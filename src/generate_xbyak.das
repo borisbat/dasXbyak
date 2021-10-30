@@ -14,7 +14,7 @@ def main
     blocked_functions <- [{auto[]
         "Xbyak::CodeArray::getCode";
         "Xbyak::CodeArray::getCurr";
-        "Xbyak::CodeGenerator:L";                       // note - we can't really return Label
+        "Xbyak::CodeGenerator::L";
         "Xbyak::Operand::setIdx";
         "Xbyak::LabelManager::getId";
         "Xbyak::LabelManager::incRefCount";
@@ -58,8 +58,34 @@ def main
             return true
         return false
 
+    var args <- get_command_line_arguments()
+    generate_split_functions = true
+    g_split_factor = 200    // there are TONES of functions
+    split_prefix = "{args[4]}_split"
+
+    split_cpp_prefix="
+#include \"daScript\/misc\/platform.h\"
+#include \"daScript\/daScript.h\"
+#include \"daScript\/ast\/ast_typefactory_bind.h\"
+#include \"dasXbyak.h\"
+using namespace das;
+#if USE_GENERATED
+#define GLOBAL_NAMESPACE    1
+#include \"module_xbyak.h\"
+#endif
+namespace das \{
+void Module_Xbyak::initFunctions_$$$() \{
+#if USE_GENERATED
+#if USE_GENERATED_SPLIT
+"
+
+    split_cpp_suffix="
+#endif
+#endif
+}
+}
+"
     // generate
     allow_extern_c = true
-    var args <- get_command_line_arguments()
     bindHeaders(args[3], args[4])
 

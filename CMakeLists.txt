@@ -13,6 +13,18 @@ IF (NOT DAS_XBYAK_INCLUDED)
 	SET(DAS_XBYAK_MODULE_SRC
 		${DAS_XBYAK_DIR}/src/dasXbyak.h
 		${DAS_XBYAK_DIR}/src/dasXbyak.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_0.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_1.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_2.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_3.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_4.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_5.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_6.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_7.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_8.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_9.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_10.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_11.cpp
 	)
 
 	ADD_MODULE_LIB(libDasModuleXbyak)
