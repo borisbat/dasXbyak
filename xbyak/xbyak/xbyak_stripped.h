@@ -13,14 +13,21 @@
 	#define XBYAK_NO_OP_NAMES
 #endif
 
-#include <stdio.h> // for debug print
-#include <assert.h>
-#include <list>
-#include <string>
-#include <algorithm>
+//#include <stdio.h> // for debug print
+//#include <assert.h>
+//#include <list>
+//#include <string>
+//#include <algorithm>
 #ifndef NDEBUG
-#include <iostream>
+//#include <iostream>
 #endif
+
+/*
+	stripped module only
+*/
+namespace std {
+	class string;
+};
 
 // #define XBYAK_DISABLE_AVX512
 
@@ -40,36 +47,34 @@
 // This covers -std=(gnu|c)++(0x|11|1y), -stdlib=libc++, and modern Microsoft.
 #if ((defined(_MSC_VER) && (_MSC_VER >= 1600)) || defined(_LIBCPP_VERSION) ||\
 	 			 ((__cplusplus >= 201103) || defined(__GXX_EXPERIMENTAL_CXX0X__)))
-	#include <unordered_set>
+//	#include <unordered_set>
 	#define XBYAK_STD_UNORDERED_SET std::unordered_set
-	#include <unordered_map>
+//	#include <unordered_map>
 	#define XBYAK_STD_UNORDERED_MAP std::unordered_map
-	// #define XBYAK_STD_UNORDERED_MULTIMAP std::unordered_multimap
-	// bbatkin: won't compile otherwise
-	#define XBYAK_STD_UNORDERED_MULTIMAP std::multimap
+	#define XBYAK_STD_UNORDERED_MULTIMAP std::unordered_multimap
 
 /*
 	Clang/llvm-gcc and ICC-EDG in 'GCC-mode' always claim to be GCC 4.2, using
 	libstdcxx 20070719 (from GCC 4.2.1, the last GPL 2 version).
 */
 #elif XBYAK_GNUC_PREREQ(4, 5) || (XBYAK_GNUC_PREREQ(4, 2) && __GLIBCXX__ >= 20070719) || defined(__INTEL_COMPILER) || defined(__llvm__)
-	#include <tr1/unordered_set>
+//	#include <tr1/unordered_set>
 	#define XBYAK_STD_UNORDERED_SET std::tr1::unordered_set
-	#include <tr1/unordered_map>
+//	#include <tr1/unordered_map>
 	#define XBYAK_STD_UNORDERED_MAP std::tr1::unordered_map
 	#define XBYAK_STD_UNORDERED_MULTIMAP std::tr1::unordered_multimap
 
 #elif defined(_MSC_VER) && (_MSC_VER >= 1500) && (_MSC_VER < 1600)
-	#include <unordered_set>
+//	#include <unordered_set>
 	#define XBYAK_STD_UNORDERED_SET std::tr1::unordered_set
-	#include <unordered_map>
+//	#include <unordered_map>
 	#define XBYAK_STD_UNORDERED_MAP std::tr1::unordered_map
 	#define XBYAK_STD_UNORDERED_MULTIMAP std::tr1::unordered_multimap
 
 #else
-	#include <set>
+//	#include <set>
 	#define XBYAK_STD_UNORDERED_SET std::set
-	#include <map>
+//	#include <map>
 	#define XBYAK_STD_UNORDERED_MAP std::map
 	#define XBYAK_STD_UNORDERED_MULTIMAP std::multimap
 #endif
@@ -77,18 +82,17 @@
 	#ifndef WIN32_LEAN_AND_MEAN
 		#define WIN32_LEAN_AND_MEAN
 	#endif
-	#include <windows.h>
-	#include <malloc.h>
+//	#include <malloc.h>
 	#define XBYAK_TLS __declspec(thread)
 #elif defined(__GNUC__)
-	#include <unistd.h>
-	#include <sys/mman.h>
-	#include <stdlib.h>
+//	#include <unistd.h>
+//	#include <sys/mman.h>
+//	#include <stdlib.h>
 	#define XBYAK_TLS __thread
 #endif
 #if defined(__APPLE__) && !defined(XBYAK_DONT_USE_MAP_JIT)
 	#define XBYAK_USE_MAP_JIT
-	#include <sys/sysctl.h>
+//	#include <sys/sysctl.h>
 	#ifndef MAP_JIT
 		#define MAP_JIT 0x800
 	#endif
@@ -1578,8 +1582,7 @@ public:
 		T_NEAR,
 		T_AUTO // T_SHORT if possible
 	};
-// bbatkin: can't access instructions otherwise
-// private:
+private:
 	CodeGenerator operator=(const CodeGenerator&); // don't call
 #ifdef XBYAK64
 	enum { i32e = 32 | 64, BIT = 64 };
@@ -2453,8 +2456,7 @@ public:
 #ifndef XBYAK_DISABLE_SEGMENT
 	const Segment es, cs, ss, ds, fs, gs;
 #endif
-// bbatkin: can't access instructions otherwise
-// private:
+private:
 	bool isDefaultJmpNEAR_;
 public:
 	void L(const std::string& label) { labelMgr_.defineSlabel(label); }
