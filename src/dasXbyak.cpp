@@ -59,10 +59,31 @@ namespace das {
         return reg + value;
     }
 
+    Xbyak::RegExp das_op_sub_int ( const Xbyak::Reg & reg, int32_t value ) {
+        return reg - value;
+    }
+
+    Xbyak::RegExp das_op_sub_uint ( const Xbyak::Reg & reg, uint32_t value ) {
+        return reg - value;
+    }
+
     int32_t das_test_i ( const Xbyak::CodeGenerator & code ) {
         auto fun = code.getCode<int(*)(void)>();
         return fun();
     }
+
+    /*
+    static Context * SAMPLE_CONTEXT;
+    static __m128  * SAMPLE_ARGUMENTS;
+    static void    * SAMPLE_CMRES;
+
+    __m128 sample_function ( Context * context, __m128 * arguments, void * cmres ) {
+        SAMPLE_CONTEXT = context;
+        SAMPLE_ARGUMENTS = arguments;
+        SAMPLE_CMRES = cmres;
+        return v_zero();
+    }
+    */
 
     int32_t das_test_i_i ( const Xbyak::CodeGenerator & code, int32_t value ) {
         auto fun = code.getCode<int(*)(int)>();
@@ -72,6 +93,12 @@ namespace das {
     int32_t das_test_i_i_i ( const Xbyak::CodeGenerator & code, int32_t v1, int32_t v2 ) {
         auto fun = code.getCode<int(*)(int,int)>();
         return fun(v1,v2);
+    }
+
+    float4 das_invoke_code ( const Xbyak::CodeGenerator & code, vec4f anything, void * cmres, Context * context ) {
+        vec4f * arguments = cast<vec4f *>::to(anything);
+        auto fun = code.getCode<vec4f (*)(Context *, vec4f *, void *)>();
+        return fun ( context, arguments, cmres );
     }
 
 }
@@ -120,6 +147,8 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
     setParents(this,"Reg32e",   {"Operand","Reg"});
     setParents(this,"Reg32",    {"Operand","Reg","Reg32e"});
     setParents(this,"Reg64",    {"Operand","Reg","Reg32e","Reg32"});
+    setParents(this,"Mmx",      {"Operand","Reg"});
+    setParents(this,"Xmm",      {"Operand","Reg","Mmx"});
 
     addExtern<DAS_BIND_FUN(das_L_str)>(*this, lib, "L",SideEffects::worstDefault, "das_L_str")
 	    ->args({"self","label"});
@@ -139,17 +168,25 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
 	    ->args({"Operand","constant"});
     addExtern<DAS_BIND_FUN(das_op_mul_uint),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "*",SideEffects::worstDefault, "das_op_mul_uint")
 	    ->args({"Operand","constant"});
+
     addExtern<DAS_BIND_FUN(das_op_add_int),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "+",SideEffects::worstDefault, "das_op_add_int")
 	    ->args({"Operand","constant"});
     addExtern<DAS_BIND_FUN(das_op_add_uint),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "+",SideEffects::worstDefault, "das_op_add_uint")
 	    ->args({"Operand","constant"});
+    addExtern<DAS_BIND_FUN(das_op_sub_int),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "-",SideEffects::worstDefault, "das_op_sub_int")
+	    ->args({"Operand","constant"});
+    addExtern<DAS_BIND_FUN(das_op_sub_uint),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "-",SideEffects::worstDefault, "das_op_sub_uint")
+	    ->args({"Operand","constant"});
 
     addExtern<DAS_BIND_FUN(das_test_i)>(*this, lib, "eval_i",SideEffects::worstDefault, "das_test_i")
-	    ->args({"code"})->unsafeFunction = true;
+	    ->args({"code"})->unsafeOperation = true;
     addExtern<DAS_BIND_FUN(das_test_i_i)>(*this, lib, "eval_i",SideEffects::worstDefault, "das_test_i_i")
-	    ->args({"code","arg0"})->unsafeFunction = true;
+	    ->args({"code","arg0"})->unsafeOperation = true;
     addExtern<DAS_BIND_FUN(das_test_i_i_i)>(*this, lib, "eval_i",SideEffects::worstDefault, "das_test_i_i_i")
-	    ->args({"code","arg0","arg1"})->unsafeFunction = true;
+	    ->args({"code","arg0","arg1"})->unsafeOperation = true;
+
+    addExtern<DAS_BIND_FUN(das_invoke_code)>(*this, lib, "invoke_code",SideEffects::worstDefault, "das_invoke_code")
+	    ->args({"code","arguments","cmres","context"})->unsafeOperation = true;
 
 #if USE_GENERATED_SPLIT
     initFunctions_0();
