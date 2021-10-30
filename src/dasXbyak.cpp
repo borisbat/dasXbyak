@@ -30,19 +30,66 @@ namespace das {
         self.L(*label);
         return label;
     }
+
+    Xbyak::Address das_op_at_reg ( const Xbyak::AddressFrame & frame, const Xbyak::Reg & reg ) {
+        return frame[reg];
+    }
+
+    Xbyak::Address das_op_at_regexp ( const Xbyak::AddressFrame & frame, const Xbyak::RegExp & reg ) {
+        return frame[reg];
+    }
+
+    Xbyak::Address das_op_at_ptr ( const Xbyak::AddressFrame & frame, void * reg ) {
+        return frame[reg];
+    }
+
+    Xbyak::RegExp das_op_mul_int ( const Xbyak::Reg & reg, int32_t value ) {
+        return reg * value;
+    }
+
+    Xbyak::RegExp das_op_mul_uint ( const Xbyak::Reg & reg, uint32_t value ) {
+        return reg * value;
+    }
+
+    Xbyak::RegExp das_op_add_int ( const Xbyak::Reg & reg, int32_t value ) {
+        return reg + value;
+    }
+
+    Xbyak::RegExp das_op_add_uint ( const Xbyak::Reg & reg, uint32_t value ) {
+        return reg + value;
+    }
+
+    int32_t das_test_i ( const Xbyak::CodeGenerator & code ) {
+        auto fun = code.getCode<int(*)(void)>();
+        return fun();
+    }
+
+    int32_t das_test_i_i ( const Xbyak::CodeGenerator & code, int32_t value ) {
+        auto fun = code.getCode<int(*)(int)>();
+        return fun(value);
+    }
+
+    int32_t das_test_i_i_i ( const Xbyak::CodeGenerator & code, int32_t v1, int32_t v2 ) {
+        auto fun = code.getCode<int(*)(int,int)>();
+        return fun(v1,v2);
+    }
+
 }
 
 #endif
 
 namespace das {
 
-void setParents ( Module * mod, const char * child, const char * parent ) {
+void setParents ( Module * mod, const char * child, const initializer_list<const char *> & parents ) {
     auto chA = mod->findAnnotation(child);
-    DAS_ASSERTF(chA,"missing child annotation");
-    auto chP = mod->findAnnotation(parent);
-    DAS_ASSERTF(chP,"missing parent annotation");
+    DAS_VERIFYF(chA,"missing child annotation");
+    DAS_VERIFYF(chA->rtti_isBasicStructureAnnotation(),"expecting basic structure annotation");
     auto bsaCh = (BasicStructureAnnotation *) chA.get();
-    bsaCh->parents.push_back((TypeAnnotation *)chP.get());
+    for ( auto parent : parents ) {
+        auto chP = mod->findAnnotation(parent);
+        DAS_VERIFYF(chP,"missing parent annotation");
+        bsaCh->parents.push_back((TypeAnnotation *)chP.get());
+    }
 }
 
 Module_Xbyak::Module_Xbyak() : Module("xbyak") {
@@ -52,18 +99,27 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
     #include "module_xbyak.enum.inc"
     #include "module_xbyak.ann.inc"
 
-    setParents(this,"Reg","Operand");
+    #ifdef XBYAK32
+        addConstant<bool>(*this,"xbyak32",true);
+        addConstant<bool>(*this,"xbyak64",false);
+        addConstant<bool>(*this,"xbyak64win",false);
+    #elif defined(XBYAK64_WIN)
+        addConstant<bool>(*this,"xbyak32",false);
+        addConstant<bool>(*this,"xbyak64",false);
+        addConstant<bool>(*this,"xbyak64win",true);
+    #else
+        addConstant<bool>(*this,"xbyak32",false);
+        addConstant<bool>(*this,"xbyak64",true);
+        addConstant<bool>(*this,"xbyak64win",false);
+    #endif
 
-    setParents(this,"Reg8","Reg");
-
-    setParents(this,"Reg16","Reg");
-
-    setParents(this,"Reg32e","Reg");
-
-    setParents(this,"Reg32","Reg32e");
-    setParents(this,"Reg32","Operand");
-
-    setParents(this,"Reg64","Reg32e");
+    setParents(this,"Address",  {"Operand"});
+    setParents(this,"Reg",      {"Operand"});
+    setParents(this,"Reg8",     {"Operand","Reg"});
+    setParents(this,"Reg16",    {"Operand","Reg"});
+    setParents(this,"Reg32e",   {"Operand","Reg"});
+    setParents(this,"Reg32",    {"Operand","Reg","Reg32e"});
+    setParents(this,"Reg64",    {"Operand","Reg","Reg32e","Reg32"});
 
     addExtern<DAS_BIND_FUN(das_L_str)>(*this, lib, "L",SideEffects::worstDefault, "das_L_str")
 	    ->args({"self","label"});
@@ -72,6 +128,28 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
     addExtern<DAS_BIND_FUN(das_L)>(*this, lib, "L",SideEffects::worstDefault, "das_L")
 	    ->args({"self"});
 
+    addExtern<DAS_BIND_FUN(das_op_at_reg),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "[]",SideEffects::worstDefault, "das_op_at_reg")
+	    ->args({"AddrFrame","address"});
+    addExtern<DAS_BIND_FUN(das_op_at_regexp),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "[]",SideEffects::worstDefault, "das_op_at_regexp")
+	    ->args({"AddrFrame","address"});
+    addExtern<DAS_BIND_FUN(das_op_at_ptr),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "[]",SideEffects::worstDefault, "das_op_at_ptr")
+	    ->args({"AddrFrame","address"});
+
+    addExtern<DAS_BIND_FUN(das_op_mul_int),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "*",SideEffects::worstDefault, "das_op_mul_int")
+	    ->args({"Operand","constant"});
+    addExtern<DAS_BIND_FUN(das_op_mul_uint),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "*",SideEffects::worstDefault, "das_op_mul_uint")
+	    ->args({"Operand","constant"});
+    addExtern<DAS_BIND_FUN(das_op_add_int),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "+",SideEffects::worstDefault, "das_op_add_int")
+	    ->args({"Operand","constant"});
+    addExtern<DAS_BIND_FUN(das_op_add_uint),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "+",SideEffects::worstDefault, "das_op_add_uint")
+	    ->args({"Operand","constant"});
+
+    addExtern<DAS_BIND_FUN(das_test_i)>(*this, lib, "eval_i",SideEffects::worstDefault, "das_test_i")
+	    ->args({"code"})->unsafeFunction = true;
+    addExtern<DAS_BIND_FUN(das_test_i_i)>(*this, lib, "eval_i",SideEffects::worstDefault, "das_test_i_i")
+	    ->args({"code","arg0"})->unsafeFunction = true;
+    addExtern<DAS_BIND_FUN(das_test_i_i_i)>(*this, lib, "eval_i",SideEffects::worstDefault, "das_test_i_i_i")
+	    ->args({"code","arg0","arg1"})->unsafeFunction = true;
 
 #if USE_GENERATED_SPLIT
     initFunctions_0();
