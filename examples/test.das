@@ -130,8 +130,7 @@ def jit_mad
         let err = reinterpret<GenerationError> GetError()
         if err != GenerationError NONE
             panic("xbyak - generation error {err}")
-        var jit_mad = reinterpret<function> @@test_mad
-        *pgen |> instrument_jit(jit_mad)
+        *pgen |> instrument_jit(reinterpret<function> @@test_mad)
 
 [sideeffects]
 def test_mad(x, y, z: int)

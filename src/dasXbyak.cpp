@@ -123,7 +123,7 @@ namespace das {
         JitFunction func = nullptr;
     };
 
-    bool das_instrument_jit ( const Xbyak::CodeGenerator & code, const Func & func, Context * context ) {
+    bool das_instrument_jit ( const Xbyak::CodeGenerator & code, const Func func, Context * context ) {
         auto simfn = func.PTR;
         if ( !simfn ) return false;
         auto gen = code.getCode<JitFunction>();
