@@ -73,10 +73,86 @@ def test_invoke ( x:int; y:float )
         print("\tfloat  = {cresult.f}\n")
         print("\tvoid * = {cresult.p}\n")
 
+/*
+    RBX, RBP, RDI, RSI, RSP, R12, R13, R14, R15, and XMM6-XMM15
+*/
+
+def jit_mad_ref
+    let STACK_FRAME_SIZE    =   0x40
+    let STACK_FRAME_OFFSET  =   STACK_FRAME_SIZE + 8u
+
+    let CMRES_OFFSET     =  24u
+    let ARGUMENTS_OFFSET =  16u
+    let CONTEXT_OFFSET   =  8u
+
+    let X_ARG_INDEX = 0u
+    let Y_ARG_INDEX = 1u
+    let Z_ARG_INDEX = 2u
+
+    var pgen = with_xbyak <| $ ( gen )
+        sub(rsp,STACK_FRAME_SIZE)
+        mov(ptr[rsp+CMRES_OFFSET],r8)
+        mov(ptr[rsp+ARGUMENTS_OFFSET],rdx)
+        mov(ptr[rsp+CONTEXT_OFFSET],rcx)
+        mov(rax,ptr[rsp+ARGUMENTS_OFFSET])
+        mov(r9d,ptr[rax+(X_ARG_INDEX*16u)])
+        mov(rax,ptr[rsp+ARGUMENTS_OFFSET])
+        mov(r10d,ptr[rax+(Y_ARG_INDEX*16u)])
+        mov(rax,ptr[rsp+ARGUMENTS_OFFSET])
+        mov(r11d,ptr[rax+(Z_ARG_INDEX*16u)])
+        mov(eax,r9d)
+        imul(r10d)
+        add(eax,r11d)
+        movd(xmm0, eax)
+        add(rsp,STACK_FRAME_SIZE)
+        ret()
+    unsafe
+        let err = reinterpret<GenerationError> GetError()
+        if err != GenerationError NONE
+            panic("xbyak - generation error {err}")
+        var jit_mad = reinterpret<function> @@test_mad
+        *pgen |> instrument_jit(jit_mad)
+
+def jit_mad
+    let X_ARG_INDEX = 0u
+    let Y_ARG_INDEX = 1u
+    let Z_ARG_INDEX = 2u
+    var pgen = with_xbyak <| $ ( gen )
+        mov(r9d ,ptr[rdx+(X_ARG_INDEX*16u)])
+        mov(r10d,ptr[rdx+(Y_ARG_INDEX*16u)])
+        mov(r11d,ptr[rdx+(Z_ARG_INDEX*16u)])
+        mov(eax,r9d)
+        imul(r10d)
+        add(eax,r11d)
+        movd(xmm0, eax)
+        ret()
+    unsafe
+        let err = reinterpret<GenerationError> GetError()
+        if err != GenerationError NONE
+            panic("xbyak - generation error {err}")
+        var jit_mad = reinterpret<function> @@test_mad
+        *pgen |> instrument_jit(jit_mad)
+
+[sideeffects]
+def test_mad(x, y, z: int)
+    return x * y + z
+
 [export]
 def main
-    let t = test_add(2,3)
-    print("t = {t}\n")
-
-    test_invoke(1,2.)
-
+    print("interpreting\n")
+    verify(test_mad(2,3,4)==10)
+    let t0 = profile(20,"simulated") <|
+        for i in range(100)
+            for j in range(100)
+                for k in range(1000)
+                    test_mad(i, j, k)
+    print("interpreted: {t0}\n")
+    print("jitting\n")
+    jit_mad()
+    verify(test_mad(2,3,4)==10)
+    let t1 = profile(20,"simulated") <|
+        for i in range(100)
+            for j in range(100)
+                for k in range(1000)
+                    test_mad(i, j, k)
+    print("jit: {t1}\n")

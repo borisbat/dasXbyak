@@ -3,6 +3,8 @@
 #include "daScript/daScript.h"
 #include "daScript/ast/ast_typefactory_bind.h"
 
+#include "daScript/simulate/simulate_visit_op.h"
+
 #include "dasXbyak.h"
 
 using namespace das;
@@ -95,12 +97,42 @@ namespace das {
         return fun(v1,v2);
     }
 
+    typedef vec4f ( * JitFunction ) ( Context * , vec4f *, void * );
+
     float4 das_invoke_code ( const Xbyak::CodeGenerator & code, vec4f anything, void * cmres, Context * context ) {
         vec4f * arguments = cast<vec4f *>::to(anything);
-        auto fun = code.getCode<vec4f (*)(Context *, vec4f *, void *)>();
+        auto fun = code.getCode<JitFunction>();
         return fun ( context, arguments, cmres );
     }
 
+    struct SimNode_Jit : SimNode {
+        SimNode_Jit ( const LineInfo & at, JitFunction eval )
+            : SimNode(at), func(eval) {}
+        virtual SimNode * visit ( SimVisitor & vis ) override {
+            uint64_t fptr = (uint64_t) func;
+            V_BEGIN();
+            V_OP(Jit);
+            V_ARG(fptr);
+            V_END();
+        }
+        virtual vec4f eval ( Context & context ) override {
+            auto result = func(&context, context.abiArg, context.abiCMRES);
+            context.result = result;
+            return result;
+        }
+        JitFunction func = nullptr;
+    };
+
+    bool das_instrument_jit ( const Xbyak::CodeGenerator & code, const Func & func, Context * context ) {
+        auto simfn = func.PTR;
+        if ( !simfn ) return false;
+        auto gen = code.getCode<JitFunction>();
+        auto node = context->code->makeNode<SimNode_Jit>(LineInfo(), gen);
+        simfn->code = node;
+        simfn->aot = false;
+        simfn->aotFunction = nullptr;
+        return true;
+    }
 }
 
 #endif
@@ -187,6 +219,9 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
 
     addExtern<DAS_BIND_FUN(das_invoke_code)>(*this, lib, "invoke_code",SideEffects::worstDefault, "das_invoke_code")
 	    ->args({"code","arguments","cmres","context"})->unsafeOperation = true;
+
+    addExtern<DAS_BIND_FUN(das_instrument_jit)>(*this, lib, "instrument_jit",SideEffects::worstDefault, "das_instrument_jit")
+	    ->args({"code","function","context"})->unsafeOperation = true;
 
 #if USE_GENERATED_SPLIT
     initFunctions_0();
