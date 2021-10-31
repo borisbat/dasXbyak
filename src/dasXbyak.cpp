@@ -133,6 +133,10 @@ namespace das {
         simfn->aotFunction = nullptr;
         return true;
     }
+
+    void * das_get_code_ptr ( const Xbyak::CodeGenerator & code ) {
+        return (void *) code.getCode();
+    }
 }
 
 #endif
@@ -172,6 +176,8 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
         addConstant<bool>(*this,"xbyak64win",false);
     #endif
 
+    setParents(this,"CodeGenerator",  {"CodeArray"});
+    // regs
     setParents(this,"Address",  {"Operand"});
     setParents(this,"Reg",      {"Operand"});
     setParents(this,"Reg8",     {"Operand","Reg"});
@@ -209,6 +215,8 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
 	    ->args({"Operand","constant"});
     addExtern<DAS_BIND_FUN(das_op_sub_uint),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "-",SideEffects::worstDefault, "das_op_sub_uint")
 	    ->args({"Operand","constant"});
+
+    addExtern<DAS_BIND_FUN(das_get_code_ptr)>(*this, lib, "get_code",SideEffects::worstDefault, "das_get_code_ptr");
 
     addExtern<DAS_BIND_FUN(das_test_i)>(*this, lib, "eval_i",SideEffects::worstDefault, "das_test_i")
 	    ->args({"code"})->unsafeOperation = true;

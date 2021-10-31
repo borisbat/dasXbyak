@@ -51,4 +51,67 @@ IF (NOT DAS_XBYAK_INCLUDED)
 		""
 	)
 
+	SET(DAS_ZYCONFIG_DIR ${CMAKE_SOURCE_DIR}/modules/dasXbyak/zydis/msvc)
+
+	SET(DAS_ZYDIS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/modules/dasXbyak/zydis/include)
+	SET(DAS_ZYDIS_SRC_DIR ${CMAKE_SOURCE_DIR}/modules/dasXbyak/zydis/src)
+
+	SET(DAS_ZYCORE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/modules/dasXbyak/zydis/dependencies/zycore/include)
+	SET(DAS_ZYCORE_SRC_DIR     ${CMAKE_SOURCE_DIR}/modules/dasXbyak/zydis/dependencies/zycore/src)
+
+
+	# libDasModuleZydis
+	SET(DAS_ZYDIS_MODULE_SRC
+		${DAS_XBYAK_DIR}/src/dasZydis.h
+		${DAS_XBYAK_DIR}/src/dasZydis.cpp
+	)
+
+	# zcore
+	SET(DAS_ZYCORE_SRC
+		${DAS_ZYCORE_SRC_DIR}/Allocator.c
+		${DAS_ZYCORE_SRC_DIR}/ArgParse.c
+		${DAS_ZYCORE_SRC_DIR}/Bitset.c
+		${DAS_ZYCORE_SRC_DIR}/Format.c
+		${DAS_ZYCORE_SRC_DIR}/List.c
+		${DAS_ZYCORE_SRC_DIR}/String.c
+		${DAS_ZYCORE_SRC_DIR}/Vector.c
+		${DAS_ZYCORE_SRC_DIR}/Zycore.c
+		${DAS_ZYCORE_SRC_DIR}/API/Memory.c
+		${DAS_ZYCORE_SRC_DIR}/API/Process.c
+		${DAS_ZYCORE_SRC_DIR}/API/Synchronization.c
+		${DAS_ZYCORE_SRC_DIR}/API/Terminal.c
+		${DAS_ZYCORE_SRC_DIR}/API/Thread.c
+	)
+
+	SET(DAS_ZYDIST_SRC
+		${DAS_ZYDIS_SRC_DIR}/Decoder.c
+		${DAS_ZYDIS_SRC_DIR}/DecoderData.c
+		${DAS_ZYDIS_SRC_DIR}/Formatter.c
+		${DAS_ZYDIS_SRC_DIR}/FormatterATT.c
+		${DAS_ZYDIS_SRC_DIR}/FormatterBase.c
+		${DAS_ZYDIS_SRC_DIR}/FormatterBuffer.c
+		${DAS_ZYDIS_SRC_DIR}/FormatterIntel.c
+		${DAS_ZYDIS_SRC_DIR}/Generated
+		${DAS_ZYDIS_SRC_DIR}/MetaInfo.c
+		${DAS_ZYDIS_SRC_DIR}/Mnemonic.c
+		${DAS_ZYDIS_SRC_DIR}/Register.c
+		${DAS_ZYDIS_SRC_DIR}/SharedData.c
+		${DAS_ZYDIS_SRC_DIR}/String.c
+		${DAS_ZYDIS_SRC_DIR}/Utils.c
+		${DAS_ZYDIS_SRC_DIR}/Zydis.c
+	)
+
+	ADD_MODULE_LIB(libDasModuleZydis)
+	ADD_MODULE_CPP(Zydis)
+	ADD_LIBRARY(libDasModuleZydis ${DAS_ZYDIS_MODULE_SRC} ${DAS_ZYCORE_SRC} ${DAS_ZYDIST_SRC})
+	TARGET_LINK_LIBRARIES(libDasModuleZydis ${ZYDIS_LIBRARIES})
+	ADD_DEPENDENCIES(libDasModuleZydis libDaScript)
+	TARGET_INCLUDE_DIRECTORIES(libDasModuleZydis PUBLIC ${ZYDIS_INCLUDE_DIR} ${DAS_XBYAK_DIR}
+		${DAS_ZYCONFIG_DIR}
+		${DAS_ZYCORE_INCLUDE_DIR} ${DAS_ZYDIS_INCLUDE_DIR} ${DAS_ZYDIS_SRC_DIR}
+	)
+	TARGET_COMPILE_DEFINITIONS(libDasModuleZydis PUBLIC -DZYCORE_STATIC_DEFINE)
+	TARGET_COMPILE_DEFINITIONS(libDasModuleZydis PUBLIC -DZYDIS_STATIC_DEFINE)
+	SETUP_CPP11(libDasModuleZydis)
+
 ENDIF()

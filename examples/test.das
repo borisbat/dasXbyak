@@ -1,5 +1,7 @@
 require dasxbyak/xbyak_boost
 
+require zydis
+
 require rtti
 
 def test_add(x,y:int)
@@ -110,8 +112,11 @@ def jit_mad_ref
         let err = reinterpret<GenerationError> GetError()
         if err != GenerationError NONE
             panic("xbyak - generation error {err}")
-        var jit_mad = reinterpret<function> @@test_mad
-        *pgen |> instrument_jit(jit_mad)
+        let data = *pgen |> get_code()
+        let dataLength = *pgen |> getSize()
+        disassemble(data, dataLength)
+        *pgen |> instrument_jit(reinterpret<function> @@test_mad)
+
 
 def jit_mad
     let X_ARG_INDEX = 0u
@@ -130,6 +135,9 @@ def jit_mad
         let err = reinterpret<GenerationError> GetError()
         if err != GenerationError NONE
             panic("xbyak - generation error {err}")
+        let data = *pgen |> get_code()
+        let dataLength = *pgen |> getSize()
+        disassemble(data, dataLength)
         *pgen |> instrument_jit(reinterpret<function> @@test_mad)
 
 [sideeffects]
