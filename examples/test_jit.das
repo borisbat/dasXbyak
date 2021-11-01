@@ -94,6 +94,11 @@ def fibI_asm(n:int)
 
 [export]
 def main
+    /*
+    print("fibI_jit(5) = {fibI_jit(13)}\n")
+    return
+    */
+
     print("fibI(5)     = {fibI(13)}\n")
     print("fibI_jit(5) = {fibI_jit(13)}\n")
     print("fibI_asm(5) = {fibI_asm(13)}\n")
