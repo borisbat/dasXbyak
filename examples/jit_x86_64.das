@@ -70,13 +70,21 @@ struct EvContext
 
 [macro_function]
 def dump ( ctx:EvContext )
+    print("gp temp: {length(ctx.gpa.regs)}\n")
+    for t in range(length(ctx.gpa.regs))
+        unsafe
+            print("\t{reinterpret<GpTempReg> t} {ctx.gpa.freq[t]} times\n")
+    print("xmm temp: {length(ctx.xmma.regs)}\n")
+    for x in range(length(ctx.xmma.regs))
+        unsafe
+            print("\t{reinterpret<XmmTempReg> x} {ctx.xmma.freq[x]} times\n")
     print("register allocation:\n")
     for k,v in keys(ctx.expr_res),values(ctx.expr_res)
         unsafe
             let pexpr = reinterpret<Expression?> k
             let at & = pexpr.at
             let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
-            print("{k}.{pexpr.__rtti} ->  {v} at {fname}:{int(at.line)}:{int(at.column)}\n")
+            print("\t{k}.{pexpr.__rtti} ->  {v} at {fname}:{int(at.line)}:{int(at.column)}\n")
 
 [macro_function]
 def is_gpreg_type ( t:TypeDeclPtr )
@@ -250,7 +258,8 @@ class AllocateRegistersCodeVisitor : AstVisitor
     def override visitExprCall(expr:smart_ptr<ExprCall>) : ExpressionPtr
         ////////////////////
         // TODO: calls table
-        if expr.name=="range"
+        let call_name = "{expr.func._module.name}::{expr.func.name}"
+        if call_name=="$::range"
             assert(length(expr.arguments)==1 && expr.arguments[0]._type.baseType==Type tInt)
             var evA0 & = context.expr_res[intptr(expr.arguments[0])]
             // range returns int2 in xmm register
@@ -577,8 +586,8 @@ class GenerateCodeVisitor : AstVisitor
     def override visitExprCall(expr:smart_ptr<ExprCall>) : ExpressionPtr
         ////////////////////
         // TODO: calls table
-        if expr.name=="range"
-            print("RANGE IS {expr.func._module.name}::{expr.func.name}\n")
+        let call_name = "{expr.func._module.name}::{expr.func.name}"
+        if call_name=="$::range"
             assert(length(expr.arguments)==1 && expr.arguments[0]._type.baseType==Type tInt)
             let evA0 & = context.expr_res[intptr(expr.arguments[0])]
             let evR & = context.expr_res[intptr(expr)]
@@ -612,9 +621,21 @@ def public generate_x86_64(var func:FunctionPtr) : uint64
     var allocateRegistersVisitorAdapter <- make_visitor(*allocateRegistersVisitor)
     visit(func, allocateRegistersVisitorAdapter)
     var context <- allocateRegistersVisitor.context
+    if allocateRegistersVisitor.verbose
+        context |> dump
     allocateRegistersVisitorAdapter := null
     unsafe
         delete allocateRegistersVisitor
+    // verify GP regs
+    let temp_gp = length(context.gpa.regs)
+    if temp_gp > MAX_GP_TEMP_REG
+        print("jit_x86_64: failed for {func.name}, too many temp gp registers {temp_gp} of {MAX_GP_TEMP_REG}")
+        return 0ul
+    // verify XMM regis
+    let temp_xmm = length(context.xmma.regs)
+    if temp_xmm > MAX_XMM_TEMP_REG
+        print("jit_x86_64: failed for {func.name}, too many temp xmm registers {temp_xmm} of {MAX_XMM_TEMP_REG}")
+        return 0ul
     // generate code
     var gen = new CodeGenerator
     *gen |> inLocalLabel()
@@ -643,7 +664,8 @@ class Jit_x86_64_Macro : AstFunctionAnnotation
         compiling_module() |> add_global_private_var ( jit_var_name, func.at) <| new [[ExprConstUInt64() value=-1ul]]
         var qblock <- quote() <|
             unsafe
-                *(reinterpret<CodeGenerator?> PGEN) |> instrument_jit(reinterpret<function> PFUN)
+                if PGEN != 0ul
+                    *(reinterpret<CodeGenerator?> PGEN) |> instrument_jit(reinterpret<function> PFUN)
         apply_template(qblock) <| $ ( rules )
             rules |> replaceVariable("PGEN") <| new [[ExprVar() name:=jit_var_name]]
             rules |> replaceVariable("PFUN") <| new [[ExprAddr() target:=func.name]]

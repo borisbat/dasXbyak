@@ -9,6 +9,9 @@ require dasxbyak/xbyak_boost
 // non-transient registers
 //      RBX, RBP, RDI, RSI, RSP, R12, R13, R14, R15, and XMM6-XMM15
 
+let MAX_GP_TEMP_REG = 11
+let FIRST_NON_TRANSIENT_GP_TEMP_REG = 4
+
 enum GpTempReg
     // transient
     R8
@@ -23,6 +26,9 @@ enum GpTempReg
     R13
     R14
     R15
+
+let MAX_XMM_TEMP_REG = 16
+let FIRST_NON_TRANSIENT_XMM_TEMP_REG = 6
 
 enum XmmTempReg
     XMM0
