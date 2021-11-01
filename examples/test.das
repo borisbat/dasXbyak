@@ -138,9 +138,13 @@ def jit_mad
         let data = *pgen |> get_code()
         let dataLength = *pgen |> getSize()
         disassemble(data, dataLength)
-        *pgen |> instrument_jit(reinterpret<function> @@test_mad)
+        *pgen |> instrument_jit(reinterpret<function> @@test_mad_jit)
 
 [sideeffects]
+def test_mad_jit(x, y, z: int)
+    panic("we should not be here")
+    return 1
+
 def test_mad(x, y, z: int)
     return x * y + z
 
@@ -156,10 +160,10 @@ def main
     print("interpreted: {t0}\n")
     print("jitting\n")
     jit_mad()
-    verify(test_mad(2,3,4)==10)
+    verify(test_mad_jit(2,3,4)==10)
     let t1 = profile(20,"simulated") <|
         for i in range(100)
             for j in range(100)
                 for k in range(1000)
-                    test_mad(i, j, k)
+                    test_mad_jit(i, j, k)
     print("jit: {t1}\n")

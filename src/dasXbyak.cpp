@@ -53,6 +53,10 @@ namespace das {
         return reg * value;
     }
 
+    Xbyak::RegExp das_op_add_reg ( const Xbyak::Reg & reg, const Xbyak::Reg & value ) {
+        return reg + value;
+    }
+
     Xbyak::RegExp das_op_add_int ( const Xbyak::Reg & reg, int32_t value ) {
         return reg + value;
     }
@@ -207,6 +211,8 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
     addExtern<DAS_BIND_FUN(das_op_mul_uint),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "*",SideEffects::worstDefault, "das_op_mul_uint")
 	    ->args({"Operand","constant"});
 
+    addExtern<DAS_BIND_FUN(das_op_add_reg),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "+",SideEffects::worstDefault, "das_op_add_reg")
+	    ->args({"Operand","constant"});
     addExtern<DAS_BIND_FUN(das_op_add_int),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "+",SideEffects::worstDefault, "das_op_add_int")
 	    ->args({"Operand","constant"});
     addExtern<DAS_BIND_FUN(das_op_add_uint),SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "+",SideEffects::worstDefault, "das_op_add_uint")
