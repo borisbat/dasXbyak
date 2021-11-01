@@ -293,12 +293,22 @@ class GenerateCodeVisitor : AstVisitor
         if verbose
             print("(DEF {fun.name} [STACK={stack_frame}, TEMP={temp_frame}]\n")
         with_xbyak(gen) <| $ ( GEN )
-            push(rbx)
-            push(rdi)
-            push(rsi)
-            push(r12)
-            push(r13)
-            push(r14)
+            // save non-transient gp regs
+            let total_gp_save = length(context.gpa.regs) - FIRST_NON_TRANSIENT_GP_TEMP_REG
+            if total_gp_save>0
+                for t in range(total_gp_save)
+                    unsafe
+                        let gp_reg = reinterpret<GpTempReg> (t + FIRST_NON_TRANSIENT_GP_TEMP_REG)
+                        push(REG64(GEN,gp_reg))
+                if (total_gp_save & 1) != 0     // align to 16 bytes
+                    push(rax)
+            // save non-transient xmm regs
+            let total_xmm_save = length(context.xmma.regs) - FIRST_NON_TRANSIENT_XMM_TEMP_REG
+            if total_xmm_save>0
+                for t in range(total_xmm_save)
+                    unsafe
+                        let xmm_reg = reinterpret<XmmTempReg> (t + FIRST_NON_TRANSIENT_XMM_TEMP_REG)
+                        push(REGXMM(GEN,xmm_reg))
             sub(rsp,(stack_frame+PROLOGUE_FRAME_SIZE+temp_frame))
             mov(qword[rsp+(stack_frame+ARG_CONTEXT)],rcx)
             mov(qword[rsp+(stack_frame+ARG_ARGUMENTS)],rdx)
@@ -307,12 +317,22 @@ class GenerateCodeVisitor : AstVisitor
         with_xbyak(gen) <| $ ( GEN )
             L(".return")
             add(rsp,(stack_frame+PROLOGUE_FRAME_SIZE+temp_frame))
-            pop(r14)
-            pop(r13)
-            pop(r12)
-            pop(rsi)
-            pop(rdi)
-            pop(rbx)
+            // restore non-transient xmm regs
+            let total_xmm_save = length(context.xmma.regs) - FIRST_NON_TRANSIENT_XMM_TEMP_REG
+            if total_xmm_save>0
+                for t in range(total_xmm_save)
+                    unsafe
+                        let xmm_reg = reinterpret<XmmTempReg> ((total_xmm_save-t) + FIRST_NON_TRANSIENT_XMM_TEMP_REG)
+                        pop(REGXMM(GEN,xmm_reg))
+            // restore non-transient gp regs
+            let total_gp_save = length(context.gpa.regs) - FIRST_NON_TRANSIENT_GP_TEMP_REG
+            if total_gp_save>0
+                if (total_gp_save & 1) != 0     // align to 16 bytes
+                    pop(rax)
+                for t in range(total_gp_save)
+                    unsafe
+                        let gp_reg = reinterpret<GpTempReg> ((total_gp_save-t-1) + FIRST_NON_TRANSIENT_GP_TEMP_REG)
+                        pop(REG64(GEN,gp_reg))
             ret()
         if verbose
             print(")\n")
@@ -549,7 +569,12 @@ class GenerateCodeVisitor : AstVisitor
             with_xbyak(gen) <| $ ( GEN )
                 let iSP = expr.iteratorVariables[0].stackTop
                 if evS is xmmReg
-                    movd(dword[rsp+iSP],REGXMM(GEN,evS as xmmReg))
+                    let reg & = REGXMM(GEN,evS as xmmReg)
+                    movd(dword[rsp+iSP],reg)
+                    shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
+                    movd(eax,reg)
+                    cmp(eax,dword[rsp+iSP])
+                    je(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                 else
                     self->failed("support for_range_1 source {evS}",expr.at)
         if verbose
@@ -557,25 +582,23 @@ class GenerateCodeVisitor : AstVisitor
         return source
     def override preVisitExprForBody(expr:smart_ptr<ExprFor>) : void
         with_xbyak(gen) <| $ ( GEN )
-            let lname = ".for_loop_{intptr(expr)}"
-            L(lname)
+            L(".for_loop_{intptr(expr)}")
         if verbose
             print("\n")
     def override visitExprFor(expr:smart_ptr<ExprFor>) : ExpressionPtr
         if is_for_range1(expr)
             let evS & = context.expr_res[intptr(expr.sources[0])]
             with_xbyak(gen) <| $ ( GEN )
-                let lname = ".for_loop_{intptr(expr)}"
                 let iSP = expr.iteratorVariables[0].stackTop
                 if evS is xmmReg
-                    movq(rax,REGXMM(GEN,evS as xmmReg))
-                    shr(rax,32)
+                    movd(eax,REGXMM(GEN,evS as xmmReg))
                     inc(dword[rsp+iSP])
                     cmp(dword[rsp+iSP],eax)
-                    jnz(lname,LabelType T_AUTO)
-                    print("jnz {lname}\n")
+                    jnz(".for_loop_{intptr(expr)}",LabelType T_AUTO)
                 else
                     self->failed("support for_range_1 source {evS}",expr.at)
+        with_xbyak(gen) <| $ ( GEN )
+            L(".for_loop_done_{intptr(expr)}")
         if verbose
             print("{repeat("\t",tab)})")
         return expr

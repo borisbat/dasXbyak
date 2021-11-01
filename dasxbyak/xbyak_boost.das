@@ -58,6 +58,9 @@ enum public GenerationError
 	SAME_REGS_ARE_INVALID
 	INTERNAL
 
+def _MM_SHUFFLE(fp3,fp2,fp1,fp0:int)
+    return uint8((((fp3) << 6) | ((fp2) << 4) | ((fp1) << 2) | ((fp0))))
+
 [tag_function(xbyak_remove_gen)]
 def with_xbyak ( var pgen:CodeGenerator?; blk:block<(var gen:CodeGenerator)> )
     invoke(blk, *pgen)
