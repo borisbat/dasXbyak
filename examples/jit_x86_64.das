@@ -2,7 +2,9 @@ options no_unused_block_arguments = false
 options no_unused_function_arguments = false
 options indenting = 4
 
-module jit_x86_64 shared public
+module jit_x86_64 public
+
+require jit_x86_64_regs
 
 require daslib/ast_boost
 require daslib/strings_boost
@@ -10,10 +12,6 @@ require daslib/templates_boost
 
 require dasxbyak/xbyak_boost
 require zydis
-
-//
-// non-transient registers
-//      RBX, RBP, RDI, RSI, RSP, R12, R13, R14, R15, and XMM6-XMM15
 
 /*
     STACK FRAME IS
@@ -29,6 +27,7 @@ TEMPORARY
     ...
 */
 
+
 let GREEDY_TEMP_FRAME_SIZE = 0u
 
 let PROLOGUE_FRAME_SIZE   = 32u
@@ -38,134 +37,24 @@ let ARG_CMRES             = 24u
 
 let GP_TEMP_REG_TOTAL = 11
 
-enum GpTempReg
-    // transient
-    R8
-    R9
-    R10
-    R11
-    // permanent
-    RBX
-    RDI
-    RSI
-    R12
-    R13
-    R14
-    R15
+struct RegAllocator
+    regs : array<bool>
+    freq : array<int>
 
-struct GpRegAllocator
-    reg : bool[GP_TEMP_REG_TOTAL]
+def free ( var regs:RegAllocator; r:int )
+    assert(regs.regs[r]==true)
+    regs.regs[r] = false
 
-def free ( var regs:GpRegAllocator; r:GpTempReg )
-    assert(regs.reg[int(r)])
-    regs.reg[int(r)] = false
-
-def allocate ( var regs:GpRegAllocator )
-    for r,i in regs.reg,range(GP_TEMP_REG_TOTAL)
-        if !r
-            r = true
-            unsafe
-                return reinterpret<GpTempReg> i
-    panic("out of registers")
-    return GpTempReg R8
-
-def REG32 ( var gen:CodeGenerator; r:GpTempReg ) : Reg32 const &
-    unsafe
-        if r==GpTempReg R8
-            return gen.r8d
-        elif r==GpTempReg R9
-            return gen.r9d
-        elif r==GpTempReg R10
-            return gen.r10d
-        elif r==GpTempReg R11
-            return gen.r11d
-        elif r==GpTempReg RBX
-            return gen.ebx
-        elif r==GpTempReg RDI
-            return gen.edi
-        elif r==GpTempReg RSI
-            return gen.esi
-        elif r==GpTempReg R12
-            return gen.r12d
-        elif r==GpTempReg R13
-            return gen.r13d
-        elif r==GpTempReg R14
-            return gen.r14d
-        elif r==GpTempReg R15
-            return gen.r15d
-        else
-            return gen.eax
-
-def REG64 ( var gen:CodeGenerator; r:GpTempReg ) : Reg64 const &
-    unsafe
-        if r==GpTempReg R8
-            return gen.r8
-        elif r==GpTempReg R9
-            return gen.r9
-        elif r==GpTempReg R10
-            return gen.r10
-        elif r==GpTempReg R11
-            return gen.r11
-        elif r==GpTempReg RBX
-            return gen.rbx
-        elif r==GpTempReg RDI
-            return gen.rdi
-        elif r==GpTempReg RSI
-            return gen.rsi
-        elif r==GpTempReg R12
-            return gen.r12
-        elif r==GpTempReg R13
-            return gen.r13
-        elif r==GpTempReg R14
-            return gen.r14
-        elif r==GpTempReg R15
-            return gen.r15
-        else
-            return gen.rax
-
-
-let XMM_TEMP_REG_TOTAL = 6
-
-enum XmmTempReg
-    XMM0
-    XMM1
-    XMM2
-    XMM3
-    XMM4
-    XMM5
-
-struct XmmRegAllocator
-    reg : bool[XMM_TEMP_REG_TOTAL]
-
-def free ( var regs:XmmRegAllocator; r:XmmTempReg )
-    assert(regs.reg[int(r)])
-    regs.reg[int(r)] = false
-
-def allocate ( var regs:XmmRegAllocator )
-    for r,i in regs.reg,range(GP_TEMP_REG_TOTAL)
-        if !r
-            r = true
-            unsafe
-                return reinterpret<XmmTempReg> i
-    panic("out of registers")
-    return XmmTempReg XMM0
-
-def REGXMM ( var gen:CodeGenerator; r:XmmTempReg ) : Xmm const &
-    unsafe
-        if r==XmmTempReg XMM0
-            return gen.xmm0
-        elif r==XmmTempReg XMM1
-            return gen.xmm1
-        elif r==XmmTempReg XMM2
-            return gen.xmm2
-        elif r==XmmTempReg XMM3
-            return gen.xmm3
-        elif r==XmmTempReg XMM4
-            return gen.xmm4
-        elif r==XmmTempReg XMM5
-            return gen.xmm5
-        else
-            return gen.xmm0
+def allocate ( var regs:RegAllocator )
+    let l = length(regs.regs)
+    for i in range(l)
+        if !regs.regs[i]
+            regs.regs[i] = true
+            regs.freq[i] ++
+            return i
+    regs.regs |> push(true)
+    regs.freq |> push(1)
+    return l
 
 variant EvResult
     nothing : bool
@@ -192,8 +81,8 @@ class GenerateCodeVisitor : AstVisitor
     stack_frame : uint
     temp_frame  : uint
     context : EvContext
-    gpa : GpRegAllocator
-    xmma : XmmRegAllocator
+    gpa : RegAllocator
+    xmma : RegAllocator
     def GenerateCodeVisitor(var g:CodeGenerator?)
         gen = g
         temp_frame = GREEDY_TEMP_FRAME_SIZE
@@ -206,9 +95,17 @@ class GenerateCodeVisitor : AstVisitor
         context.expr_res[intptr(expr)] = [[EvResult stack=stack]]
     def evRelease ( var res:EvResult )
         if res is gpReg
-            gpa |> free(res as gpReg)
+            gpa |> free(int(res as gpReg))
         elif res is xmmReg
-            xmma |> free(res as xmmReg)
+            xmma |> free(int(res as xmmReg))
+    def allocateGP
+        let idx = gpa |> allocate()
+        unsafe
+            return reinterpret<GpTempReg> idx
+    def allocateXMM
+        let idx = xmma |> allocate()
+        unsafe
+            return reinterpret<XmmTempReg> idx
 // function
     def override preVisitFunction(fun:FunctionPtr) : void
         stack_frame = fun.totalStackSize
@@ -315,7 +212,7 @@ class GenerateCodeVisitor : AstVisitor
             elif expr.varFlags.local
                 if expr.varFlags.r2v
                     if expr.variable._type |> is_gpreg_type
-                        let reg = gpa |> allocate()
+                        let reg = self->allocateGP()
                         if verbose
                             print("[{reg}]")
                         ev = [[EvResult gpReg=reg]]
@@ -333,7 +230,7 @@ class GenerateCodeVisitor : AstVisitor
             elif expr.varFlags.argument
                 if expr.varFlags.r2v
                     if expr.variable._type |> is_gpreg_type
-                        let reg = gpa |> allocate()
+                        let reg = self->allocateGP()
                         if verbose
                             print("[{reg}]")
                         ev = [[EvResult gpReg=reg]]
@@ -551,7 +448,7 @@ class GenerateCodeVisitor : AstVisitor
         if expr.name=="range"
             assert(length(expr.arguments)==1 && expr.arguments[0]._type.baseType==Type tInt)
             var evA0 & = context.expr_res[intptr(expr.arguments[0])]
-            let xreg = xmma |> allocate()
+            let xreg = self->allocateXMM()
             with_xbyak(gen) <| $ ( GEN )
                 if evA0 is gpReg
                     shl(REG64(GEN,evA0 as gpReg),32)
