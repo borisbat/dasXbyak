@@ -45,6 +45,17 @@ iter_5      3       5
 		)
 	(Return (GetLocalR2V_TT<int> #48))
 	)
+
+[jit_x86_64]
+def public fibI_jit ( $%n:int const ) : int
+	var %last:int -const            // % is pass
+	var cur:int = 1
+	for i in range(n - 1)
+		let $tmp:int const = cur    // ref is $ ( cur += last )
+		cur += last
+		last = tmp
+	return cur
+
 */
 
 
@@ -68,6 +79,7 @@ def jit_fibI_asm
         mov(last,0ul)                               // last = 0
         mov(cur,1ul)                                // cur = 1
         mov(i,0ul)                                  // i = 0
+        align(16ul,true)
         L(".for_loop")                              // for_loop:
         mov(eax,cur)                                //  t = cur
         add(cur,last)                               //  cur += last
@@ -92,17 +104,27 @@ def fibI_asm(n:int)
     panic("we should not be here")
     return 0
 
-[export]
-def main
-    /*
-    print("fibI_jit(5) = {fibI_jit(13)}\n")
-    return
-    */
+/*
+// [jit_x86_64]
+def summ(n:int)
+    var cur = 0
+    for t in range(n)
+        cur += t
+    return cur
 
-    print("fibI(5)     = {fibI(13)}\n")
-    print("fibI_jit(5) = {fibI_jit(13)}\n")
-    print("fibI_asm(5) = {fibI_asm(13)}\n")
+[jit_x86_64]
+def summ_jit(n:int)
+    var cur = 0
+    for t in range(n)
+        cur += t
+    return cur
 
+def test_summ
+    print("summ(10)     = {summ(10)}\n")
+    print("summ_jit(10) = {summ_jit(10)}\n")
+*/
+
+def test_fibi
     var f1 = 0
     profile(20,"fibbonacci loop - interpreted") <|
         f1 = fibI(6511134)
@@ -115,4 +137,15 @@ def main
     assert(f1==f2)
     assert(f1==f3)
 
+[export]
+def main
+    if false
+        print("fibI(5)     = {fibI(13)}\n")
+        print("fibI_jit(5) = {fibI_jit(13)}\n")
+        print("fibI_asm(5) = {fibI_asm(13)}\n")
+    if true
+        test_fibi()
+
+
 // options log_stack
+
