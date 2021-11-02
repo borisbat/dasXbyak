@@ -1,5 +1,10 @@
 require jit_x86_64
 
+require testProfile
+
+require dasxbyak/xbyak_boost
+require zydis
+
 [sideeffects]
 def fibI(n:int)
     var last = 0
@@ -12,55 +17,13 @@ def fibI(n:int)
 
 [jit_x86_64]
 def fibI_jit(n:int)
-    var last : int // = 0
+    var last = 0
     var cur = 1
     for i in range(n-1)
         let tmp = cur
         cur += last
         last = tmp
     return cur
-
-/*
-	0x20	4	let last, line 17
-	0x30	4	let cur, line 18
-	0x40	4	for i, line 19
-	0x50	4	let tmp, line 20
-
-            last    cur
-iter_1      1       1
-iter_2      1       2
-iter_3      2       3
-iter_5      3       5
-
-// fibI_jit fibI_jit Ci
-(Block
-	(InitLocal #32 0x4)
-	(Set_TT<int> (GetLocal #48) (ConstValue {1,0,0,0}))
-	(ForRangeNF
-		#64
-		(Range1Ctor (Sub_TT<int> (GetArgument #0) (ConstValue {1,0,0,0})))
-		(CopyRefValue (GetLocal #80) (GetLocal #48) 0x4)
-		(SetAdd_TT<int> (GetLocal #48) (GetLocalR2V_TT<int> #32))
-		(CopyRefValue (GetLocal #32) (GetLocal #80) 0x4)
-		)
-	(Return (GetLocalR2V_TT<int> #48))
-	)
-
-[jit_x86_64]
-def public fibI_jit ( $%n:int const ) : int
-	var %last:int -const            // % is pass
-	var cur:int = 1
-	for i in range(n - 1)
-		let $tmp:int const = cur    // ref is $ ( cur += last )
-		cur += last
-		last = tmp
-	return cur
-
-*/
-
-
-require dasxbyak/xbyak_boost
-require zydis
 
 [init]
 def jit_fibI_asm
@@ -104,26 +67,6 @@ def fibI_asm(n:int)
     panic("we should not be here")
     return 0
 
-/*
-// [jit_x86_64]
-def summ(n:int)
-    var cur = 0
-    for t in range(n)
-        cur += t
-    return cur
-
-[jit_x86_64]
-def summ_jit(n:int)
-    var cur = 0
-    for t in range(n)
-        cur += t
-    return cur
-
-def test_summ
-    print("summ(10)     = {summ(10)}\n")
-    print("summ_jit(10) = {summ_jit(10)}\n")
-*/
-
 def test_fibi
     var f1 = 0
     profile(20,"fibbonacci loop - interpreted") <|
@@ -134,8 +77,12 @@ def test_fibi
     var f3 = 0
     profile(20,"fibbonacci loop - manually assembled") <|
         f3 = fibI_asm(6511134)
+	var f4 = 0
+    profile(20,"fibbonacci loop c++") <|
+        f4 = testProfile::testFibI(6511134)
     assert(f1==f2)
     assert(f1==f3)
+	assert(f1==f4)
 
 [sideeffects]
 def fibR(n:int)

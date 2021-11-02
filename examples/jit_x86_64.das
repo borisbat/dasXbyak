@@ -9,6 +9,7 @@ require jit_x86_64_regs
 require daslib/ast_boost
 require daslib/strings_boost
 require daslib/templates_boost
+require math
 
 require dasxbyak/xbyak_boost
 require xbyak public
@@ -55,6 +56,13 @@ def allocate ( var regs:RegAllocator )
     regs.freq |> push(1)
     return l
 
+def mask ( var regs:RegAllocator; maxReg:int )
+    var mask = 0u
+    for t in range(min(maxReg,length(regs.regs)))
+        if regs.regs[t]
+            mask |= 1u << uint(t)
+    return mask
+
 variant EvResult
     nothing : bool
     stack   : uint
@@ -63,10 +71,16 @@ variant EvResult
     xmmReg  : XmmTempReg
     iconst  : uint64
 
+struct Transients
+    gp_mask  : uint
+    xmm_mask : uint
+
 struct EvContext
-    expr_res  : table<uint64; EvResult>
-    temp_var  : table<uint64; GpTempReg>
-    tf_offset : table<uint64; uint>
+    expr_res   : table<uint64; EvResult>
+    temp_var   : table<uint64; GpTempReg>
+    temp_extra : table<uint64; GpTempReg>
+    tf_offset  : table<uint64; uint>
+    transients : table<uint64; Transients>
     gpa : RegAllocator
     xmma : RegAllocator
     temp_frame  : uint
@@ -116,9 +130,19 @@ def is_for_range1 ( expr:smart_ptr<ExprFor> )
         return false
     return true
 
+[macro_function]
+def is_for_range1_with_unused_var ( expr:smart_ptr<ExprFor> )
+    if !is_for_range1(expr)
+        return false
+    let flags = expr.iteratorVariables[0].access_flags
+    if !flags.access_ref && !flags.access_get
+        return true
+    return true
+
 class AllocateRegistersCodeVisitor : AstVisitor
     verbose = true
     put_loop_variables_in_registers = true      // for i in range(blah);    i goes to GpReg
+    put_loop_sources_in_registers = true        // for i in range(blah);    range(blah).y goes to GpReg (but only of loop variables are in regs too)
     put_local_variables_in_registers = true     // var i = 5; i ++          i goes to GpReg
     context : EvContext
     [[do_not_delete]] local_stack : array<Variable?>
@@ -168,6 +192,11 @@ class AllocateRegistersCodeVisitor : AstVisitor
         if verbose
             print("allocated temp_frame {bytes} at {res} offset\n")
         return context.stack_frame + PROLOGUE_FRAME_SIZE + res
+    def setTransients(expr:smart_ptr<ExprCall>)
+        context.transients[intptr(expr)] = [[Transients
+            gp_mask = context.gpa |> mask(FIRST_NON_TRANSIENT_GP_TEMP_REG),
+            xmm_mask = context.xmma |> mask(FIRST_NON_TRANSIENT_XMM_TEMP_REG)
+        ]]
 // function
     def override preVisitFunction(fun:FunctionPtr) : void
         context.stack_frame = fun.totalStackSize
@@ -274,17 +303,22 @@ class AllocateRegistersCodeVisitor : AstVisitor
                     self->evRelease(evR)
                 else
                     // imm operators
-                    if expr.op=="-" || expr.op=="+"
-                        if evL is gpReg             // left is reg
-                            if evR is iconst        // right is const
+                    if expr.op=="-" || expr.op=="+" || expr.op=="<"
+                        if evL is gpReg                                 // left is reg
+                            if (evR is iconst) || (evR is gpReg)        // right is const, or reg
                                 // reuse left register
                                 context.expr_res[intptr(expr)] = evL
+                                // we release only right
                                 self->evRelease(evR)
                             else
-                                self->failed("OP2 {expr.op} int imm gpREG R{evR}", expr.at)
+                                self->failed("OP2 {expr.op} int imm gpREG R {debug(evR)}", expr.at)
                         elif evL is gpRegT
+                            // we allocate new temp register
                             let nreg = self->allocateGP()
                             context.expr_res[intptr(expr)] = [[EvResult gpReg=nreg]]
+                            // we release both left and right
+                            self->evRelease(evL)
+                            self->evRelease(evR)
                             if verbose
                                 print("reg {nreg} for {describe(expr)}\n")
                         else
@@ -295,6 +329,19 @@ class AllocateRegistersCodeVisitor : AstVisitor
                 self->failed("OP2 {expr.op} int support {describe(expr.left._type)}", expr.at)
         else
             self->failed("OP2 {expr.op} support {describe(expr.left._type)}", expr.at)
+        return expr
+// op3
+    def override visitExprOp3(expr:smart_ptr<ExprOp3>) : ExpressionPtr
+        var evS & = context.expr_res[intptr(expr.subexpr)]
+        var evL & = context.expr_res[intptr(expr.left)]
+        var evR & = context.expr_res[intptr(expr.right)]
+        let reg = self->allocateGP()
+        context.expr_res[intptr(expr)] = [[EvResult gpReg=reg]]
+        if verbose
+            print("op3 {evS} ? {evL} : {evR} result in {reg}\n")
+        self->evRelease(evS)
+        self->evRelease(evL)
+        self->evRelease(evR)
         return expr
 // copy
     def override visitExprCopy(expr:smart_ptr<ExprCopy>) : ExpressionPtr
@@ -317,12 +364,23 @@ class AllocateRegistersCodeVisitor : AstVisitor
             for v in expr.iteratorVariables
                 let reg = self->allocateGP()
                 context.temp_var[intptr(v)] = reg
+            if put_loop_sources_in_registers
+                if is_for_range1(expr)
+                    if !is_for_range1_with_unused_var(expr)
+                        // if the loop variable is unused, we don't need extra one for the source
+                        let reg = self->allocateGP()
+                        context.temp_extra[intptr(expr)] = reg
     def override visitExprFor(expr:smart_ptr<ExprFor>) : ExpressionPtr
         if put_loop_variables_in_registers
             for v in expr.iteratorVariables
                 if context.temp_var |> key_exists(intptr(v))
                     let reg = context.temp_var[intptr(v)]
                     self->releaseGP(reg)
+            if put_loop_sources_in_registers
+                if is_for_range1(expr)
+                    if !is_for_range1_with_unused_var(expr)
+                        let reg = context.temp_extra[intptr(expr)]
+                        self->releaseGP(reg)
         // we are done with all sources at this point
         for src in expr.sources
             var evS & = context.expr_res[intptr(src)]
@@ -331,6 +389,7 @@ class AllocateRegistersCodeVisitor : AstVisitor
 // call
     def override visitExprCall(var expr:smart_ptr<ExprCall>) : ExpressionPtr
         if !expr.func.flags.builtIn
+            self->setTransients(expr)
             // ok, 2 arguments
             let bytes = uint(length(expr.arguments) * 16)
             let offset = self->allocateTempFrame(bytes)
@@ -354,6 +413,9 @@ class AllocateRegistersCodeVisitor : AstVisitor
                         fnR = [[EvResult gpReg=reg]]
                     if verbose
                         print("call {expr.func._module.name}::{expr.func.name} returns {fnR}\n")
+            for arg in expr.arguments
+                var eaV & = context.expr_res[intptr(arg)]
+                self->evRelease(eaV)
             if verbose
                 print("call {expr.func._module.name}::{expr.func.name} temp frame {offset}\n")
             return expr
@@ -376,6 +438,8 @@ class GenerateCodeVisitor : AstVisitor
     tab : int
     [[do_not_delete]] gen : CodeGenerator?
     context : EvContext
+    [[do_not_delete]] this_function : Function?
+    func_begin : uint64
     def GenerateCodeVisitor(var g:CodeGenerator?; var ctx:EvContext )
         gen = g
         context <- ctx
@@ -385,10 +449,21 @@ class GenerateCodeVisitor : AstVisitor
     def failed ( txt:string; at:LineInfo )
         let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
         print("\nTODO jit_x86_64(generate): {txt} at {fname}:{int(at.line)}:{int(at.column)}\n")
+    def check_gen()
+        with_xbyak(gen) <| $ ( GEN )
+            var err : GenerationError
+            unsafe
+                err = reinterpret<GenerationError> GetError()
+            if err != GenerationError NONE
+                panic("xbyak - generation error {err}")
 // function
     def override preVisitFunction(fun:FunctionPtr) : void
         if verbose
             print("(DEF {fun.name} [STACK={context.stack_frame}, TEMP={context.temp_frame}]\n")
+        this_function = get_ptr(fun)
+        unsafe
+            let fn_code = *gen |> get_code()
+            func_begin = reinterpret<uint64> fn_code
         with_xbyak(gen) <| $ ( GEN )
             // save non-transient gp regs
             let total_gp_save = length(context.gpa.regs) - FIRST_NON_TRANSIENT_GP_TEMP_REG
@@ -411,6 +486,7 @@ class GenerateCodeVisitor : AstVisitor
             mov(qword[rsp+(context.stack_frame+ARG_CONTEXT)],rcx)
             mov(qword[rsp+(context.stack_frame+ARG_ARGUMENTS)],rdx)
             mov(qword[rsp+(context.stack_frame+ARG_CMRES)],r8)
+        self->check_gen()
     def gen_epilogue
         with_xbyak(gen) <| $ ( GEN )
             // note: 8u is here to keep the stack aligned
@@ -432,8 +508,10 @@ class GenerateCodeVisitor : AstVisitor
                         let gp_reg = reinterpret<GpTempReg> ((total_gp_save-t-1) + FIRST_NON_TRANSIENT_GP_TEMP_REG)
                         pop(REG64(GEN,gp_reg))
             ret()
+        self->check_gen()
     def override visitFunction(fun:FunctionPtr) : FunctionPtr
         self->gen_epilogue()
+        self->check_gen()
         if verbose
             print(")\n")
         return fun
@@ -446,6 +524,7 @@ class GenerateCodeVisitor : AstVisitor
             let ev & = context.expr_res[intptr(expr)]
             if ev is stack
                 mov(dword[rsp+(ev as stack)],uint64(expr.value))
+        self->check_gen()
         if verbose
             print(")")
         return expr
@@ -463,6 +542,7 @@ class GenerateCodeVisitor : AstVisitor
                     mov(qword[rsp+arg.stackTop],0ul)
                 else
                     self->failed("memzero({arg.name} aka [rsp+{arg.stackTop}],{initSize})",expr.at)
+            self->check_gen()
         if verbose
             print(")")
         return arg
@@ -510,6 +590,7 @@ class GenerateCodeVisitor : AstVisitor
                         self->failed("accept reg by value init {evI} of type {describe(arg._type)}",arg.init.at)
                 else
                     self->failed("accept by value init {evI}",arg.init.at)
+        self->check_gen()
         return  expr
 // variable
     def override preVisitExprVar(expr:smart_ptr<ExprVar>) : void
@@ -520,13 +601,13 @@ class GenerateCodeVisitor : AstVisitor
     def override visitExprVar(expr:smart_ptr<ExprVar>) : ExpressionPtr
         let ev & = context.expr_res[intptr(expr)]
         with_xbyak(gen) <| $ ( GEN )
-            let varSize = expr._type.isRef ? 8 : expr._type.sizeOf
             if expr.varFlags._block
                 self->failed("{expr.variable.name} support block variable", expr.at)
             elif expr.varFlags.local
                 if context.temp_var |> key_exists(intptr(expr.variable))
                     pass
                 elif expr.varFlags.r2v
+                    let varSize = expr._type.sizeOf
                     if expr.variable._type |> is_gpreg_type
                         let reg = ev as gpReg
                         if verbose
@@ -541,6 +622,7 @@ class GenerateCodeVisitor : AstVisitor
                         self->failed("{expr.variable.name} support local R2V type {describe(expr.variable._type)}", expr.at)
             elif expr.varFlags.argument
                 if expr.varFlags.r2v
+                    let varSize = expr._type.sizeOf
                     if expr.variable._type |> is_gpreg_type
                         if ev is gpReg
                             let reg = ev as gpReg
@@ -550,7 +632,7 @@ class GenerateCodeVisitor : AstVisitor
                             if varSize==8
                                 mov(REG64(GEN,reg),qword[rax])
                             elif varSize==4
-                                mov(REG64(GEN,reg),dword[rax])
+                                mov(REG32(GEN,reg),dword[rax])
                             else
                                 self->failed("{expr.variable.name} support argument R2V size of {varSize}", expr.at)
                         else
@@ -562,6 +644,7 @@ class GenerateCodeVisitor : AstVisitor
                     // ev = [[EvResult stack=expr.variable.stackTop]]
             else
                 self->failed("{expr.variable.name} support that other variable type", expr.at)
+        self->check_gen()
         if verbose
             print(")")
         return expr
@@ -570,7 +653,7 @@ class GenerateCodeVisitor : AstVisitor
         if verbose
             print("(OP2 {expr.op}")
     def override visitExprOp2(expr:smart_ptr<ExprOp2>) : ExpressionPtr
-        var eV &  = context.expr_res[intptr(expr)]
+        let eV &  = context.expr_res[intptr(expr)]
         let evL & = context.expr_res[intptr(expr.left)]
         let evR & = context.expr_res[intptr(expr.right)]
         with_xbyak(gen) <| $ ( GEN )
@@ -601,11 +684,12 @@ class GenerateCodeVisitor : AstVisitor
                             else
                                 self->failed("OP2 {expr.op} int ref", expr.at)
                     else
-                        if expr.op=="+" || expr.op=="-"
+                        if expr.op=="+" || expr.op=="-" || expr.op=="<"
                             if evL is gpReg
+                                // result is in the left register, which we reused during allocation
                                 if evR is iconst
                                     let ic = uint(evR as iconst)
-                                    if ic==1u
+                                    if ic==1u && (expr.op=="+" || expr.op=="-")
                                         if expr.op=="+"
                                             inc(REG32(GEN,evL as gpReg))
                                         else
@@ -613,13 +697,26 @@ class GenerateCodeVisitor : AstVisitor
                                     else
                                         if expr.op=="+"
                                             add(REG32(GEN,evL as gpReg),ic)
-                                        else
+                                        elif expr.op=="-"
                                             sub(REG32(GEN,evL as gpReg),ic)
+                                        elif expr.op=="<"
+                                            cmp(REG32(GEN,evL as gpReg),ic)
+                                            mov(REG32(GEN,evL as gpReg),0ul)
+                                            mov(eax,1ul)
+                                            cmovl(REG32(GEN,evL as gpReg),eax)
+                                        else
+                                            self->failed("{expr.op} unsupported here", expr.at)
+                                elif evR is gpReg
+                                    if expr.op=="+"
+                                        add(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
+                                    else
+                                        sub(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
                                 else
-                                    self->failed("OP2 {expr.op} int imm gpREG R{evR}", expr.at)
+                                    self->failed("OP2 {expr.op} int imm gpREG R {debug(evR)}", expr.at)
                                 if verbose
                                     print(" [{evL}]")
                             else
+                                // result is in the result register, which we allocated separately
                                 assert(eV is gpReg)
                                 if (evL is gpReg) && (evR is iconst)
                                     if expr.op=="+"
@@ -651,6 +748,49 @@ class GenerateCodeVisitor : AstVisitor
                     self->failed("OP2 {expr.op} int support {describe(expr.left._type)}", expr.at)
             else
                 self->failed("OP2 {expr.op} support {describe(expr.left._type)}", expr.at)
+        self->check_gen()
+        if verbose
+            print(")")
+        return expr
+// op3
+    def copyReg32 ( reg:GpTempReg; eV:EvResult; at:LineInfo ) : void
+        with_xbyak(gen) <| $ ( GEN )
+            if eV is gpReg
+                mov(REG32(GEN,reg),REG32(GEN,eV as gpReg))
+            else
+                self->failed("supprt copy reg32 {eV}", at)
+        self->check_gen()
+    def override preVisitExprOp3(expr:smart_ptr<ExprOp3>): void
+        if verbose
+            print("(? ")
+    def override preVisitExprOp3Left(expr:smart_ptr<ExprOp3>;left:ExpressionPtr): void
+        let evS & = context.expr_res[intptr(expr.subexpr)]
+        with_xbyak(gen) <| $ ( GEN )
+            if evS is gpReg
+                test(REG32(GEN,evS as gpReg),REG32(GEN,evS as gpReg))
+                jz(".cond_right_{intptr(expr)}",LabelType T_NEAR)
+            else
+                self->failed("supprt cond subexpr in {evS}", expr.at)
+        self->check_gen()
+        if verbose
+            print(" ? ")
+    def override preVisitExprOp3Right(expr:smart_ptr<ExprOp3>;right:ExpressionPtr): void
+        let eV & = context.expr_res[intptr(expr)]
+        let evL & = context.expr_res[intptr(expr.left)]
+        with_xbyak(gen) <| $ ( GEN )
+            self->copyReg32(eV as gpReg,evL,expr.at)
+            jmp(".cond_end_{intptr(expr)}",LabelType T_NEAR)
+            L(".cond_right_{intptr(expr)}")
+        self->check_gen()
+        if verbose
+            print(" : ")
+    def override visitExprOp3(expr:smart_ptr<ExprOp3>) : ExpressionPtr
+        let eV & = context.expr_res[intptr(expr)]
+        let evR & = context.expr_res[intptr(expr.right)]
+        with_xbyak(gen) <| $ ( GEN )
+            self->copyReg32(eV as gpReg,evR,expr.at)
+            L(".cond_end_{intptr(expr)}")
+        self->check_gen()
         if verbose
             print(")")
         return expr
@@ -701,6 +841,7 @@ class GenerateCodeVisitor : AstVisitor
                         print("(REF COPY {copySize})")
                 else
                     self->failed("support copy VALUE", expr.at)
+        self->check_gen()
         if verbose
             print(")")
         return expr
@@ -729,6 +870,7 @@ class GenerateCodeVisitor : AstVisitor
                         movd(xmm0,REG32(GEN,evR as gpRegT))
                     else
                         self->failed("support return {evR}",expr.at)
+        self->check_gen()
         return expr
 // block
     def override preVisitExprBlock(blk:smart_ptr<ExprBlock>) : void
@@ -766,18 +908,35 @@ class GenerateCodeVisitor : AstVisitor
                     let reg & = REGXMM(GEN,evS as xmmReg)
                     if context.temp_var |> key_exists(intptr(expr.iteratorVariables[0]))
                         let RV = context.temp_var[intptr(expr.iteratorVariables[0])]
-                        movd(REG32(GEN,RV),reg)
-                        shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
-                        movd(eax,reg)
-                        cmp(eax,REG32(GEN,RV))
+                        if is_for_range1_with_unused_var(expr)
+                            movd(eax,reg)
+                            shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
+                            movd(REG32(GEN,RV),reg)
+                            sub(REG32(GEN,RV),eax)
+                            jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)   // verify loop type
+                            self->check_gen()
+                        else
+                            // regular for range-to-range
+                            movd(REG32(GEN,RV),reg)
+                            shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
+                            if context.temp_extra |> key_exists(intptr(expr))
+                                // with loop source is in register
+                                let regs = context.temp_extra[intptr(expr)]
+                                movd(REG32(GEN,regs),reg)
+                                cmp(REG32(GEN,regs),REG32(GEN,RV))
+                            else
+                                movd(eax,reg)
+                                cmp(eax,REG32(GEN,RV))
+                            jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                     else
                         movd(dword[rsp+iSP],reg)
                         shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
                         movd(eax,reg)
                         cmp(eax,dword[rsp+iSP])
-                    je(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
+                        jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                 else
                     self->failed("support for_range_1 source {evS}",expr.at)
+            self->check_gen()
         if verbose
             print(")")
         return source
@@ -793,19 +952,29 @@ class GenerateCodeVisitor : AstVisitor
             with_xbyak(gen) <| $ ( GEN )
                 let iSP = expr.iteratorVariables[0].stackTop
                 if evS is xmmReg
-                    movd(eax,REGXMM(GEN,evS as xmmReg))
                     if context.temp_var |> key_exists(intptr(expr.iteratorVariables[0]))
                         let RV = context.temp_var[intptr(expr.iteratorVariables[0])]
-                        inc(REG32(GEN,RV))
-                        cmp(REG32(GEN,RV),eax)
+                        if is_for_range1_with_unused_var(expr)
+                            dec(REG32(GEN,RV))
+                        else
+                            inc(REG32(GEN,RV))
+                            if context.temp_extra |> key_exists(intptr(expr))   // check if loop source is in register
+                                let regs = context.temp_extra[intptr(expr)]
+                                cmp(REG32(GEN,RV),REG32(GEN,regs))
+                            else
+                                movd(eax,REGXMM(GEN,evS as xmmReg))
+                                cmp(REG32(GEN,RV),eax)
                     else
                         inc(dword[rsp+iSP])
+                        movd(eax,REGXMM(GEN,evS as xmmReg))
                         cmp(dword[rsp+iSP],eax)
-                    jnz(".for_loop_{intptr(expr)}",LabelType T_AUTO)
+                    jnz(".for_loop_{intptr(expr)}",LabelType T_NEAR)
                 else
                     self->failed("support for_range_1 source {evS}",expr.at)
+            self->check_gen()
         with_xbyak(gen) <| $ ( GEN )
             L(".for_loop_done_{intptr(expr)}")
+        self->check_gen()
         if verbose
             print("{repeat("\t",tab)})")
         return expr
@@ -835,12 +1004,51 @@ class GenerateCodeVisitor : AstVisitor
                     MNH = hash(mangled_name)
                 if verbose
                     print("MNG={MNH} ")
-                mov(rcx,uint64(MNH))                                // rcx is MNH
-                lea(rdx,ptr[rsp+offset])                            // rdx is ARGS
-                mov(r8,ptr[rsp+(context.stack_frame+ARG_CONTEXT)])  // r8  is Context *
-                unsafe
-                    mov(rax,reinterpret<uint64> JIT_call_or_fastcall())
-                call(rax)
+                // save used transient registers
+                let transients = context.transients[intptr(expr)]
+                var t_offset = 0u
+                var t_total = 0
+                for t in urange(FIRST_NON_TRANSIENT_GP_TEMP_REG)
+                    if (transients.gp_mask & (1u<<t)) != 0u
+                        var tgpr : GpTempReg
+                        unsafe
+                            tgpr = reinterpret<GpTempReg> t
+                        push(REG64(GEN,tgpr))
+                        t_offset += 8u
+                        t_total ++
+                if (t_total & 1) != 0
+                    push(rax)
+                    t_offset += 8u
+                if expr.func == this_function
+                    // setup arguments
+                    mov(rcx,qword[rsp+(context.stack_frame+t_offset+ARG_CONTEXT)])  // rcx is Context *
+                    lea(rdx,ptr[rsp+(offset+t_offset)])                             // rdx is ARGS
+                    sub(r8,r8)                                                      // r8 is CMRES
+                    // do the call
+                    // sub(rsp,32u)     - our abi does not use those
+                    mov(rax,func_begin)
+                    call(rax)
+                    // add(rsp,32u)     - our abi does not use those
+                else
+                    // setup arguments
+                    mov(rcx,uint64(MNH))                                        // rcx is MNH
+                    lea(rdx,ptr[rsp+(offset+t_offset)])                         // rdx is ARGS
+                    mov(r8,ptr[rsp+(context.stack_frame+t_offset+ARG_CONTEXT)]) // r8  is Context *
+                    // do the call
+                    sub(rsp,32u)
+                    mov(rax,JIT_call_or_fastcall())
+                    call(rax)
+                    add(rsp,32u)
+                // restore used transient registers
+                if (t_total & 1) != 0
+                    pop(rax)
+                for i_t in urange(FIRST_NON_TRANSIENT_GP_TEMP_REG)
+                    let t = uint(FIRST_NON_TRANSIENT_GP_TEMP_REG) - i_t - 1u
+                    if (transients.gp_mask & (1u<<t)) != 0u
+                        unsafe
+                            let tgpr = reinterpret<GpTempReg> t
+                            pop(REG64(GEN,tgpr))
+                // move result to xmm0
                 if expr.func.result != null
                     if expr.func.result.isRef
                         self->failed("support result by ref", expr.at)
@@ -856,6 +1064,7 @@ class GenerateCodeVisitor : AstVisitor
                                 self->failed("support result size {asize}", expr.at)
                         else
                             self->failed("support result {fnR}", expr.at)
+            self->check_gen()
             return expr
         ////////////////////
         // TODO: calls table
@@ -871,6 +1080,7 @@ class GenerateCodeVisitor : AstVisitor
                     movd(REGXMM(GEN,xreg),REG64(GEN,evA0 as gpReg))
                 else
                     self->error("TODO: support range(1) argument {evA0}",expr.at)
+            self->check_gen()
             if verbose
                 print(" [{xreg}]")
         if verbose
@@ -920,13 +1130,13 @@ def public generate_x86_64(var func:FunctionPtr) : uint64
     unsafe
         delete generateCodeVisitor
     unsafe
-        let err = reinterpret<GenerationError> GetError()
-        if err != GenerationError NONE
-            panic("xbyak - generation error {err}")
         let data = *gen |> get_code()
         let dataLength = *gen |> getSize()
         print("data at {intptr(data)} of {int(dataLength)} bytes\n")
         disassemble(data, dataLength)
+        let err = reinterpret<GenerationError> GetError()
+        if err != GenerationError NONE
+            panic("xbyak - generation error {err}")
     return intptr(gen)
 
 [function_macro(name="jit_x86_64")]
@@ -944,7 +1154,8 @@ class Jit_x86_64_Macro : AstFunctionAnnotation
             rules |> replaceVariable("PFUN") <| new [[ExprAddr() target:=func.name]]
         var qres <- move_unquote_block(qblock)
         qres.blockFlags ^= ExprBlockFlags isClosure
-        if true    // TODO: this to enable installation of jit
+        // TODO: this to enable installation of jit
+        if true
             var reg <- setup_call_list("all`things`jit", func.at, true)
             reg.list |> emplace(qres)
         return true
