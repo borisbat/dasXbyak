@@ -141,6 +141,16 @@ namespace das {
     void * das_get_code_ptr ( const Xbyak::CodeGenerator & code ) {
         return (void *) code.getCode();
     }
+
+    vec4f JIT_call_or_fastcall ( uint32_t MNH, vec4f * args, Context * context ) {
+        SimFunction * fn = context->fnByMangledName(MNH);
+        if ( fn->mangledNameHash!=MNH ) context->throw_error("JIT: calling by MNH failed\n");
+        return context->callOrFastcall(fn, args, nullptr);
+    }
+
+    uint64_t das_get_JIT_call_or_fastcall ( ) {
+        return (uint64_t) &JIT_call_or_fastcall;
+    }
 }
 
 #endif
@@ -236,6 +246,10 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
 
     addExtern<DAS_BIND_FUN(das_instrument_jit)>(*this, lib, "instrument_jit",SideEffects::worstDefault, "das_instrument_jit")
 	    ->args({"code","function","context"})->unsafeOperation = true;
+
+    // JIT table
+    addExtern<DAS_BIND_FUN(das_get_JIT_call_or_fastcall)>(*this, lib, "JIT_call_or_fastcall",
+        SideEffects::none, "das_get_JIT_call_or_fastcall");
 
 #if USE_GENERATED_SPLIT
     initFunctions_0();

@@ -11,6 +11,7 @@ require daslib/strings_boost
 require daslib/templates_boost
 
 require dasxbyak/xbyak_boost
+require xbyak public
 require zydis
 
 /*
@@ -27,8 +28,6 @@ TEMPORARY
     ...
 */
 
-
-let GREEDY_TEMP_FRAME_SIZE = 0u
 
 let PROLOGUE_FRAME_SIZE   = 32u
 let ARG_CONTEXT           = 8u
@@ -65,13 +64,24 @@ variant EvResult
     iconst  : uint64
 
 struct EvContext
-    expr_res : table<uint64; EvResult>
-    temp_var : table<uint64; GpTempReg>
+    expr_res  : table<uint64; EvResult>
+    temp_var  : table<uint64; GpTempReg>
+    tf_offset : table<uint64; uint>
     gpa : RegAllocator
     xmma : RegAllocator
+    temp_frame  : uint
+    stack_frame : uint
 
 [macro_function]
 def dump ( ctx:EvContext )
+    print("stack frame is {ctx.stack_frame}\n")
+    print("temp frame is {ctx.temp_frame} bytes\n")
+    for k,v in keys(ctx.tf_offset),values(ctx.tf_offset)
+        unsafe
+            let pexpr = reinterpret<Expression?> k
+            let at & = pexpr.at
+            let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
+            print("\ttemp frame {k}.{pexpr.__rtti} ->  {v} at {fname}:{int(at.line)}:{int(at.column)}\n")
     print("gp temp: {length(ctx.gpa.regs)}\n")
     for t in range(length(ctx.gpa.regs))
         unsafe
@@ -124,7 +134,9 @@ class AllocateRegistersCodeVisitor : AstVisitor
     def evExpectStack ( expr:ExpressionPtr; stack:uint )
         if verbose
             print("expect stack {stack} {expr.__rtti}.{intptr(expr)}\n")
-        context.expr_res[intptr(expr)] = [[EvResult stack=stack]]
+        var eV & = context.expr_res[intptr(expr)]
+        if eV is nothing
+            eV = [[EvResult stack=stack]]
     def evRelease ( var res:EvResult )
         if res is gpReg
             if verbose
@@ -150,6 +162,15 @@ class AllocateRegistersCodeVisitor : AstVisitor
             if verbose
                 print("allocate XMM reg {reg}\n")
             return reg
+    def allocateTempFrame(bytes:uint)
+        let res = context.temp_frame
+        context.temp_frame += bytes
+        if verbose
+            print("allocated temp_frame {bytes} at {res} offset\n")
+        return context.stack_frame + PROLOGUE_FRAME_SIZE + res
+// function
+    def override preVisitFunction(fun:FunctionPtr) : void
+        context.stack_frame = fun.totalStackSize
 // block
     def override preVisitExprBlock(blk:smart_ptr<ExprBlock>) : void
         // keep local variables on local_stack
@@ -252,7 +273,8 @@ class AllocateRegistersCodeVisitor : AstVisitor
                     self->evRelease(evL)
                     self->evRelease(evR)
                 else
-                    if expr.op=="-"                 // imm operators
+                    // imm operators
+                    if expr.op=="-" || expr.op=="+"
                         if evL is gpReg             // left is reg
                             if evR is iconst        // right is const
                                 // reuse left register
@@ -302,7 +324,21 @@ class AllocateRegistersCodeVisitor : AstVisitor
             self->evRelease(evS)
         return expr
 // call
-    def override visitExprCall(expr:smart_ptr<ExprCall>) : ExpressionPtr
+    def override visitExprCall(var expr:smart_ptr<ExprCall>) : ExpressionPtr
+        if !expr.func.flags.builtIn
+            // ok, 2 arguments
+            let bytes = uint(length(expr.arguments) * 16)
+            let offset = self->allocateTempFrame(bytes)
+            context.tf_offset[intptr(expr)] = offset
+            if expr.func.flags.copyOnReturn || expr.func.flags.moveOnReturn
+                self->failed("support CMRES", expr.at)
+            if expr.stackTop != 0u
+                self->failed("support cmres? stack top = {expr.stackTop}", expr.at)
+            for argi in range(length(expr.arguments))
+                self->evExpectStack(expr.arguments[argi],offset+uint(argi)*16u)
+            if verbose
+                print("call {expr.func._module.name}::{expr.func.name} temp frame {offset}\n")
+            return expr
         ////////////////////
         // TODO: calls table
         let call_name = "{expr.func._module.name}::{expr.func.name}"
@@ -321,12 +357,9 @@ class GenerateCodeVisitor : AstVisitor
     verbose = true
     tab : int
     [[do_not_delete]] gen : CodeGenerator?
-    stack_frame : uint
-    temp_frame  : uint
     context : EvContext
     def GenerateCodeVisitor(var g:CodeGenerator?; var ctx:EvContext )
         gen = g
-        temp_frame = GREEDY_TEMP_FRAME_SIZE
         context <- ctx
     def error ( txt:string; at:LineInfo )
         let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
@@ -336,9 +369,8 @@ class GenerateCodeVisitor : AstVisitor
         print("\nTODO jit_x86_64(generate): {txt} at {fname}:{int(at.line)}:{int(at.column)}\n")
 // function
     def override preVisitFunction(fun:FunctionPtr) : void
-        stack_frame = fun.totalStackSize
         if verbose
-            print("(DEF {fun.name} [STACK={stack_frame}, TEMP={temp_frame}]\n")
+            print("(DEF {fun.name} [STACK={context.stack_frame}, TEMP={context.temp_frame}]\n")
         with_xbyak(gen) <| $ ( GEN )
             // save non-transient gp regs
             let total_gp_save = length(context.gpa.regs) - FIRST_NON_TRANSIENT_GP_TEMP_REG
@@ -356,13 +388,15 @@ class GenerateCodeVisitor : AstVisitor
                     unsafe
                         let xmm_reg = reinterpret<XmmTempReg> (t + FIRST_NON_TRANSIENT_XMM_TEMP_REG)
                         push(REGXMM(GEN,xmm_reg))
-            sub(rsp,(stack_frame+PROLOGUE_FRAME_SIZE+temp_frame))
-            mov(qword[rsp+(stack_frame+ARG_CONTEXT)],rcx)
-            mov(qword[rsp+(stack_frame+ARG_ARGUMENTS)],rdx)
-            mov(qword[rsp+(stack_frame+ARG_CMRES)],r8)
+            // note: 8u is here to keep the stack aligned
+            sub(rsp,(context.stack_frame+PROLOGUE_FRAME_SIZE+context.temp_frame+8u))
+            mov(qword[rsp+(context.stack_frame+ARG_CONTEXT)],rcx)
+            mov(qword[rsp+(context.stack_frame+ARG_ARGUMENTS)],rdx)
+            mov(qword[rsp+(context.stack_frame+ARG_CMRES)],r8)
     def gen_epilogue
         with_xbyak(gen) <| $ ( GEN )
-            add(rsp,(stack_frame+PROLOGUE_FRAME_SIZE+temp_frame))
+            // note: 8u is here to keep the stack aligned
+            add(rsp,(context.stack_frame+PROLOGUE_FRAME_SIZE+context.temp_frame+8u))
             // restore non-transient xmm regs
             let total_xmm_save = length(context.xmma.regs) - FIRST_NON_TRANSIENT_XMM_TEMP_REG
             if total_xmm_save>0
@@ -481,24 +515,27 @@ class GenerateCodeVisitor : AstVisitor
                         elif varSize==4
                             mov(REG32(GEN,reg),dword[rsp+expr.variable.stackTop])
                         else
-                            self->failed("{expr.variable.name} support argument R2V size of {varSize}", expr.at)
+                            self->failed("{expr.variable.name} support local R2V size of {varSize}", expr.at)
                     else
-                        self->failed("{expr.variable.name} support argument R2V type {describe(expr.variable._type)}", expr.at)
+                        self->failed("{expr.variable.name} support local R2V type {describe(expr.variable._type)}", expr.at)
             elif expr.varFlags.argument
                 if expr.varFlags.r2v
                     if expr.variable._type |> is_gpreg_type
-                        let reg = ev as gpReg
-                        if verbose
-                            print("[{reg}]")
-                        mov(rax,ptr[rsp+(stack_frame+ARG_ARGUMENTS)])
-                        if varSize==8
-                            mov(REG64(GEN,reg),qword[rax])
-                        elif varSize==4
-                            mov(REG64(GEN,reg),dword[rax])
+                        if ev is gpReg
+                            let reg = ev as gpReg
+                            if verbose
+                                print("[{reg}]")
+                            mov(rax,ptr[rsp+(context.stack_frame+ARG_ARGUMENTS)])
+                            if varSize==8
+                                mov(REG64(GEN,reg),qword[rax])
+                            elif varSize==4
+                                mov(REG64(GEN,reg),dword[rax])
+                            else
+                                self->failed("{expr.variable.name} support argument R2V size of {varSize}", expr.at)
                         else
-                            self->failed("{expr.variable.name} support argument R2V size of {varSize}", expr.at)
+                            self->failed("{expr.variable.name} support argument R2V type {describe(expr.variable._type)}", expr.at)
                     else
-                        self->failed("{expr.variable.name} support argument R2V type {describe(expr.variable._type)}", expr.at)
+                        self->failed("{expr.variable.name} support local R2V type {describe(expr.variable._type)}", expr.at)
                 else
                     self->failed("{expr.variable.name} support argument ref", expr.at)
                     // ev = [[EvResult stack=expr.variable.stackTop]]
@@ -542,7 +579,21 @@ class GenerateCodeVisitor : AstVisitor
                             else
                                 self->failed("OP2 {expr.op} int ref", expr.at)
                     else
-                        if expr.op=="-"
+                        if expr.op=="+"
+                            if evL is gpReg
+                                if evR is iconst
+                                    let ic = uint(evR as iconst)
+                                    if ic==1u
+                                        inc(REG32(GEN,evL as gpReg))
+                                    else
+                                        add(REG32(GEN,evL as gpReg),ic)
+                                else
+                                    self->failed("OP2 {expr.op} int imm gpREG R{evR}", expr.at)
+                                if verbose
+                                    print(" [{evL}]")
+                            else
+                                self->failed("OP2 {expr.op} int imm L{evL}", expr.at)
+                        elif expr.op=="-"
                             if evL is gpReg
                                 if evR is iconst
                                     let ic = uint(evR as iconst)
@@ -725,6 +776,34 @@ class GenerateCodeVisitor : AstVisitor
         if verbose
             print("CALL `{expr.name}` ")
     def override visitExprCall(expr:smart_ptr<ExprCall>) : ExpressionPtr
+        if !expr.func.flags.builtIn
+            with_xbyak(gen) <| $ ( GEN )
+                let offset = context.tf_offset[intptr(expr)]
+                for ai in range(length(expr.arguments))
+                    let asize = expr.arguments[ai]._type.isRef ? 8 : expr.arguments[ai]._type.sizeOf
+                    var eA & = context.expr_res[intptr(expr.arguments[ai])]
+                    if eA is gpReg
+                        if asize==4
+                            mov(dword[rsp+(offset+uint(ai)*16u)],REG32(GEN,eA as gpReg))
+                        elif asize==8
+                            mov(qword[rsp+(offset+uint(ai)*16u)],REG64(GEN,eA as gpReg))
+                        else
+                            self->error("TODO: support call argument size {asize}",expr.at)
+                    else
+                        self->error("TODO: support call argument size {eA}",expr.at)
+                var MNH : uint
+                unsafe
+                    let mangled_name = get_mangled_name(reinterpret<FunctionPtr> expr.func)
+                    MNH = hash(mangled_name)
+                if verbose
+                    print("MNG={MNH} ")
+                mov(rcx,uint64(MNH))                                // rcx is MNH
+                lea(rdx,ptr[rsp+offset])                            // rdx is ARGS
+                mov(r8,ptr[rsp+(context.stack_frame+ARG_CONTEXT)])  // r8  is Context *
+                unsafe
+                    mov(rax,reinterpret<uint64> JIT_call_or_fastcall())
+                call(rax)
+            return expr
         ////////////////////
         // TODO: calls table
         let call_name = "{expr.func._module.name}::{expr.func.name}"

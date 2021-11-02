@@ -137,15 +137,20 @@ def test_fibi
     assert(f1==f2)
     assert(f1==f3)
 
+[sideeffects]
+def fibR(n:int)
+    if (n < 2)
+        return n
+    return fibR(n - 1) + fibR(n - 2)
+
 [export]
 def main
+    if false
+        print("fibR(4) = {fibR(4)}\n")
     if false
         print("fibI(5)     = {fibI(13)}\n")
         print("fibI_jit(5) = {fibI_jit(13)}\n")
         print("fibI_asm(5) = {fibI_asm(13)}\n")
     if true
         test_fibi()
-
-
-// options log_stack
 
