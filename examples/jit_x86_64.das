@@ -30,10 +30,9 @@ TEMPORARY
 */
 
 
-let PROLOGUE_FRAME_SIZE   = 32u
-let ARG_CONTEXT           = 8u
-let ARG_ARGUMENTS         = 16u
 let ARG_CMRES             = 24u
+let ARG_ARGUMENTS         = 16u
+let ARG_CONTEXT           =  8u
 
 let GP_TEMP_REG_TOTAL = 11
 
@@ -83,13 +82,15 @@ struct EvContext
     transients : table<uint64; Transients>
     gpa : RegAllocator
     xmma : RegAllocator
-    temp_frame  : uint
-    stack_frame : uint
+    temp_frame  : uint      // where temp buffers are allocated (like calls)
+    stack_frame : uint      // regular stack
+    save_frame  : uint      // where transient registers are saved
 
 [macro_function]
 def dump ( ctx:EvContext )
     print("stack frame is {ctx.stack_frame}\n")
     print("temp frame is {ctx.temp_frame} bytes\n")
+    print("save frame is {ctx.save_frame} bytes\n")
     for k,v in keys(ctx.tf_offset),values(ctx.tf_offset)
         unsafe
             let pexpr = reinterpret<Expression?> k
@@ -191,7 +192,7 @@ class AllocateRegistersCodeVisitor : AstVisitor
         context.temp_frame += bytes
         if verbose
             print("allocated temp_frame {bytes} at {res} offset\n")
-        return context.stack_frame + PROLOGUE_FRAME_SIZE + res
+        return context.stack_frame + res
     def setTransients(expr:smart_ptr<ExprCall>)
         context.transients[intptr(expr)] = [[Transients
             gp_mask = context.gpa |> mask(FIRST_NON_TRANSIENT_GP_TEMP_REG),
@@ -200,6 +201,16 @@ class AllocateRegistersCodeVisitor : AstVisitor
 // function
     def override preVisitFunction(fun:FunctionPtr) : void
         context.stack_frame = fun.totalStackSize
+    def override visitFunction(fun:FunctionPtr) : FunctionPtr
+        let total_xmm_save = length(context.xmma.regs) - FIRST_NON_TRANSIENT_XMM_TEMP_REG
+        if total_xmm_save>0
+            context.save_frame += uint(total_xmm_save) * 16u
+        let total_gp_save = length(context.gpa.regs) - FIRST_NON_TRANSIENT_GP_TEMP_REG
+        if total_gp_save>0
+            context.save_frame += uint(total_gp_save) * 8u
+            if (total_gp_save & 1)!=0
+                context.save_frame += 8u
+        return fun
 // block
     def override preVisitExprBlock(blk:smart_ptr<ExprBlock>) : void
         // keep local variables on local_stack
@@ -456,6 +467,13 @@ class GenerateCodeVisitor : AstVisitor
                 err = reinterpret<GenerationError> GetError()
             if err != GenerationError NONE
                 panic("xbyak - generation error {err}")
+// ABI
+    def getContextOffset
+        return context.stack_frame+context.temp_frame+context.save_frame+8u+ARG_CONTEXT
+    def getArgOffset
+        return context.stack_frame+context.temp_frame+context.save_frame+8u+ARG_ARGUMENTS
+    def getCmresOffset
+        return context.stack_frame+context.temp_frame+context.save_frame+8u+ARG_CMRES
 // function
     def override preVisitFunction(fun:FunctionPtr) : void
         if verbose
@@ -465,6 +483,10 @@ class GenerateCodeVisitor : AstVisitor
             let fn_code = *gen |> get_code()
             func_begin = reinterpret<uint64> fn_code
         with_xbyak(gen) <| $ ( GEN )
+            // passing (context(rcx) *, arguments(rdx) *, cmres(r8) *)
+            mov(qword[rsp+ARG_CMRES],r8)
+            mov(qword[rsp+ARG_ARGUMENTS],rdx)
+            mov(qword[rsp+ARG_CONTEXT],rcx)
             // save non-transient gp regs
             let total_gp_save = length(context.gpa.regs) - FIRST_NON_TRANSIENT_GP_TEMP_REG
             if total_gp_save>0
@@ -481,16 +503,12 @@ class GenerateCodeVisitor : AstVisitor
                     unsafe
                         let xmm_reg = reinterpret<XmmTempReg> (t + FIRST_NON_TRANSIENT_XMM_TEMP_REG)
                         push(REGXMM(GEN,xmm_reg))
-            // note: 8u is here to keep the stack aligned
-            sub(rsp,(context.stack_frame+PROLOGUE_FRAME_SIZE+context.temp_frame+8u))
-            mov(qword[rsp+(context.stack_frame+ARG_CONTEXT)],rcx)
-            mov(qword[rsp+(context.stack_frame+ARG_ARGUMENTS)],rdx)
-            mov(qword[rsp+(context.stack_frame+ARG_CMRES)],r8)
+            sub(rsp,(context.stack_frame+context.temp_frame+8u))                // note: 8u is here to keep the stack aligned
         self->check_gen()
     def gen_epilogue
         with_xbyak(gen) <| $ ( GEN )
             // note: 8u is here to keep the stack aligned
-            add(rsp,(context.stack_frame+PROLOGUE_FRAME_SIZE+context.temp_frame+8u))
+            add(rsp,(context.stack_frame+context.temp_frame+8u))
             // restore non-transient xmm regs
             let total_xmm_save = length(context.xmma.regs) - FIRST_NON_TRANSIENT_XMM_TEMP_REG
             if total_xmm_save>0
@@ -628,7 +646,7 @@ class GenerateCodeVisitor : AstVisitor
                             let reg = ev as gpReg
                             if verbose
                                 print("[{reg}]")
-                            mov(rax,ptr[rsp+(context.stack_frame+ARG_ARGUMENTS)])
+                            mov(rax,ptr[rsp+self->getArgOffset()])
                             if varSize==8
                                 mov(REG64(GEN,reg),qword[rax])
                             elif varSize==4
@@ -1021,19 +1039,21 @@ class GenerateCodeVisitor : AstVisitor
                     t_offset += 8u
                 if expr.func == this_function
                     // setup arguments
-                    mov(rcx,qword[rsp+(context.stack_frame+t_offset+ARG_CONTEXT)])  // rcx is Context *
-                    lea(rdx,ptr[rsp+(offset+t_offset)])                             // rdx is ARGS
-                    sub(r8,r8)                                                      // r8 is CMRES
+                    let ctx_offset = self->getContextOffset()
+                    mov(rcx,qword[rsp+(ctx_offset+t_offset)])   // rcx is Context *
+                    lea(rdx,ptr[rsp+(offset+t_offset)])         // rdx is ARGS
+                    sub(r8,r8)                                  // r8 is CMRES
                     // do the call
-                    // sub(rsp,32u)     - our abi does not use those
+                    sub(rsp,32u)
                     mov(rax,func_begin)
                     call(rax)
-                    // add(rsp,32u)     - our abi does not use those
+                    add(rsp,32u)
                 else
                     // setup arguments
-                    mov(rcx,uint64(MNH))                                        // rcx is MNH
-                    lea(rdx,ptr[rsp+(offset+t_offset)])                         // rdx is ARGS
-                    mov(r8,ptr[rsp+(context.stack_frame+t_offset+ARG_CONTEXT)]) // r8  is Context *
+                    let ctx_offset = self->getContextOffset()
+                    mov(rcx,uint64(MNH))                        // rcx is MNH
+                    lea(rdx,ptr[rsp+(offset+t_offset)])         // rdx is ARGS
+                    mov(r8,ptr[rsp+(ctx_offset+t_offset)])      // r8  is Context *
                     // do the call
                     sub(rsp,32u)
                     mov(rax,JIT_call_or_fastcall())

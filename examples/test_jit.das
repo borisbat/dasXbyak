@@ -90,14 +90,17 @@ def fibR(n:int)
         return n
     return fibR(n - 1) + fibR(n - 2)
 
+[jit_x86_64]
+def fibR_jit(n:int)
+    if (n < 2)
+        return n
+    return fibR_jit(n - 1) + fibR_jit(n - 2)
+
 [export]
 def main
-    if false
-        print("fibR(4) = {fibR(4)}\n")
-    if false
-        print("fibI(5)     = {fibI(13)}\n")
-        print("fibI_jit(5) = {fibI_jit(13)}\n")
-        print("fibI_asm(5) = {fibI_asm(13)}\n")
     if true
+        print("fibI_jit(5) = {fibI_jit(5)}\n")
+        print("fibR_jit(5) = {fibR_jit(5)}\n")
+    if false
         test_fibi()
 
