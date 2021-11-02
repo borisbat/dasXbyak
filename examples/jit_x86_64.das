@@ -450,7 +450,7 @@ class GenerateCodeVisitor : AstVisitor
     [[do_not_delete]] gen : CodeGenerator?
     context : EvContext
     [[do_not_delete]] this_function : Function?
-    func_begin : uint64
+    func_begin : void?
     def GenerateCodeVisitor(var g:CodeGenerator?; var ctx:EvContext )
         gen = g
         context <- ctx
@@ -480,8 +480,7 @@ class GenerateCodeVisitor : AstVisitor
             print("(DEF {fun.name} [STACK={context.stack_frame}, TEMP={context.temp_frame}]\n")
         this_function = get_ptr(fun)
         unsafe
-            let fn_code = *gen |> get_code()
-            func_begin = reinterpret<uint64> fn_code
+            func_begin = *gen |> get_code()
         with_xbyak(gen) <| $ ( GEN )
             // passing (context(rcx) *, arguments(rdx) *, cmres(r8) *)
             mov(qword[rsp+ARG_CMRES],r8)
@@ -1042,11 +1041,10 @@ class GenerateCodeVisitor : AstVisitor
                     let ctx_offset = self->getContextOffset()
                     mov(rcx,qword[rsp+(ctx_offset+t_offset)])   // rcx is Context *
                     lea(rdx,ptr[rsp+(offset+t_offset)])         // rdx is ARGS
-                    sub(r8,r8)                                  // r8 is CMRES
+                    // sub(r8,r8)                               // r8 is CMRES
                     // do the call
                     sub(rsp,32u)
-                    mov(rax,func_begin)
-                    call(rax)
+                    call(func_begin)
                     add(rsp,32u)
                 else
                     // setup arguments
@@ -1056,8 +1054,7 @@ class GenerateCodeVisitor : AstVisitor
                     mov(r8,ptr[rsp+(ctx_offset+t_offset)])      // r8  is Context *
                     // do the call
                     sub(rsp,32u)
-                    mov(rax,JIT_call_or_fastcall())
-                    call(rax)
+                    call(JIT_call_or_fastcall())
                     add(rsp,32u)
                 // restore used transient registers
                 if (t_total & 1) != 0
