@@ -282,6 +282,11 @@ class AllocateRegistersCodeVisitor : AstVisitor
                                 self->evRelease(evR)
                             else
                                 self->failed("OP2 {expr.op} int imm gpREG R{evR}", expr.at)
+                        elif evL is gpRegT
+                            let nreg = self->allocateGP()
+                            context.expr_res[intptr(expr)] = [[EvResult gpReg=nreg]]
+                            if verbose
+                                print("reg {nreg} for {describe(expr)}\n")
                         else
                             self->failed("OP2 {expr.op} int imm L{evL}", expr.at)
                     else
@@ -336,6 +341,19 @@ class AllocateRegistersCodeVisitor : AstVisitor
                 self->failed("support cmres? stack top = {expr.stackTop}", expr.at)
             for argi in range(length(expr.arguments))
                 self->evExpectStack(expr.arguments[argi],offset+uint(argi)*16u)
+            if expr.func.result != null
+                if expr.func.result.isRef
+                    self->failed("support result by ref", expr.at)
+                else
+                    var fnR & = context.expr_res[intptr(expr)]
+                    if expr.func.result.isVectorType
+                        let reg = self->allocateXMM()
+                        fnR = [[EvResult xmmReg=reg]]
+                    else
+                        let reg = self->allocateGP()
+                        fnR = [[EvResult gpReg=reg]]
+                    if verbose
+                        print("call {expr.func._module.name}::{expr.func.name} returns {fnR}\n")
             if verbose
                 print("call {expr.func._module.name}::{expr.func.name} temp frame {offset}\n")
             return expr
@@ -483,7 +501,10 @@ class GenerateCodeVisitor : AstVisitor
                     if initSize==4
                         if evI is iconst
                             mov(REG32(GEN,reg),evI as iconst)
+                        elif evI is gpReg
+                            mov(REG32(GEN,reg),REG32(GEN,evI as gpReg))
                         else
+                            print("by value init {describe(arg.init)}\n")
                             self->failed("accept reg by value init {evI}",arg.init.at)
                     else
                         self->failed("accept reg by value init {evI} of type {describe(arg._type)}",arg.init.at)
@@ -549,6 +570,7 @@ class GenerateCodeVisitor : AstVisitor
         if verbose
             print("(OP2 {expr.op}")
     def override visitExprOp2(expr:smart_ptr<ExprOp2>) : ExpressionPtr
+        var eV &  = context.expr_res[intptr(expr)]
         let evL & = context.expr_res[intptr(expr.left)]
         let evR & = context.expr_res[intptr(expr.right)]
         with_xbyak(gen) <| $ ( GEN )
@@ -579,34 +601,50 @@ class GenerateCodeVisitor : AstVisitor
                             else
                                 self->failed("OP2 {expr.op} int ref", expr.at)
                     else
-                        if expr.op=="+"
+                        if expr.op=="+" || expr.op=="-"
                             if evL is gpReg
                                 if evR is iconst
                                     let ic = uint(evR as iconst)
                                     if ic==1u
-                                        inc(REG32(GEN,evL as gpReg))
+                                        if expr.op=="+"
+                                            inc(REG32(GEN,evL as gpReg))
+                                        else
+                                            dec(REG32(GEN,evL as gpReg))
                                     else
-                                        add(REG32(GEN,evL as gpReg),ic)
+                                        if expr.op=="+"
+                                            add(REG32(GEN,evL as gpReg),ic)
+                                        else
+                                            sub(REG32(GEN,evL as gpReg),ic)
                                 else
                                     self->failed("OP2 {expr.op} int imm gpREG R{evR}", expr.at)
                                 if verbose
                                     print(" [{evL}]")
                             else
-                                self->failed("OP2 {expr.op} int imm L{evL}", expr.at)
-                        elif expr.op=="-"
-                            if evL is gpReg
-                                if evR is iconst
-                                    let ic = uint(evR as iconst)
-                                    if ic==1u
-                                        dec(REG32(GEN,evL as gpReg))
+                                assert(eV is gpReg)
+                                if (evL is gpReg) && (evR is iconst)
+                                    if expr.op=="+"
+                                        lea(REG32(GEN,eV as gpReg),ptr[REG32(GEN,(evL as gpReg))+uint(evR as iconst)])
                                     else
-                                        sub(REG32(GEN,evL as gpReg),ic)
+                                        lea(REG32(GEN,eV as gpReg),ptr[REG32(GEN,(evL as gpReg))-uint(evR as iconst)])
+                                if (evL is gpRegT) && (evR is iconst)
+                                    if expr.op=="+"
+                                        lea(REG32(GEN,eV as gpReg),ptr[REG32(GEN,(evL as gpRegT))+uint(evR as iconst)])
+                                    else
+                                        lea(REG32(GEN,eV as gpReg),ptr[REG32(GEN,(evL as gpRegT))-uint(evR as iconst)])
                                 else
-                                    self->failed("OP2 {expr.op} int imm gpREG R{evR}", expr.at)
-                                if verbose
-                                    print(" [{evL}]")
-                            else
-                                self->failed("OP2 {expr.op} int imm L{evL}", expr.at)
+                                    // left
+                                    if evL is gpReg
+                                        mov(REG32(GEN,eV as gpReg),REG32(GEN,evL as gpReg))
+                                    else
+                                        self->failed("OP2 {expr.op} int {eV} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
+                                    // right
+                                    if evR is iconst
+                                        if expr.op=="+"
+                                            add(REG32(GEN,eV as gpReg),uint(evR as iconst))
+                                        else
+                                            sub(REG32(GEN,eV as gpReg),uint(evR as iconst))
+                                    else
+                                        self->failed("OP2 {expr.op} int {eV} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
                         else
                             self->failed("OP2 {expr.op} int imm", expr.at)
                 else
@@ -803,6 +841,21 @@ class GenerateCodeVisitor : AstVisitor
                 unsafe
                     mov(rax,reinterpret<uint64> JIT_call_or_fastcall())
                 call(rax)
+                if expr.func.result != null
+                    if expr.func.result.isRef
+                        self->failed("support result by ref", expr.at)
+                    else
+                        var fnR & = context.expr_res[intptr(expr)]
+                        let asize = expr.func.result.sizeOf
+                        if fnR is gpReg
+                            if asize==4
+                                movd(REG32(GEN,fnR as gpReg),xmm0)
+                            elif asize==8
+                                mov(REG64(GEN,fnR as gpReg),xmm0)
+                            else
+                                self->failed("support result size {asize}", expr.at)
+                        else
+                            self->failed("support result {fnR}", expr.at)
             return expr
         ////////////////////
         // TODO: calls table
