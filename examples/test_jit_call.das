@@ -1,3 +1,5 @@
+options rtti
+
 require jit_x86_64
 
 def output_result(a,b:int)
@@ -13,3 +15,4 @@ def test_call(n:int)
 def main
     let t = test_call(13)
     print("t = {t}\n")
+

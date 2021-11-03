@@ -142,14 +142,16 @@ namespace das {
         return (void *) code.getCode();
     }
 
-    vec4f JIT_call_or_fastcall ( uint32_t MNH, vec4f * args, Context * context ) {
-        SimFunction * fn = context->fnByMangledName(MNH);
-        if ( fn->mangledNameHash!=MNH ) context->throw_error("JIT: calling by MNH failed\n");
+    vec4f JIT_call_or_fastcall ( SimFunction * fn, vec4f * args, Context * context ) {
         return context->callOrFastcall(fn, args, nullptr);
     }
 
     uint64_t das_get_JIT_call_or_fastcall ( ) {
         return (uint64_t) &JIT_call_or_fastcall;
+    }
+
+    uint64_t das_get_SimFunction_by_MNH ( uint32_t MNH, Context * context ) {
+        return (uint64_t) context->fnByMangledName(MNH);
     }
 }
 
@@ -250,6 +252,8 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
     // JIT table
     addExtern<DAS_BIND_FUN(das_get_JIT_call_or_fastcall)>(*this, lib, "JIT_call_or_fastcall",
         SideEffects::none, "das_get_JIT_call_or_fastcall");
+    addExtern<DAS_BIND_FUN(das_get_SimFunction_by_MNH)>(*this, lib, "get_function_address",
+        SideEffects::none, "das_get_SimFunction_by_MNH");
 
 #if USE_GENERATED_SPLIT
     initFunctions_0();

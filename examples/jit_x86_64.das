@@ -15,6 +15,8 @@ require dasxbyak/xbyak_boost
 require xbyak public
 require zydis
 
+require ast public
+
 /*
     STACK FRAME IS
 VARIABLE_FRAME
@@ -102,12 +104,10 @@ struct EvContext
     temp_frame  : uint      // where temp buffers are allocated (like calls)
     stack_frame : uint      // regular stack
     save_frame  : uint      // where transient registers are saved
-
     use_cmres   : bool
     use_args    : bool
     use_context : bool
 
-[macro_function]
 def dump ( ctx:EvContext )
     print("stack frame is {ctx.stack_frame}\n")
     print("temp frame is {ctx.temp_frame} bytes\n")
@@ -137,7 +137,6 @@ def dump ( ctx:EvContext )
             let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
             print("\t{k}.{pexpr.__rtti} ->  {v} at {fname}:{int(at.line)}:{int(at.column)}\n")
 
-[macro_function]
 def is_gpreg_type ( t:TypeDeclPtr )
     if length(t.dim)>0
         return false
@@ -145,7 +144,6 @@ def is_gpreg_type ( t:TypeDeclPtr )
         return true
     return true
 
-[macro_function]
 def is_for_range1 ( expr:smart_ptr<ExprFor> )
     if length(expr.sources)!=1
         return false
@@ -155,7 +153,6 @@ def is_for_range1 ( expr:smart_ptr<ExprFor> )
         return false
     return true
 
-[macro_function]
 def is_for_range1_with_unused_var ( expr:smart_ptr<ExprFor> )
     if !is_for_range1(expr)
         return false
@@ -1100,13 +1097,15 @@ class GenerateCodeVisitor : AstVisitor
                             self->error("TODO: support call argument size {asize}",expr.at)
                     else
                         self->error("TODO: support call argument size {eA}",expr.at)
-                var MNH : uint
+                var MNH_ADDR : uint64
                 unsafe
                     let mangled_name = get_mangled_name(reinterpret<FunctionPtr> expr.func)
-                    MNH = hash(mangled_name)
+                    let MNH = hash(mangled_name)
+                    MNH_ADDR = get_function_address(MNH)
                 if verbose
-                    print("MNG={MNH} ")
+                    print("@@{MNH_ADDR} ")
                 // save used transient registers
+                let recursive_call = expr.func == this_function
                 let transients = context.transients[intptr(expr)]
                 var t_offset = 0u
                 var t_total = 0
@@ -1118,7 +1117,7 @@ class GenerateCodeVisitor : AstVisitor
                         push(REG64(GEN,tgpr))
                         t_offset += 8u
                         t_total ++
-                if expr.func == this_function
+                if recursive_call
                     // setup arguments
                     let ctx_offset = self->getContextOffset()
                     if context.use_context                          // in recursive call, if context is not used - don't pass
@@ -1128,13 +1127,13 @@ class GenerateCodeVisitor : AstVisitor
                 else
                     // setup arguments
                     let ctx_offset = self->getContextOffset()
-                    mov(rcx,uint64(MNH))                        // rcx is MNH
+                    mov(rcx,uint64(MNH_ADDR))                   // rcx is MNH
                     lea(rdx,ptr[rsp+(offset+t_offset)])         // rdx is ARGS
                     mov(r8,ptr[rsp+(ctx_offset+t_offset)])      // r8  is Context *
                 // call must be aligned, so if even number of transient registers is saved - we add extra 8 bytes
                 sub(rsp,(t_total & 1) != 0 ? 40u : 32u)
-                if expr.func == this_function
-                    call(this_function)
+                if recursive_call
+                    call(func_begin)
                 else
                     mov(rax,JIT_call_or_fastcall())
                     call(rax)
@@ -1185,7 +1184,6 @@ class GenerateCodeVisitor : AstVisitor
             print(")")
         return expr
 
-[macro_function]
 def allocate_regs(var func : FunctionPtr)
     var allocateRegistersVisitor = new AllocateRegistersCodeVisitor()
     var allocateRegistersVisitorAdapter <- make_visitor(*allocateRegistersVisitor)
@@ -1196,8 +1194,7 @@ def allocate_regs(var func : FunctionPtr)
         delete allocateRegistersVisitor
     return <- cont
 
-[macro_function]
-def public generate_x86_64(var func:FunctionPtr) : uint64
+def public generate_x86_64(var func:FunctionPtr) : CodeGenerator?
     var allocateRegistersVisitor = new AllocateRegistersCodeVisitor()
     var allocateRegistersVisitorAdapter <- make_visitor(*allocateRegistersVisitor)
     visit(func, allocateRegistersVisitorAdapter)
@@ -1211,12 +1208,12 @@ def public generate_x86_64(var func:FunctionPtr) : uint64
     let temp_gp = length(context.gpa.regs)
     if temp_gp > MAX_GP_TEMP_REG
         print("jit_x86_64: failed for {func.name}, too many temp gp registers {temp_gp} of {MAX_GP_TEMP_REG}")
-        return 0ul
+        return null
     // verify XMM regis
     let temp_xmm = length(context.xmma.regs)
     if temp_xmm > MAX_XMM_TEMP_REG
         print("jit_x86_64: failed for {func.name}, too many temp xmm registers {temp_xmm} of {MAX_XMM_TEMP_REG}")
-        return 0ul
+        return null
     // generate code
     var gen = new CodeGenerator
     *gen |> inLocalLabel()
@@ -1235,35 +1232,25 @@ def public generate_x86_64(var func:FunctionPtr) : uint64
         let err = reinterpret<GenerationError> GetError()
         if err != GenerationError NONE
             panic("xbyak - generation error {err}")
-    return intptr(gen)
+    return gen
 
 [function_macro(name="jit_x86_64")]
 class Jit_x86_64_Macro : AstFunctionAnnotation
     def override apply ( var func:FunctionPtr; var group:ModuleGroup; args:AnnotationArgumentList; var errors : das_string ) : bool
         func.sideEffectFlags |= bitfield(int(SideEffects userScenario))
-        let jit_var_name = "{func.name}`jit"
-        compiling_module() |> add_global_private_var ( jit_var_name, func.at) <| new [[ExprConstUInt64() value=-1ul]]
         var qblock <- quote() <|
             unsafe
-                if PGEN != 0ul
-                    *(reinterpret<CodeGenerator?> PGEN) |> instrument_jit(reinterpret<function> PFUN)
+                if true
+                    var fnptr <- find_module_function_via_rtti(find_module_via_rtti(PMOD),PFUN)
+                    var gen = generate_x86_64(fnptr)
+                    if gen != null
+                        *gen |> instrument_jit(reinterpret<function> PFUN)
+                    fnptr := null
         apply_template(qblock) <| $ ( rules )
-            rules |> replaceVariable("PGEN") <| new [[ExprVar() name:=jit_var_name]]
             rules |> replaceVariable("PFUN") <| new [[ExprAddr() target:=func.name]]
+            rules |> replaceVariable("PMOD") <| new [[ExprConstString() value:=compiling_module().name]]
         var qres <- move_unquote_block(qblock)
         qres.blockFlags ^= ExprBlockFlags isClosure
-
-        // TODO: this to enable installation of jit
-        if true
-            var reg <- setup_call_list("all`things`jit", func.at, true)
-            reg.list |> emplace(qres)
-
-        return true
-    def override finish ( var func:FunctionPtr; var group:ModuleGroup; args,progArgs:AnnotationArgumentList; var errors : das_string ) : bool
-        print("jit: {func.name}\n")
-        let jit_addr = generate_x86_64(func)
-        let jit_var_name = "{func.name}`jit"
-        var glob <- find_variable(compiling_module(), jit_var_name)
-        if glob != null
-            (glob.init as ExprConstUInt64).value = jit_addr
+        var reg <- setup_call_list("all`things`jit", func.at, true)
+        reg.list |> emplace(qres)
         return true
