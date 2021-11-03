@@ -103,11 +103,18 @@ struct EvContext
     stack_frame : uint      // regular stack
     save_frame  : uint      // where transient registers are saved
 
+    use_cmres   : bool
+    use_args    : bool
+    use_context : bool
+
 [macro_function]
 def dump ( ctx:EvContext )
     print("stack frame is {ctx.stack_frame}\n")
     print("temp frame is {ctx.temp_frame} bytes\n")
     print("save frame is {ctx.save_frame} bytes\n")
+    print("use context: {ctx.use_context}\n")
+    print("use args: {ctx.use_args}\n")
+    print("use cmres: {ctx.use_cmres}\n")
     for k,v in keys(ctx.tf_offset),values(ctx.tf_offset)
         unsafe
             let pexpr = reinterpret<Expression?> k
@@ -165,6 +172,7 @@ class AllocateRegistersCodeVisitor : AstVisitor
     context : EvContext
     [[do_not_delete]] local_stack : array<Variable?>
     local_stack_depth : array<int>
+    [[do_not_delete]] this_function : Function?
     def AllocateRegistersCodeVisitor
         pass
     def error ( txt:string; at:LineInfo )
@@ -223,6 +231,7 @@ class AllocateRegistersCodeVisitor : AstVisitor
         ]]
 // function
     def override preVisitFunction(fun:FunctionPtr) : void
+        this_function = get_ptr(fun)
         context.stack_frame = fun.totalStackSize
     def override visitFunction(fun:FunctionPtr) : FunctionPtr
         let total_xmm_save = length(context.xmma.regs) - FIRST_NON_TRANSIENT_XMM_TEMP_REG
@@ -312,6 +321,7 @@ class AllocateRegistersCodeVisitor : AstVisitor
                 // if we are asking for reference, return stack
                 ev = [[EvResult stack=expr.variable.stackTop]]
         elif expr.varFlags.argument // arguments
+            context.use_args = true
             if expr.varFlags.r2v
                 if expr.variable._type |> is_gpreg_type
                     // return local variable as GP register
@@ -381,13 +391,21 @@ class AllocateRegistersCodeVisitor : AstVisitor
         var evS & = context.expr_res[intptr(expr.subexpr)]
         var evL & = context.expr_res[intptr(expr.left)]
         var evR & = context.expr_res[intptr(expr.right)]
-        let reg = self->allocateGP()
-        context.expr_res[intptr(expr)] = [[EvResult gpReg=reg]]
+        var evOP3 & = context.expr_res[intptr(expr)]
+        if evL is gpReg
+            evOP3 = evL
+            self->evRelease(evR)
+        elif evR is gpReg
+            evOP3 = evR
+            self->evRelease(evL)
+        else
+            let reg = self->allocateGP()
+            evOP3 = [[EvResult gpReg=reg]]
+            self->evRelease(evL)
+            self->evRelease(evR)
         if verbose
-            print("op3 {evS} ? {evL} : {evR} result in {reg}\n")
+            print("op3 {evS} ? {evL} : {evR} result in {evS}\n")
         self->evRelease(evS)
-        self->evRelease(evL)
-        self->evRelease(evR)
         return expr
 // copy
     def override visitExprCopy(expr:smart_ptr<ExprCopy>) : ExpressionPtr
@@ -435,7 +453,9 @@ class AllocateRegistersCodeVisitor : AstVisitor
 // call
     def override visitExprCall(var expr:smart_ptr<ExprCall>) : ExpressionPtr
         if !expr.func.flags.builtIn
-            self->setTransients(expr)
+            // if not recursive, context is used
+            if expr.func != this_function
+                context.use_context = true
             // ok, 2 arguments
             let bytes = uint(length(expr.arguments) * 16)
             let offset = self->allocateTempFrame(bytes)
@@ -446,6 +466,10 @@ class AllocateRegistersCodeVisitor : AstVisitor
                 self->failed("support cmres? stack top = {expr.stackTop}", expr.at)
             for argi in range(length(expr.arguments))
                 self->evExpectStack(expr.arguments[argi],offset+uint(argi)*16u)
+            for arg in expr.arguments
+                var eaV & = context.expr_res[intptr(arg)]
+                self->evRelease(eaV)
+            self->setTransients(expr)
             if expr.func.result != null
                 if expr.func.result.isRef
                     self->failed("support result by ref", expr.at)
@@ -459,9 +483,6 @@ class AllocateRegistersCodeVisitor : AstVisitor
                         fnR = [[EvResult gpReg=reg]]
                     if verbose
                         print("call {expr.func._module.name}::{expr.func.name} returns {fnR}\n")
-            for arg in expr.arguments
-                var eaV & = context.expr_res[intptr(arg)]
-                self->evRelease(eaV)
             if verbose
                 print("call {expr.func._module.name}::{expr.func.name} temp frame {offset}\n")
             return expr
@@ -486,6 +507,7 @@ class GenerateCodeVisitor : AstVisitor
     context : EvContext
     [[do_not_delete]] this_function : Function?
     func_begin : void?
+    rdx_has_args : bool                             // rdx contains arg *, as part of the parameters passed
     def GenerateCodeVisitor(var g:CodeGenerator?; var ctx:EvContext )
         gen = g
         context <- ctx
@@ -513,14 +535,18 @@ class GenerateCodeVisitor : AstVisitor
     def override preVisitFunction(fun:FunctionPtr) : void
         if verbose
             print("(DEF {fun.name} [STACK={context.stack_frame}, TEMP={context.temp_frame}]\n")
+        rdx_has_args = true
         this_function = get_ptr(fun)
         unsafe
             func_begin = *gen |> get_code()
         with_xbyak(gen) <| $ ( GEN )
             // passing (context(rcx) *, arguments(rdx) *, cmres(r8) *)
-            mov(qword[rsp+ARG_CMRES],r8)
-            mov(qword[rsp+ARG_ARGUMENTS],rdx)
-            mov(qword[rsp+ARG_CONTEXT],rcx)
+            if context.use_cmres
+                mov(qword[rsp+ARG_CMRES],r8)
+            if context.use_args
+                mov(qword[rsp+ARG_ARGUMENTS],rdx)
+            if context.use_context
+                mov(qword[rsp+ARG_CONTEXT],rcx)
             // save non-transient gp regs
             let total_gp_save = length(context.gpa.regs) - FIRST_NON_TRANSIENT_GP_TEMP_REG
             if total_gp_save>0
@@ -680,11 +706,13 @@ class GenerateCodeVisitor : AstVisitor
                             let reg = ev as gpReg
                             if verbose
                                 print("[{reg}]")
-                            mov(rax,ptr[rsp+self->getArgOffset()])
+                            if !rdx_has_args
+                                mov(rdx,ptr[rsp+self->getArgOffset()])
+                                rdx_has_args
                             if varSize==8
-                                mov(REG64(GEN,reg),qword[rax])
+                                mov(REG64(GEN,reg),qword[rdx+(expr.argumentIndex*16)])
                             elif varSize==4
-                                mov(REG32(GEN,reg),dword[rax])
+                                mov(REG32(GEN,reg),dword[rdx+(expr.argumentIndex*16)])
                             else
                                 self->failed("{expr.variable.name} support argument R2V size of {varSize}", expr.at)
                         else
@@ -825,7 +853,8 @@ class GenerateCodeVisitor : AstVisitor
     def copyReg32 ( reg:GpTempReg; eV:EvResult; at:LineInfo ) : void
         with_xbyak(gen) <| $ ( GEN )
             if eV is gpReg
-                mov(REG32(GEN,reg),REG32(GEN,eV as gpReg))
+                if reg != eV as gpReg
+                    mov(REG32(GEN,reg),REG32(GEN,eV as gpReg))
             else
                 self->failed("supprt copy reg32 {eV}", at)
         self->check_gen()
@@ -851,6 +880,7 @@ class GenerateCodeVisitor : AstVisitor
         with_xbyak(gen) <| $ ( GEN )
             self->copyReg32(eV as gpReg,evL,expr.at)
             jmp(".cond_end_{intptr(expr)}",LabelType T_NEAR)
+            align(16ul,true)
             L(".cond_right_{intptr(expr)}")
         self->check_gen()
         if verbose
@@ -1055,6 +1085,7 @@ class GenerateCodeVisitor : AstVisitor
             print("CALL `{expr.name}` ")
     def override visitExprCall(expr:smart_ptr<ExprCall>) : ExpressionPtr
         if !expr.func.flags.builtIn
+            rdx_has_args = false            // rdx no longer has args, since we call another function
             with_xbyak(gen) <| $ ( GEN )
                 let offset = context.tf_offset[intptr(expr)]
                 for ai in range(length(expr.arguments))
@@ -1087,34 +1118,27 @@ class GenerateCodeVisitor : AstVisitor
                         push(REG64(GEN,tgpr))
                         t_offset += 8u
                         t_total ++
-                if (t_total & 1) != 0
-                    push(rax)
-                    // lea(rsp,ptr[rsp-8])
-                    t_offset += 8u
-                var caddr : void?
                 if expr.func == this_function
                     // setup arguments
                     let ctx_offset = self->getContextOffset()
-                    mov(rcx,qword[rsp+(ctx_offset+t_offset)])   // rcx is Context *
-                    lea(rdx,ptr[rsp+(offset+t_offset)])         // rdx is ARGS
-                    // sub(r8,r8)                               // r8 is CMRES
-                    caddr = func_begin
+                    if context.use_context                          // in recursive call, if context is not used - don't pass
+                        mov(rcx,qword[rsp+(ctx_offset+t_offset)])   // rcx is Context *
+                    lea(rdx,ptr[rsp+(offset+t_offset)])             // rdx is ARGS
+                    // sub(r8,r8)                                   // r8 is CMRES
                 else
                     // setup arguments
                     let ctx_offset = self->getContextOffset()
                     mov(rcx,uint64(MNH))                        // rcx is MNH
                     lea(rdx,ptr[rsp+(offset+t_offset)])         // rdx is ARGS
                     mov(r8,ptr[rsp+(ctx_offset+t_offset)])      // r8  is Context *
-                    caddr = JIT_call_or_fastcall()
-                // do the call
-                sub(rsp,32u)
-                call(caddr)
-                if (t_total & 1) != 0
-                    // align used transient registers and restore stack frame
-                    add(rsp,40u)
+                // call must be aligned, so if even number of transient registers is saved - we add extra 8 bytes
+                sub(rsp,(t_total & 1) != 0 ? 40u : 32u)
+                if expr.func == this_function
+                    call(this_function)
                 else
-                    // restore stack frame
-                    add(rsp,32u)
+                    mov(rax,JIT_call_or_fastcall())
+                    call(rax)
+                add(rsp,(t_total & 1) != 0 ? 40u : 32u)
                 // restore used transient registers
                 for i_t in urange(FIRST_NON_TRANSIENT_GP_TEMP_REG)
                     let t = uint(FIRST_NON_TRANSIENT_GP_TEMP_REG) - i_t - 1u

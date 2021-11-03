@@ -148,8 +148,8 @@ namespace das {
         return context->callOrFastcall(fn, args, nullptr);
     }
 
-    void * das_get_JIT_call_or_fastcall ( ) {
-        return &JIT_call_or_fastcall;
+    uint64_t das_get_JIT_call_or_fastcall ( ) {
+        return (uint64_t) &JIT_call_or_fastcall;
     }
 }
 
