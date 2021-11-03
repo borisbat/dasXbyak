@@ -62,6 +62,22 @@ def mask ( var regs:RegAllocator; maxReg:int )
             mask |= 1u << uint(t)
     return mask
 
+enum CompareType
+    always
+    less
+
+def condJump ( var gen:CodeGenerator; lab:string; cond:CompareType )
+    if cond==CompareType less
+        jl(gen,lab,LabelType T_NEAR)
+    else
+        panic("unsupported jump {cond}")
+
+def condJumpIfNot ( var gen:CodeGenerator; lab:string; cond:CompareType )
+    if cond==CompareType less
+        jge(gen,lab,LabelType T_NEAR)
+    else
+        panic("unsupported jump {cond}")
+
 variant EvResult
     nothing : bool
     stack   : uint
@@ -69,6 +85,7 @@ variant EvResult
     gpRegT  : GpTempReg     // variable replaced via register
     xmmReg  : XmmTempReg
     iconst  : uint64
+    cmp     : CompareType
 
 struct Transients
     gp_mask  : uint
@@ -162,6 +179,12 @@ class AllocateRegistersCodeVisitor : AstVisitor
         var eV & = context.expr_res[intptr(expr)]
         if eV is nothing
             eV = [[EvResult stack=stack]]
+    def evExpectCmp ( expr:ExpressionPtr )
+        if verbose
+            print("expect results in flags {expr.__rtti}.{intptr(expr)}\n")
+        var eV & = context.expr_res[intptr(expr)]
+        if eV is nothing
+            eV = [[EvResult cmp=CompareType always]]
     def evRelease ( var res:EvResult )
         if res is gpReg
             if verbose
@@ -306,6 +329,7 @@ class AllocateRegistersCodeVisitor : AstVisitor
     def override visitExprOp2(expr:smart_ptr<ExprOp2>) : ExpressionPtr
         var evL & = context.expr_res[intptr(expr.left)]
         var evR & = context.expr_res[intptr(expr.right)]
+        var evOP2 & = context.expr_res[intptr(expr)]
         if expr.left._type.isInteger
             if expr.left._type.baseType==Type tInt
                 if expr.left._type.isRef    // +=, -=, and such - were left side is ref
@@ -313,36 +337,47 @@ class AllocateRegistersCodeVisitor : AstVisitor
                     self->evRelease(evL)
                     self->evRelease(evR)
                 else
-                    // imm operators
-                    if expr.op=="-" || expr.op=="+" || expr.op=="<"
-                        if evL is gpReg                                 // left is reg
-                            if (evR is iconst) || (evR is gpReg)        // right is const, or reg
-                                // reuse left register
-                                context.expr_res[intptr(expr)] = evL
-                                // we release only right
-                                self->evRelease(evR)
-                            else
-                                self->failed("OP2 {expr.op} int imm gpREG R {debug(evR)}", expr.at)
-                        elif evL is gpRegT
-                            // we allocate new temp register
-                            let nreg = self->allocateGP()
-                            context.expr_res[intptr(expr)] = [[EvResult gpReg=nreg]]
-                            // we release both left and right
-                            self->evRelease(evL)
-                            self->evRelease(evR)
-                            if verbose
-                                print("reg {nreg} for {describe(expr)}\n")
+                    if evOP2 is cmp
+                        if expr.op=="<"
+                            evOP2 = [[EvResult cmp=CompareType less]]
                         else
-                            self->failed("OP2 {expr.op} int imm L{evL}", expr.at)
+                            self->failed("OP2 {expr.op} support cmp result for more operators", expr.at)
+                        self->evRelease(evL)
+                        self->evRelease(evR)
                     else
-                        self->failed("OP2 {expr.op} int imm", expr.at)
+                        // imm operators
+                        if expr.op=="-" || expr.op=="+" || expr.op=="<"
+                            if evL is gpReg                                 // left is reg
+                                if (evR is iconst) || (evR is gpReg)        // right is const, or reg
+                                    // reuse left register
+                                    context.expr_res[intptr(expr)] = evL
+                                    // we release only right
+                                    self->evRelease(evR)
+                                else
+                                    self->failed("OP2 {expr.op} int imm gpREG R {debug(evR)}", expr.at)
+                            elif evL is gpRegT
+                                // we allocate new temp register
+                                let nreg = self->allocateGP()
+                                evOP2 = [[EvResult gpReg=nreg]]
+                                // we release both left and right
+                                self->evRelease(evL)
+                                self->evRelease(evR)
+                                if verbose
+                                    print("reg {nreg} for {describe(expr)}\n")
+                            else
+                                self->failed("OP2 {expr.op} int imm L{evL}", expr.at)
+                        else
+                            self->failed("OP2 {expr.op} int imm", expr.at)
             else
                 self->failed("OP2 {expr.op} int support {describe(expr.left._type)}", expr.at)
         else
             self->failed("OP2 {expr.op} support {describe(expr.left._type)}", expr.at)
         return expr
 // op3
+    def override preVisitExprOp3(expr:smart_ptr<ExprOp3>): void
+        self->evExpectCmp(expr.subexpr)
     def override visitExprOp3(expr:smart_ptr<ExprOp3>) : ExpressionPtr
+        // todo: support result type
         var evS & = context.expr_res[intptr(expr.subexpr)]
         var evL & = context.expr_res[intptr(expr.left)]
         var evR & = context.expr_res[intptr(expr.right)]
@@ -670,7 +705,7 @@ class GenerateCodeVisitor : AstVisitor
         if verbose
             print("(OP2 {expr.op}")
     def override visitExprOp2(expr:smart_ptr<ExprOp2>) : ExpressionPtr
-        let eV &  = context.expr_res[intptr(expr)]
+        let evOP2 &  = context.expr_res[intptr(expr)]
         let evL & = context.expr_res[intptr(expr.left)]
         let evR & = context.expr_res[intptr(expr.right)]
         with_xbyak(gen) <| $ ( GEN )
@@ -701,66 +736,83 @@ class GenerateCodeVisitor : AstVisitor
                             else
                                 self->failed("OP2 {expr.op} int ref", expr.at)
                     else
-                        if expr.op=="+" || expr.op=="-" || expr.op=="<"
-                            if evL is gpReg
-                                // result is in the left register, which we reused during allocation
-                                if evR is iconst
-                                    let ic = uint(evR as iconst)
-                                    if ic==1u && (expr.op=="+" || expr.op=="-")
-                                        if expr.op=="+"
-                                            inc(REG32(GEN,evL as gpReg))
-                                        else
-                                            dec(REG32(GEN,evL as gpReg))
-                                    else
-                                        if expr.op=="+"
-                                            add(REG32(GEN,evL as gpReg),ic)
-                                        elif expr.op=="-"
-                                            sub(REG32(GEN,evL as gpReg),ic)
-                                        elif expr.op=="<"
-                                            cmp(REG32(GEN,evL as gpReg),ic)
-                                            mov(REG32(GEN,evL as gpReg),0ul)
-                                            mov(eax,1ul)
-                                            cmovl(REG32(GEN,evL as gpReg),eax)
-                                        else
-                                            self->failed("{expr.op} unsupported here", expr.at)
-                                elif evR is gpReg
-                                    if expr.op=="+"
-                                        add(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
-                                    else
-                                        sub(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
-                                else
-                                    self->failed("OP2 {expr.op} int imm gpREG R {debug(evR)}", expr.at)
-                                if verbose
-                                    print(" [{evL}]")
-                            else
-                                // result is in the result register, which we allocated separately
-                                assert(eV is gpReg)
-                                if (evL is gpReg) && (evR is iconst)
-                                    if expr.op=="+"
-                                        lea(REG32(GEN,eV as gpReg),ptr[REG32(GEN,(evL as gpReg))+uint(evR as iconst)])
-                                    else
-                                        lea(REG32(GEN,eV as gpReg),ptr[REG32(GEN,(evL as gpReg))-uint(evR as iconst)])
-                                if (evL is gpRegT) && (evR is iconst)
-                                    if expr.op=="+"
-                                        lea(REG32(GEN,eV as gpReg),ptr[REG32(GEN,(evL as gpRegT))+uint(evR as iconst)])
-                                    else
-                                        lea(REG32(GEN,eV as gpReg),ptr[REG32(GEN,(evL as gpRegT))-uint(evR as iconst)])
-                                else
-                                    // left
-                                    if evL is gpReg
-                                        mov(REG32(GEN,eV as gpReg),REG32(GEN,evL as gpReg))
-                                    else
-                                        self->failed("OP2 {expr.op} int {eV} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
-                                    // right
+                        if evOP2 is cmp
+                            if expr.op=="<"
+                                if evL is gpReg
+                                    // result is in the left register, which we reused during allocation
                                     if evR is iconst
-                                        if expr.op=="+"
-                                            add(REG32(GEN,eV as gpReg),uint(evR as iconst))
+                                        let ic = uint(evR as iconst)
+                                        if expr.op=="<"
+                                            cmp(REG32(GEN,evL as gpReg),ic)
                                         else
-                                            sub(REG32(GEN,eV as gpReg),uint(evR as iconst))
+                                            self->failed("{expr.op} int cmp unsupported here", expr.at)
                                     else
-                                        self->failed("OP2 {expr.op} int {eV} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
+                                        self->failed("OP2 {expr.op} int cmp gpREG R {debug(evR)}", expr.at)
+                                    if verbose
+                                        print(" [{evL}]")
+                            else
+                                self->failed("OP2 {expr.op} support more cmp operators", expr.at)
                         else
-                            self->failed("OP2 {expr.op} int imm", expr.at)
+                            if expr.op=="+" || expr.op=="-" || expr.op=="<"
+                                if evL is gpReg
+                                    // result is in the left register, which we reused during allocation
+                                    if evR is iconst
+                                        let ic = uint(evR as iconst)
+                                        if ic==1u && (expr.op=="+" || expr.op=="-")
+                                            if expr.op=="+"
+                                                inc(REG32(GEN,evL as gpReg))
+                                            else
+                                                dec(REG32(GEN,evL as gpReg))
+                                        else
+                                            if expr.op=="+"
+                                                add(REG32(GEN,evL as gpReg),ic)
+                                            elif expr.op=="-"
+                                                sub(REG32(GEN,evL as gpReg),ic)
+                                            elif expr.op=="<"
+                                                cmp(REG32(GEN,evL as gpReg),ic)
+                                                mov(REG32(GEN,evL as gpReg),0ul)
+                                                mov(eax,1ul)
+                                                cmovl(REG32(GEN,evL as gpReg),eax)
+                                            else
+                                                self->failed("{expr.op} unsupported here", expr.at)
+                                    elif evR is gpReg
+                                        if expr.op=="+"
+                                            add(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
+                                        else
+                                            sub(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
+                                    else
+                                        self->failed("OP2 {expr.op} int imm gpREG R {debug(evR)}", expr.at)
+                                    if verbose
+                                        print(" [{evL}]")
+                                else
+                                    // result is in the result register, which we allocated separately
+                                    assert(evOP2 is gpReg)
+                                    if (evL is gpReg) && (evR is iconst)
+                                        if expr.op=="+"
+                                            lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpReg))+uint(evR as iconst)])
+                                        else
+                                            lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpReg))-uint(evR as iconst)])
+                                    if (evL is gpRegT) && (evR is iconst)
+                                        if expr.op=="+"
+                                            lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpRegT))+uint(evR as iconst)])
+                                        else
+                                            lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpRegT))-uint(evR as iconst)])
+                                    else
+                                        // left
+                                        if evL is gpReg
+                                            mov(REG32(GEN,evOP2 as gpReg),REG32(GEN,evL as gpReg))
+                                        else
+                                            self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
+                                        // right
+                                        if evR is iconst
+                                            if expr.op=="+"
+                                                add(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
+                                            else
+                                                sub(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
+                                        else
+                                            self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
+                            else
+                                self->failed("OP2 {expr.op} int imm", expr.at)
                 else
                     self->failed("OP2 {expr.op} int support {describe(expr.left._type)}", expr.at)
             else
@@ -786,6 +838,8 @@ class GenerateCodeVisitor : AstVisitor
             if evS is gpReg
                 test(REG32(GEN,evS as gpReg),REG32(GEN,evS as gpReg))
                 jz(".cond_right_{intptr(expr)}",LabelType T_NEAR)
+            elif evS is cmp
+                GEN |> condJumpIfNot(".cond_right_{intptr(expr)}",evS as cmp)
             else
                 self->failed("supprt cond subexpr in {evS}", expr.at)
         self->check_gen()
@@ -1035,30 +1089,33 @@ class GenerateCodeVisitor : AstVisitor
                         t_total ++
                 if (t_total & 1) != 0
                     push(rax)
+                    // lea(rsp,ptr[rsp-8])
                     t_offset += 8u
+                var caddr : void?
                 if expr.func == this_function
                     // setup arguments
                     let ctx_offset = self->getContextOffset()
                     mov(rcx,qword[rsp+(ctx_offset+t_offset)])   // rcx is Context *
                     lea(rdx,ptr[rsp+(offset+t_offset)])         // rdx is ARGS
                     // sub(r8,r8)                               // r8 is CMRES
-                    // do the call
-                    sub(rsp,32u)
-                    call(func_begin)
-                    add(rsp,32u)
+                    caddr = func_begin
                 else
                     // setup arguments
                     let ctx_offset = self->getContextOffset()
                     mov(rcx,uint64(MNH))                        // rcx is MNH
                     lea(rdx,ptr[rsp+(offset+t_offset)])         // rdx is ARGS
                     mov(r8,ptr[rsp+(ctx_offset+t_offset)])      // r8  is Context *
-                    // do the call
-                    sub(rsp,32u)
-                    call(JIT_call_or_fastcall())
+                    caddr = JIT_call_or_fastcall()
+                // do the call
+                sub(rsp,32u)
+                call(caddr)
+                if (t_total & 1) != 0
+                    // align used transient registers and restore stack frame
+                    add(rsp,40u)
+                else
+                    // restore stack frame
                     add(rsp,32u)
                 // restore used transient registers
-                if (t_total & 1) != 0
-                    pop(rax)
                 for i_t in urange(FIRST_NON_TRANSIENT_GP_TEMP_REG)
                     let t = uint(FIRST_NON_TRANSIENT_GP_TEMP_REG) - i_t - 1u
                     if (transients.gp_mask & (1u<<t)) != 0u
@@ -1171,10 +1228,12 @@ class Jit_x86_64_Macro : AstFunctionAnnotation
             rules |> replaceVariable("PFUN") <| new [[ExprAddr() target:=func.name]]
         var qres <- move_unquote_block(qblock)
         qres.blockFlags ^= ExprBlockFlags isClosure
+
         // TODO: this to enable installation of jit
         if true
             var reg <- setup_call_list("all`things`jit", func.at, true)
             reg.list |> emplace(qres)
+
         return true
     def override finish ( var func:FunctionPtr; var group:ModuleGroup; args,progArgs:AnnotationArgumentList; var errors : das_string ) : bool
         print("jit: {func.name}\n")

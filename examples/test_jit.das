@@ -99,8 +99,10 @@ def fibR_jit(n:int)
 [export]
 def main
     if true
-        print("fibI_jit(5) = {fibI_jit(5)}\n")
-        print("fibR_jit(5) = {fibR_jit(5)}\n")
+        // print("fibI_jit(5) = {fibI_jit(5)}\n")
+        for i in range(10)
+            print("fibR_jit(i) = {fibR_jit(i)}\n")
+            print("fibR(i)     = {fibR(i)}\n")
     if false
         test_fibi()
 
