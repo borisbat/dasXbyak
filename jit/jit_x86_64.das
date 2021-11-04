@@ -30,14 +30,15 @@ def allocate_regs(var func : FunctionPtr)
         delete allocateRegistersVisitor
     return <- cont
 
-def public generate_x86_64(var func:FunctionPtr) : CodeGenerator?
-    var allocateRegistersVisitor = new AllocateRegistersCodeVisitor()
+def public generate_x86_64(var func:FunctionPtr; show_disasm:bool ) : CodeGenerator?
+    var context : EvContext
+    var allocateRegistersVisitor = new AllocateRegistersCodeVisitor(context)
     var allocateRegistersVisitorAdapter <- make_visitor(*allocateRegistersVisitor)
     visit(func, allocateRegistersVisitorAdapter)
-    var context <- allocateRegistersVisitor.context
+    let f2a = allocateRegistersVisitor.failed_to_generate
+    context <- allocateRegistersVisitor.context
     if allocateRegistersVisitor.verbose
         context |> dump
-    let f2a = allocateRegistersVisitor.failed_to_allocate
     allocateRegistersVisitorAdapter := null
     unsafe
         delete allocateRegistersVisitor
@@ -70,15 +71,17 @@ def public generate_x86_64(var func:FunctionPtr) : CodeGenerator?
     unsafe
         delete generateCodeVisitor
     unsafe
-        let data = *gen |> get_code()
-        let dataLength = *gen |> getSize()
-        print("data at {intptr(data)} of {int(dataLength)} bytes\n")
-        disassemble(data, dataLength)
+        if show_disasm
+            let data = *gen |> get_code()
+            let dataLength = *gen |> getSize()
+            print("{describe_function(func)}data at {intptr(data)} of {int(dataLength)} bytes\n")
+            disassemble(data, dataLength)
+            print("\n")
         let err = reinterpret<GenerationError> GetError()
         if err != GenerationError NONE
             panic("xbyak - generation error {err}")
     if f2g
-        print("jit_x86_64: failed to generate\n")
+        print("jit_x86_64: failed to generate {func.name} aka {get_mangled_name(func)}\n")
         unsafe
             delete gen
     return gen
@@ -91,15 +94,17 @@ class Jit_x86_64_Macro : AstFunctionAnnotation
             unsafe
                 if get_ptr(this_program()) != null
                     var fnptr <- find_module_function_via_rtti(find_module_via_rtti(this_program(),PMOD),PFUN)
-                    var gen = generate_x86_64(fnptr)
+                    var gen = generate_x86_64(fnptr,SHOW_DISASM)
                     if gen != null
                         *gen |> instrument_jit(reinterpret<function> PFUN)
                     fnptr := null
                 else
                     panic("missing 'options rtti'")
+        let show_disasm = find_arg("asm",args) ?as tBool ?? false
         apply_template(qblock) <| $ ( rules )
             rules |> replaceVariable("PFUN") <| new [[ExprAddr() target:=func.name]]
             rules |> replaceVariable("PMOD") <| new [[ExprConstString() value:=compiling_module().name]]
+            rules |> replaceVariable("SHOW_DISASM") <| new [[ExprConstBool() value=show_disasm]]
         var qres <- move_unquote_block(qblock)
         qres.blockFlags ^= ExprBlockFlags isClosure
         var reg <- setup_call_list("all`things`jit", func.at, true)

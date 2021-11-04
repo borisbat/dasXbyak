@@ -2,40 +2,8 @@
 
 require testProfile
 
-require jit_x86_64
-
-/*
-00007FF7BC76A710  push        rdi
-00007FF7BC76A712  sub         rsp,20h
-00007FF7BC76A716  mov         edi,ecx
-    if (n < 2) {
-00007FF7BC76A718  cmp         ecx,2
-00007FF7BC76A71B  jge         testFibR+15h (07FF7BC76A725h)
-        return n;
-00007FF7BC76A71D  mov         eax,ecx
-    }
-}
-00007FF7BC76A71F  add         rsp,20h
-00007FF7BC76A723  pop         rdi
-00007FF7BC76A724  ret
-    }
-    else {
-        return testFibR(n - 1) + testFibR(n - 2);
-00007FF7BC76A725  add         ecx,0FFFFFFFEh
-00007FF7BC76A728  mov         qword ptr [rsp+30h],rbx
-00007FF7BC76A72D  call        testFibR (07FF7BBBF466Dh)
-00007FF7BC76A732  lea         ecx,[rdi-1]
-00007FF7BC76A735  mov         ebx,eax
-00007FF7BC76A737  call        testFibR (07FF7BBBF466Dh)
-00007FF7BC76A73C  add         eax,ebx
-00007FF7BC76A73E  mov         rbx,qword ptr [rsp+30h]
-    }
-}
-00007FF7BC76A743  add         rsp,20h
-00007FF7BC76A747  pop         rdi
-00007FF7BC76A748  ret
-*/
-
+options rtti
+require jit/jit_x86_64
 
 [sideeffects]
 def fibR(n:int)

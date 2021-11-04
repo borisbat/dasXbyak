@@ -159,3 +159,25 @@ def is_for_range1_with_unused_var ( expr:smart_ptr<ExprFor> )
     if !flags.access_ref && !flags.access_get
         return true
     return false
+
+class JitVisitor : AstVisitor
+    verbose = false
+    context : EvContext
+    failed_to_generate : bool
+    visitor_type : string
+    def JitVisitor ( var ctx:EvContext )
+        context <- ctx
+    def error ( txt:string; at:LineInfo )
+        failed_to_generate = true
+        let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
+        print("\nERROR jit_x86_64({visitor_type}): {txt} at {fname}:{int(at.line)}:{int(at.column)}\n")
+        stackwalk(false,false)
+    def failed ( txt:string; at:LineInfo )
+        failed_to_generate = true
+        let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
+        print("\nTODO jit_x86_64({visitor_type}): {txt} at {fname}:{int(at.line)}:{int(at.column)}\n")
+        stackwalk(false,false)
+    def log(text:string)
+        if verbose
+            print(text)
+
