@@ -2,7 +2,7 @@ options no_unused_block_arguments = false
 options no_unused_function_arguments = false
 options indenting = 4
 
-module jit_x86_64 public
+module jit_x86_64 shared public
 
 require jit_x86_64_regs
 require jit_x86_64_common
@@ -56,6 +56,8 @@ def public generate_x86_64(var func:FunctionPtr) : CodeGenerator?
     if temp_xmm > MAX_XMM_TEMP_REG
         print("jit_x86_64: failed for {func.name}, too many temp xmm registers {temp_xmm} of {MAX_XMM_TEMP_REG}")
         return null
+    // generation extra settings
+    context.assume_no_exceptions = false
     // generate code
     var gen = new CodeGenerator
     *gen |> inLocalLabel()

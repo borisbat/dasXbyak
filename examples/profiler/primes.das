@@ -3,8 +3,7 @@
 require testProfile
 
 options rtti
-
-require jit_x86_64
+require jit/jit_x86_64
 
 [jit_x86_64]
 def isprime_jit(n:int)
@@ -59,12 +58,12 @@ def primesI_jit(n:int)
 
 [export]
 def main()
-
+    /*
     print("primesI    (10) = {primesI(10)}\n")
     print("primes     (10) = {primes(10)}\n")
     print("primes_jit (10) = {primes_jit(10)}\n")
     print("primesI_jit(10) = {primesI_jit(10)}\n")
-
+    */
     var f1 = 0
     profile(20,"primes loop") <|
         f1 = primes(14000)
@@ -86,4 +85,3 @@ def main()
         f3 = testProfile::testPrimes(14000)
 	assert(f3==1652)
 
-options log

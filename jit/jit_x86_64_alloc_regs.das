@@ -2,7 +2,7 @@ options no_unused_block_arguments = false
 options no_unused_function_arguments = false
 options indenting = 4
 
-module jit_x86_64_alloc_regs public
+module jit_x86_64_alloc_regs shared public
 
 require jit_x86_64_regs
 require jit_x86_64_common

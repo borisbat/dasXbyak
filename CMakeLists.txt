@@ -37,6 +37,13 @@ IF (NOT DAS_XBYAK_INCLUDED)
 	SETUP_CPP11(libDasModuleXbyak)
 
 	ADD_MODULE_DAS(dasxbyak dasxbyak xbyak_boost)
+	ADD_MODULE_DAS(dasxbyak dasxbyak xbyak_boost)
+
+	ADD_MODULE_DAS(jit jit jit_x86_64_alloc_regs)
+	ADD_MODULE_DAS(jit jit jit_x86_64_regs)
+	ADD_MODULE_DAS(jit jit jit_x86_64_generate)
+	ADD_MODULE_DAS(jit jit jit_x86_64_common)
+	ADD_MODULE_DAS(jit jit jit_x86_64)
 
     #DAS_OUTPUT_AST(XBYAK_GENERATE_AST "${XBYAK_DIR}/xbyak.h" ${DAS_XBYAK_DIR} ${XBYAK_DIR})
 	#DAS_OUTPUT_JSON(XBYAK_GENERATE_JSON "${DAS_XBYAK_DIR}/src/xbyak_headers.h" ${DAS_XBYAK_DIR} ${XBYAK_DIR})

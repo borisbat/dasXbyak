@@ -1,4 +1,4 @@
-merge jumps for the if ... break
+* merge jumps for the if ... break
 
 [jit_x86_64]
 def test_break(a,b,c:int)
@@ -7,4 +7,8 @@ def test_break(a,b,c:int)
             break           // this is jmp
     if_end:
         printreg(t)
+
+* if ( expr ) inc to cmov
+
+    if foo { a ++ }
 

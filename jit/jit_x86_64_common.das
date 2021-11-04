@@ -2,7 +2,7 @@ options no_unused_block_arguments = false
 options no_unused_function_arguments = false
 options indenting = 4
 
-module jit_x86_64_common public
+module jit_x86_64_common shared public
 
 require jit_x86_64_regs public
 
@@ -105,6 +105,7 @@ struct EvContext
     use_cmres   : bool
     use_args    : bool
     use_context : bool
+    assume_no_exceptions : bool
 
 def dump ( ctx:EvContext )
     print("stack frame is {ctx.stack_frame}\n")

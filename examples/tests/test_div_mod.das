@@ -1,5 +1,5 @@
 options rtti
-require jit_x86_64
+require jit/jit_x86_64
 
 [jit_x86_64]
 def mod_jit ( a, b: int )
