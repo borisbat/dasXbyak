@@ -46,28 +46,10 @@ def primesI_jit(n:int)
 				break
     return count
 
-[jit_x86_64]
-def mod_jit ( a, b: int )
-    return a % b
-
-[jit_x86_64]
-def div_jit ( a, b: int )
-    return a / b
-
 [export]
 def main()
 
-    print("mod_jit(30,0) = {mod_jit(30,0)}\n")
-
-    return
-
-    for i in range(-10,10)
-        print("i = {i}\n")
-        print("mod_jit(30,{i}) = {mod_jit(30,i)}\n")
-        print("div_jit(30,{i}) = {div_jit(30,i)}\n")
-
-
-    // print("primesI_jit(14000) = {primesI_jit(14000)}\n")
+    print("primesI_jit(10) = {primesI_jit(10)}\n")
     return
 
 /*
@@ -77,7 +59,9 @@ def main()
 	assert(f2j==1652)
 
     return
+*/
 
+/*
 	var f1 = 0
     profile(20,"primes loop") <|
         f1 = primes(14000)

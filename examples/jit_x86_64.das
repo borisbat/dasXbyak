@@ -394,6 +394,14 @@ class AllocateRegistersCodeVisitor : AstVisitor
         else
             self->failed("OP2 {expr.op} support {describe(expr.left._type)}", expr.at)
         return expr
+
+// if-then-else
+    def override preVisitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : void
+        self->evExpectCmp(expr.cond)
+    def override visitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : ExpressionPtr
+        var evCond & = context.expr_res[intptr(expr.cond)]
+        self->evRelease(evCond)
+        return expr
 // op3
     def override preVisitExprOp3(expr:smart_ptr<ExprOp3>): void
         self->evExpectCmp(expr.subexpr)
@@ -552,6 +560,25 @@ class GenerateCodeVisitor : AstVisitor
         return context.stack_frame+context.temp_frame+context.save_frame+8u+ARG_ARGUMENTS
     def getCmresOffset
         return context.stack_frame+context.temp_frame+context.save_frame+8u+ARG_CMRES
+// exception
+    def JIT`exception(text:string):void
+        with_xbyak(gen) <| $ ( GEN )
+            let ctx_offset = self->getContextOffset()
+            mov(rcx,jit_generate_const_string(text))    // rcx is exception text
+            mov(rdx,ptr[rsp+ctx_offset])                // rdx is Context *
+            sub(rsp,32u)
+            mov(rax,JIT_exception())
+            call(rax)
+            add(rsp,32u)
+// helpers
+    def copyReg32 ( reg:GpTempReg; eV:EvResult; at:LineInfo ) : void
+        with_xbyak(gen) <| $ ( GEN )
+            if eV is gpReg
+                if reg != eV as gpReg
+                    mov(REG32(GEN,reg),REG32(GEN,eV as gpReg))
+            else
+                self->failed("supprt copy reg32 {eV}", at)
+        self->check_gen()
 // function
     def override preVisitFunction(fun:FunctionPtr) : void
         if verbose
@@ -786,12 +813,12 @@ class GenerateCodeVisitor : AstVisitor
                                 self->failed("OP2 {expr.op} int ref", expr.at)
                     else
                         if evOP2 is cmp
-                            if expr.op=="<"
+                            if expr.op=="<" || expr.op=="=="
                                 if evL is gpReg
                                     // result is in the left register, which we reused during allocation
                                     if evR is iconst
                                         let ic = uint(evR as iconst)
-                                        if expr.op=="<"
+                                        if expr.op=="<" || expr.op=="=="
                                             cmp(REG32(GEN,evL as gpReg),ic)
                                         else
                                             self->failed("{expr.op} int cmp unsupported here", expr.at)
@@ -835,8 +862,8 @@ class GenerateCodeVisitor : AstVisitor
                                         elif expr.op=="-"
                                             sub(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
                                         elif expr.op=="%" || expr.op=="/"
-                                            cmp(REG32(GEN,evR as gpReg),REG32(GEN,evR as gpReg))
-                                            jnz(".div_{intptr(expr)}",LabelType T_AUTO)
+                                            cmp(REG32(GEN,evR as gpReg),0u)
+                                            jne(".div_{intptr(expr)}",LabelType T_AUTO)
                                             self->JIT`exception("division by zero")
                                             L(".div_{intptr(expr)}")
                                             mov(eax,REG32(GEN,evL as gpReg))
@@ -882,7 +909,7 @@ class GenerateCodeVisitor : AstVisitor
                                                     mov(ecx,REG32(GEN,evR as gpRegT))
                                                 else
                                                     self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
-                                                cmp(ecx,ecx)
+                                                cmp(ecx,0u)
                                                 jnz(".div_{intptr(expr)}",LabelType T_AUTO)
                                                 self->JIT`exception("division by zero")
                                                 L(".div_{intptr(expr)}")
@@ -918,24 +945,42 @@ class GenerateCodeVisitor : AstVisitor
         if verbose
             print(")")
         return expr
-    def JIT`exception(text:string):void
+// if-then-else
+    def override preVisitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : void
+        if verbose
+            tab ++
+            print("(IF\n{repeat("\t",tab)}")
+    def override preVisitExprIfThenElseIfBlock(expr:smart_ptr<ExprIfThenElse>;ifBlock:ExpressionPtr) : void
+        let evS & = context.expr_res[intptr(expr.cond)]
         with_xbyak(gen) <| $ ( GEN )
-            let ctx_offset = self->getContextOffset()
-            mov(rcx,jit_generate_const_string(text))    // rcx is exception text
-            mov(rdx,ptr[rsp+ctx_offset])                // rdx is Context *
-            sub(rsp,32u)
-            mov(rax,JIT_exception())
-            call(rax)
-            add(rsp,32u)
-// op3
-    def copyReg32 ( reg:GpTempReg; eV:EvResult; at:LineInfo ) : void
-        with_xbyak(gen) <| $ ( GEN )
-            if eV is gpReg
-                if reg != eV as gpReg
-                    mov(REG32(GEN,reg),REG32(GEN,eV as gpReg))
+            if evS is gpReg
+                test(REG32(GEN,evS as gpReg),REG32(GEN,evS as gpReg))
+                jz(".if_true_{intptr(expr)}",LabelType T_NEAR)
+            elif evS is cmp
+                GEN |> condJumpIfNot(".if_true_{intptr(expr)}",evS as cmp)
             else
-                self->failed("supprt copy reg32 {eV}", at)
+                self->failed("supprt if-then-else subexpr in {evS}", expr.at)
         self->check_gen()
+        if verbose
+            print("\n{repeat("\t",tab)}THEN\n")
+    def override preVisitExprIfThenElseElseBlock(expr:smart_ptr<ExprIfThenElse>;elseBlock:ExpressionPtr) : void
+        with_xbyak(gen) <| $ ( GEN )
+            jmp(".if_end_{intptr(expr)}",LabelType T_NEAR)
+            L(".if_true_{intptr(expr)}")
+        self->check_gen()
+        if verbose
+            print("\n{repeat("\t",tab)}ELSE\n")
+    def override visitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : ExpressionPtr
+        with_xbyak(gen) <| $ ( GEN )
+            if expr.if_false==null
+                L(".if_true_{intptr(expr)}")
+            L(".if_end_{intptr(expr)}")
+        self->check_gen()
+        if verbose
+            tab --
+            print(")\n{repeat("\t",tab)}")
+        return expr
+// op3
     def override preVisitExprOp3(expr:smart_ptr<ExprOp3>): void
         if verbose
             print("(? ")
@@ -1159,7 +1204,7 @@ class GenerateCodeVisitor : AstVisitor
 // call
     def override preVisitExprCall(expr:smart_ptr<ExprCall>): void
         if verbose
-            print("CALL `{expr.name}` ")
+            print("(CALL `{expr.name}` ")
     def override visitExprCall(var expr:smart_ptr<ExprCall>) : ExpressionPtr
         if !expr.func.flags.builtIn
             rdx_has_args = false            // rdx no longer has args, since we call another function
@@ -1174,16 +1219,23 @@ class GenerateCodeVisitor : AstVisitor
                         elif asize==8
                             mov(qword[rsp+(offset+uint(ai)*16u)],REG64(GEN,eA as gpReg))
                         else
-                            self->error("TODO: support call argument size {asize}",expr.at)
+                            self->error("TODO: support reg call argument size {asize}",expr.at)
+                    elif eA is iconst
+                        if asize==4
+                            mov(dword[rsp+(offset+uint(ai)*16u)],eA as iconst)
+                        elif asize==8
+                            mov(qword[rsp+(offset+uint(ai)*16u)],eA as iconst)
+                        else
+                            self->error("TODO: support iconst call argument size {asize}",expr.at)
                     else
-                        self->error("TODO: support call argument size {eA}",expr.at)
+                        self->error("TODO: support call argument size {eA} {describe(expr.arguments[ai]._type)}",expr.at)
                 var MNH_ADDR : uint64
                 unsafe
                     let mangled_name = get_mangled_name(reinterpret<FunctionPtr> expr.func)
                     let MNH = hash(mangled_name)
                     MNH_ADDR = get_function_address(MNH)
                 if verbose
-                    print("@@{MNH_ADDR} ")
+                    print(" @@{MNH_ADDR} ")
                 // save used transient registers
                 let recursive_call = expr.func == this_function
                 let transients = context.transients[intptr(expr)]
@@ -1229,6 +1281,8 @@ class GenerateCodeVisitor : AstVisitor
                 if expr.func.result != null
                     if expr.func.result.isRef
                         self->failed("support result by ref", expr.at)
+                    elif expr.func.result.isVoid
+                        pass    // if void - no output
                     else
                         var fnR & = context.expr_res[intptr(expr)]
                         let asize = expr.func.result.sizeOf
@@ -1309,11 +1363,9 @@ def public generate_x86_64(var func:FunctionPtr) : CodeGenerator?
     allocateRegistersVisitorAdapter := null
     unsafe
         delete allocateRegistersVisitor
-/*
     if f2a
         print("jit_x86_64: failed due to errors")
         return null
-*/
     // verify GP regs
     let temp_gp = length(context.gpa.regs)
     if temp_gp > MAX_GP_TEMP_REG
