@@ -421,19 +421,20 @@ class GenerateCodeVisitor : AstVisitor
                                                 cmove(REG32(GEN,evL as gpReg),eax)
                                             else
                                                 self->failed("{expr.op} unsupported here", expr.at)
-                                    elif evR is gpReg
+                                    elif (evR is gpReg) || (evR is gpRegT)
+                                        let regR = (evR is gpReg) ? (evR as gpReg) : (evR as gpRegT)
                                         if expr.op=="+"
-                                            add(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
+                                            add(REG32(GEN,evL as gpReg),REG32(GEN,regR))
                                         elif expr.op=="-"
-                                            sub(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
+                                            sub(REG32(GEN,evL as gpReg),REG32(GEN,regR))
                                         elif expr.op=="%" || expr.op=="/"
-                                            cmp(REG32(GEN,evR as gpReg),0u)
+                                            cmp(REG32(GEN,regR),0u)
                                             jne(".div_{intptr(expr)}",LabelType T_AUTO)
                                             self->JIT`exception("division by zero")
                                             L(".div_{intptr(expr)}")
                                             mov(eax,REG32(GEN,evL as gpReg))
                                             cdq();  rdx_has_args = false
-                                            idiv(REG32(GEN,evR as gpReg))
+                                            idiv(REG32(GEN,regR))
                                             mov(REG32(GEN,evL as gpReg),expr.op=="%" ? edx : eax)
                                         else
                                             self->failed("OP2 {expr.op} int imm gpREG R {debug(evR)}", expr.at)
@@ -683,17 +684,33 @@ class GenerateCodeVisitor : AstVisitor
                 self->failed("support return ref",expr.at)
             elif expr.returnFlags.returnInBlock
                 self->failed("support return in block",expr.at)
+            elif expr.returnFlags.returnCallCMRES
+                self->failed("support return call CMRES",expr.at)
+            elif expr.returnFlags.returnCMRES
+                self->failed("support return CMRES",expr.at)
+            elif expr.returnFlags.takeOverRightStack
+                self->failed("support return take over right stack",expr.at)
             else
                 let evR & = context.expr_res[intptr(expr.subexpr)]
                 if length(expr.subexpr._type.dim)!=0
                     self->error("TODO: support return in block",expr.at)
-                if expr.subexpr._type.baseType==Type tInt || expr.subexpr._type.baseType==Type tUInt
-                    if evR is gpReg
-                        movd(xmm0,REG32(GEN,evR as gpReg))
-                    elif evR is gpRegT
-                        movd(xmm0,REG32(GEN,evR as gpRegT))
+                if expr.subexpr._type |> is_gpreg_type
+                    let returnSize = expr.subexpr._type.sizeOf
+                    if returnSize==1 || returnSize==2 || returnSize==4
+                        if evR is gpReg
+                            movd(xmm0,REG32(GEN,evR as gpReg))
+                        elif evR is gpRegT
+                            movd(xmm0,REG32(GEN,evR as gpRegT))
+                        elif evR is iconst
+                            mov(eax,evR as iconst)
+                            movd(xmm0,eax)
+                        else
+                            self->failed("support return {evR}",expr.at)
                     else
-                        self->failed("support return {evR}",expr.at)
+                        self->failed("support return of size {returnSize}",expr.at)
+                else
+                    self->failed("support return of type {describe(expr.subexpr._type)}",expr.at)
+            self->gen_epilogue()
         self->check_gen()
         return expr
 // block
@@ -914,7 +931,7 @@ class GenerateCodeVisitor : AstVisitor
                         var fnR & = context.expr_res[intptr(expr)]
                         let asize = expr.func.result.sizeOf
                         if fnR is gpReg
-                            if asize==4
+                            if asize==4 || asize==2 || asize==1
                                 movd(REG32(GEN,fnR as gpReg),xmm0)
                             elif asize==8
                                 mov(REG64(GEN,fnR as gpReg),xmm0)

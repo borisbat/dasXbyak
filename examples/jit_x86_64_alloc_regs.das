@@ -87,6 +87,13 @@ class AllocateRegistersCodeVisitor : AstVisitor
             gp_mask = context.gpa |> mask(FIRST_NON_TRANSIENT_GP_TEMP_REG),
             xmm_mask = context.xmma |> mask(FIRST_NON_TRANSIENT_XMM_TEMP_REG)
         ]]
+    def acceptConstR64 ( expr:smart_ptr<Expression>; value:uint64 )
+        var ev & = context.expr_res[intptr(expr)]
+        if ev is stack
+            pass
+        else
+            ev = [[EvResult iconst=value]]
+        return expr
 // function
     def override preVisitFunction(fun:FunctionPtr) : void
         this_function = get_ptr(fun)
@@ -125,11 +132,11 @@ class AllocateRegistersCodeVisitor : AstVisitor
         return blk
 // const int
     def override visitExprConstInt(expr:smart_ptr<ExprConstInt>) : ExpressionPtr
-        var ev & = context.expr_res[intptr(expr)]
-        if ev is stack
-            pass
-        else
-            ev = [[EvResult iconst=uint64(expr.value)]]
+        self->acceptConstR64(expr,uint64(expr.value))
+        return expr
+// const bool
+    def override visitExprConstBool(expr:smart_ptr<ExprConstBool>) : ExpressionPtr
+        self->acceptConstR64(expr,expr.value ? 1ul : 0ul)
         return expr
 // let
     def override preVisitExprLet(expr:smart_ptr<ExprLet>) : void
@@ -245,8 +252,8 @@ class AllocateRegistersCodeVisitor : AstVisitor
                         if expr.op=="-" || expr.op=="+" || expr.op=="*" || expr.op=="/" || expr.op=="%" || expr.op=="<" || expr.op=="=="
                             if expr.op=="%" || expr.op=="/"                 // this operators require context for the exceptions
                                 context.use_context = true
-                            if evL is gpReg                                 // left is reg
-                                if (evR is iconst) || (evR is gpReg)        // right is const, or reg
+                            if evL is gpReg                                             // left is reg
+                                if (evR is iconst) || (evR is gpReg) || (evR is gpRegT) // right is const, or reg
                                     // reuse left register
                                     context.expr_res[intptr(expr)] = evL
                                     // we release only right

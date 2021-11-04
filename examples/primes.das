@@ -61,11 +61,17 @@ def primesI_jit(n:int)
 def main()
 
     print("primesI    (10) = {primesI(10)}\n")
+    print("primes     (10) = {primes(10)}\n")
+    print("primes_jit (10) = {primes_jit(10)}\n")
     print("primesI_jit(10) = {primesI_jit(10)}\n")
 
-	var f1 = 0
+    var f1 = 0
     profile(20,"primes loop") <|
         f1 = primes(14000)
+	assert(f1==1652)
+    var f1j = 0
+    profile(20,"primes loop - jit") <|
+        f1j = primes_jit(14000)
 	assert(f1==1652)
 	var f2 = 0
     profile(20,"primes loop, inline") <|
@@ -79,3 +85,5 @@ def main()
     profile(20,"primes loop C++") <|
         f3 = testProfile::testPrimes(14000)
 	assert(f3==1652)
+
+options log

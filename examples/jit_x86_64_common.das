@@ -138,7 +138,7 @@ def dump ( ctx:EvContext )
 def is_gpreg_type ( t:TypeDeclPtr )
     if length(t.dim)>0
         return false
-    if t.isInteger || t.isPointer
+    if t.isInteger || t.isPointer || t.baseType==Type tBool
         return true
     return true
 
