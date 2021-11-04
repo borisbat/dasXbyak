@@ -23,6 +23,7 @@ require ast public
 var public JIT_MAX_OPT_LEVEL = 3
 var public JIT_VERBOSE = false
 var public JIT_DISASM = false
+var public JIT_REPORT_REG_PRESSURE = false
 
 def private allocate_regs(var func : FunctionPtr; var context:EvContext; verbose:bool; _opt_level:int )
     let opt_level = min(JIT_MAX_OPT_LEVEL, _opt_level)
@@ -59,13 +60,16 @@ def private allocate_regs(var func : FunctionPtr; var context:EvContext; verbose
         delete allocateRegistersVisitor
     if f2a
         return false
-    // verify GP regs
+    // report register pressure
     let temp_gp = length(context.gpa.regs)
+    let temp_xmm = length(context.xmma.regs)
+    if JIT_REPORT_REG_PRESSURE
+        print("jit_x86_64: {func.name} gp:{temp_gp} xmm:{temp_xmm}\n")
+    // verify GP regs
     if temp_gp > MAX_GP_TEMP_REG
         print("jit_x86_64: {func.name}: too many temp gp registers {temp_gp} of {MAX_GP_TEMP_REG}")
         return false
     // verify XMM regis
-    let temp_xmm = length(context.xmma.regs)
     if temp_xmm > MAX_XMM_TEMP_REG
         print("jit_x86_64: {func.name}: too many temp xmm registers {temp_xmm} of {MAX_XMM_TEMP_REG}")
         return false
