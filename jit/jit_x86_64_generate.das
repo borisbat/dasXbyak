@@ -457,21 +457,21 @@ class GenerateCodeVisitor : JitVisitor
         return expr
 // if-then-else
     /*
-        if a==blah print1 else print2
-                cmp a, blah
-                jne else
-                print1
-                goto end
-            else:
-                print2
-            end:
-    */
-    /*
-        if a==blah print1
-                cmp a, blah
-                jne end
-                print1
-            end:
+    1. if if_false is not null, and there is an 'else' section
+        if cond
+                cmp ???
+                jne if_cond_faild
+                if_true
+                goto if_end
+            .if_consd_failed:
+                if_false
+            .if_end:
+    2. if if_false is null, and there is no 'else' section
+        if cond
+                cmp ???
+                jne if_end
+                if_true
+            .if_end:
     */
     def override preVisitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : void
         if verbose
@@ -492,14 +492,12 @@ class GenerateCodeVisitor : JitVisitor
                 else
                     GEN |> condJumpIfNot(".if_cond_failed_{intptr(expr)}",evS as cmp)
             else
-                self->failed("supprt if-then-else subexpr in {evS}", expr.at)
+                self->failed("ExprIfThenElse evS={evS}", expr.at)
         self->log("\n{repeat("\t",tab)}THEN\n")
     def override preVisitExprIfThenElseElseBlock(expr:smart_ptr<ExprIfThenElse>;elseBlock:ExpressionPtr) : void
         // we are only here, if there is an else block
         with_xbyak(gen) <| $ ( GEN )
-            // we jump towards the end of it
             jmp(".if_end_{intptr(expr)}",LabelType T_NEAR)
-            // else section starts here
             L(".if_cond_failed_{intptr(expr)}")
         self->log("\n{repeat("\t",tab)}ELSE\n")
     def override visitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : ExpressionPtr
@@ -510,6 +508,15 @@ class GenerateCodeVisitor : JitVisitor
             print(")\n{repeat("\t",tab)}")
         return expr
 // op3
+/*
+    cmp ???
+    jn  .cond_right
+    result = cond_left
+    jmp .cond_end
+.cond_right:
+    result = cond_right
+.cond_end:
+*/
     def override preVisitExprOp3(expr:smart_ptr<ExprOp3>): void
         self->log("(? ")
     def override preVisitExprOp3Left(expr:smart_ptr<ExprOp3>;left:ExpressionPtr): void
@@ -556,32 +563,34 @@ class GenerateCodeVisitor : JitVisitor
                         if evR is gpRegT
                             mov(REG32(GEN,reg),REG32(GEN,evR as gpRegT))
                         else
-                            self->failed("copy temp {reg} from {evR}", expr.at)
+                            self->failed("ExprCopy temp expr.right._type.isRef {reg} evR={evR}", expr.at)
                     else
-                        self->failed("support temp {reg} copy size {copySize}", expr.at)
+                        self->failed("ExprCopy temp expr.right._type.isRef {reg} copySize={copySize}", expr.at)
                     self->log("(REF COPY {copySize})")
                 else
-                    self->failed("support temp {reg} copy VALUE", expr.at)
+                    self->failed("ExprCopy temp {reg}", expr.at)
             else
                 if expr.right._type.isRef
                     if copySize==4
                         if evR is gpReg
+                            print("WARNING: FROM STACK AS GPREG, VERIFY?\n")    // i think its dword[REG64...]
                             mov(eax,dword[rsp+REG64(GEN,evR as gpReg)])
                         elif evR is stack
                             mov(eax,dword[rsp+(evR as stack)])
                         else
-                            self->failed("copy from {evR}", expr.at)
+                            self->failed("ExprCopy temp expr.right._type.isRef evR={evR}", expr.at)
                         if evL is gpReg
+                            print("WARNING: TO STACK AS GPREG, VERIFY?\n")    // i think its dword[REG64...]
                             mov(dword[rsp+REG64(GEN,evL as gpReg)],eax)
                         elif evL is stack
                             mov(dword[rsp+(evL as stack)],eax)
                         else
-                            self->failed("copy to {evL}", expr.at)
+                            self->failed("ExprCopy temp expr.right._type.isRef evL={evL}", expr.at)
                     else
-                        self->failed("support copy size {copySize}", expr.at)
+                        self->failed("ExprCopy expr.right._type.isRef copySize={copySize}", expr.at)
                     self->log("(REF COPY {copySize})")
                 else
-                    self->failed("support copy VALUE", expr.at)
+                    self->failed("ExprCopy !expr.right._type.isRef", expr.at)
         self->log(")")
         return expr
 // return
@@ -593,19 +602,19 @@ class GenerateCodeVisitor : JitVisitor
             if expr.subexpr==null
                 self->gen_epilogue()
             elif expr.returnFlags.returnReference
-                self->failed("support return ref",expr.at)
+                self->failed("ExprReturn expr.returnFlags.returnReference", expr.at)
             elif expr.returnFlags.returnInBlock
-                self->failed("support return in block",expr.at)
+                self->failed("ExprReturn expr.returnFlags.returnInBlock", expr.at)
             elif expr.returnFlags.returnCallCMRES
-                self->failed("support return call CMRES",expr.at)
+                self->failed("ExprReturn expr.returnFlags.returnCallCMRES", expr.at)
             elif expr.returnFlags.returnCMRES
-                self->failed("support return CMRES",expr.at)
+                self->failed("ExprReturn expr.returnFlags.returnCMRES", expr.at)
             elif expr.returnFlags.takeOverRightStack
-                self->failed("support return take over right stack",expr.at)
+                self->failed("ExprReturn expr.returnFlags.takeOverRightStack", expr.at)
             else
                 let evR & = context.expr_res[intptr(expr.subexpr)]
                 if length(expr.subexpr._type.dim)!=0
-                    self->error("TODO: support return in block",expr.at)
+                    self->failed("ExprReturn expr.subexpr._type.dim", expr.at)
                 if expr.subexpr._type |> is_gpreg_type
                     let returnSize = expr.subexpr._type.sizeOf
                     if returnSize==1 || returnSize==2 || returnSize==4
@@ -617,11 +626,11 @@ class GenerateCodeVisitor : JitVisitor
                             mov(eax,evR as iconst)
                             movd(xmm0,eax)
                         else
-                            self->failed("support return {evR}",expr.at)
+                            self->failed("ExprReturn evR={evR}", expr.at)
                     else
-                        self->failed("support return of size {returnSize}",expr.at)
+                        self->failed("ExprReturn returnSize={returnSize}", expr.at)
                 else
-                    self->failed("support return of type {describe(expr.subexpr._type)}",expr.at)
+                    self->failed("ExprReturn {describe(expr.subexpr._type)}",expr.at)
             self->gen_epilogue()
         return expr
 // block
@@ -642,7 +651,7 @@ class GenerateCodeVisitor : JitVisitor
         if is_for_range1(expr)
             pass
         else
-            self->failed("support other types of for loop", expr.at)
+            self->failed("ExprFor !is_for_range1",expr.at)
     def override preVisitExprForVariable(expr:smart_ptr<ExprFor>;svar:VariablePtr;last:bool) : void
         self->log("`{svar.name}` ")
     def override preVisitExprForSource(expr:smart_ptr<ExprFor>;source:ExpressionPtr;last:bool) : void
@@ -682,7 +691,9 @@ class GenerateCodeVisitor : JitVisitor
                         cmp(eax,dword[rsp+iSP])
                         jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                 else
-                    self->failed("support for_range_1 source {evS}",expr.at)
+                    self->failed("ExprFor is_for_range1 evS={evS}",expr.at)
+        else
+            self->failed("ExprFor !is_for_range1",expr.at)
         self->log(")")
         return source
     def override preVisitExprForBody(expr:smart_ptr<ExprFor>) : void
@@ -715,7 +726,9 @@ class GenerateCodeVisitor : JitVisitor
                         cmp(dword[rsp+iSP],eax)
                     jnz(".for_loop_{intptr(expr)}",LabelType T_NEAR)
                 else
-                    self->failed("support for_range_1 source {evS}",expr.at)
+                    self->failed("ExprFor is_for_range1 evS={evS}",expr.at)
+        else
+            self->failed("ExprFor !is_for_range1",expr.at)
         with_xbyak(gen) <| $ ( GEN )
             L(".for_loop_done_{intptr(expr)}")
         loop_stack |> pop()
@@ -752,23 +765,23 @@ class GenerateCodeVisitor : JitVisitor
                         elif asize==8
                             mov(qword[rsp+(offset+uint(ai)*16u)],REG64(GEN,eA as gpReg))
                         else
-                            self->error("TODO: support reg call argument size {asize}",expr.at)
+                            self->error("ExprCall eA is gpReg, asize={asize}",expr.at)
                     elif eA is gpRegT
                         if asize==4
                             mov(dword[rsp+(offset+uint(ai)*16u)],REG32(GEN,eA as gpRegT))
                         elif asize==8
                             mov(qword[rsp+(offset+uint(ai)*16u)],REG64(GEN,eA as gpRegT))
                         else
-                            self->error("TODO: support reg call argument size {asize}",expr.at)
+                            self->error("ExprCall eA is gpRegT, asize={asize}",expr.at)
                     elif eA is iconst
                         if asize==4
                             mov(dword[rsp+(offset+uint(ai)*16u)],eA as iconst)
                         elif asize==8
                             mov(qword[rsp+(offset+uint(ai)*16u)],eA as iconst)
                         else
-                            self->error("TODO: support iconst call argument size {asize}",expr.at)
+                            self->error("ExprCall eA is iconst, asize={asize}",expr.at)
                     else
-                        self->error("TODO: support call argument size {eA} {describe(expr.arguments[ai]._type)}",expr.at)
+                        self->error("ExprCall eA={eA}",expr.at)
                 var MNH_ADDR : uint64
                 unsafe
                     let mangled_name = get_mangled_name(reinterpret<FunctionPtr> expr.func)
@@ -819,7 +832,7 @@ class GenerateCodeVisitor : JitVisitor
                 // move result to xmm0
                 if expr.func.result != null
                     if expr.func.result.isRef
-                        self->failed("support result by ref", expr.at)
+                        self->error("ExprCall expr.func.result.isRef",expr.at)
                     elif expr.func.result.isVoid
                         pass    // if void - no output
                     else
@@ -831,9 +844,9 @@ class GenerateCodeVisitor : JitVisitor
                             elif asize==8
                                 mov(REG64(GEN,fnR as gpReg),xmm0)
                             else
-                                self->failed("support result size {asize}", expr.at)
+                                self->error("ExprCall rsize={asize}",expr.at)
                         else
-                            self->failed("support result {fnR}", expr.at)
+                            self->error("ExprCall fnR={fnR}",expr.at)
             return expr
         ////////////////////
         // TODO: calls table
@@ -855,7 +868,7 @@ class GenerateCodeVisitor : JitVisitor
                     shl(REG64(GEN,evA0 as gpReg),32)
                     movd(REGXMM(GEN,xreg),REG64(GEN,evA0 as gpReg))
                 else
-                    self->error("TODO: support range(1) argument {evA0}",expr.at)
+                    self->error("$::range evA0={evA0}",expr.at)
             // range(int,int)
             elif length(expr.arguments)==2 && expr.arguments[0]._type.baseType==Type tInt && expr.arguments[1]._type.baseType==Type tInt
                 rdx_has_args = false
@@ -868,7 +881,7 @@ class GenerateCodeVisitor : JitVisitor
                 elif evA1 is iconst
                     mov(edx,(evA1 as iconst)<<32ul)
                 else
-                    self->error("TODO: support range(2) argument ({evA1},...)",expr.at)
+                    self->error("$::range (evA1={evA1},...)",expr.at)
                 if evA0 is gpReg
                     mov(eax,REG32(GEN,evA0 as gpReg))
                 elif evA0 is gpRegT
@@ -876,7 +889,7 @@ class GenerateCodeVisitor : JitVisitor
                 elif evA0 is iconst
                     mov(eax,evA0 as iconst)
                 else
-                    self->error("TODO: support range(2) argument (...,{evA0})",expr.at)
+                    self->error("$::range (...,evA0={evA0})",expr.at)
                 shl(rax,32)
                 shrd(rax,rdx,uint8(32))
                 movd(REGXMM(GEN,xreg),rax)
