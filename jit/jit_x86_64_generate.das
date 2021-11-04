@@ -811,7 +811,8 @@ class GenerateCodeVisitor : JitVisitor
                 for t in urange(FIRST_NON_TRANSIENT_XMM_TEMP_REG)
                     if (transients.xmm_mask & (1u<<t)) != 0u
                         xmm_total ++
-                sub(rsp,xmm_total * 16u)
+                if xmm_total != 0u
+                    sub(rsp,xmm_total * 16u)
                 for t in urange(FIRST_NON_TRANSIENT_XMM_TEMP_REG)
                     if (transients.xmm_mask & (1u<<t)) != 0u
                         var txmm : XmmTempReg
@@ -847,8 +848,8 @@ class GenerateCodeVisitor : JitVisitor
                 else
                     mov(rax,JIT_call_or_fastcall())
                     call(rax)
-                add(rsp,(t_total & 1) != 0 ? 40u : 32u)
                 // restore used transient registers
+                add(rsp,(t_total & 1) != 0 ? 40u : 32u)
                 for i_t in urange(FIRST_NON_TRANSIENT_GP_TEMP_REG)
                     let t = uint(FIRST_NON_TRANSIENT_GP_TEMP_REG) - i_t - 1u
                     if (transients.gp_mask & (1u<<t)) != 0u
@@ -863,7 +864,8 @@ class GenerateCodeVisitor : JitVisitor
                             txmm = reinterpret<XmmTempReg> t
                         movdqa(REGXMM(GEN,txmm),ptr[rsp+rt_offset])
                         rt_offset += 16u
-                add(rsp,xmm_total * 16u)
+                if xmm_total != 0u
+                    add(rsp,xmm_total * 16u)
                 // move result to xmm0
                 if expr.func.result != null
                     if expr.func.result.isRef

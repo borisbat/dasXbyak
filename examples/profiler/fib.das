@@ -11,7 +11,7 @@ def fibR(n:int)
         return n
     return fibR(n - 1) + fibR(n - 2)
 
-[jit_x86_64(asm)]
+[jit_x86_64]
 def fibR_jit(n:int)
     if (n < 2)
         return n
@@ -41,9 +41,6 @@ include profile_common.inc
 
 [export]
 def main()
-
-    return
-
     var f1 = 0
     profile(20,"fibbonacci loop") <|
         f1 = fibI(6511134)

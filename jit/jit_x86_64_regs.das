@@ -31,11 +31,10 @@ enum GpTempReg
     RCX
     RDX
 
-let MAX_XMM_TEMP_REG = 16
+let MAX_XMM_TEMP_REG = 15
 let FIRST_NON_TRANSIENT_XMM_TEMP_REG = 6
 
 enum XmmTempReg
-    XMM0
     XMM1
     XMM2
     XMM3
@@ -52,6 +51,8 @@ enum XmmTempReg
     XMM13
     XMM14
     XMM15
+    // temp
+    XMM0        // note - this is where result goes by ABI
 
 def REG32 ( var gen:CodeGenerator; r:GpTempReg ) : Reg32 const &
     unsafe

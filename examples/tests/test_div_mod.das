@@ -15,7 +15,7 @@ def div_jit ( a, b: int )
 def main()
     test_jit_levels <|
         // now, the tests
-        for i in range(1,10)
+        for i in range(1,5)
             print("div_jit(30,{i})={div_jit(30,i)}\n")
             print("mod_jit(30,{i})={mod_jit(30,i)}\n")
             verify(div_jit(30,i)==(30/i))
