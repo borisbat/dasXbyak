@@ -14,11 +14,14 @@ def test_call(n:int)
     let q = output_result(n,n+1)
     return q + 1
 
+include test_common.inc
+
 [export]
-def main
-    let t = test_call(13)
-    print("t = {t}\n")
-    assert(t==124)
-    assert(A==13 && B==14)
+def main()
+    test_jit_levels <|
+        let t = test_call(13)
+        print("t = {t}\n")
+        assert(t==124)
+        assert(A==13 && B==14)
 
 

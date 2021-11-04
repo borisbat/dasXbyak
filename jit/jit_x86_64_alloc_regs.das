@@ -18,44 +18,45 @@ require xbyak public
 require ast public
 
 class AllocateRegistersCodeVisitor : JitVisitor
-    put_loop_variables_in_registers = true      // for i in range(blah);    i goes to GpReg
-    put_loop_sources_in_registers = true        // for i in range(blah);    range(blah).y goes to GpReg (but only of loop variables are in regs too)
-    put_local_variables_in_registers = true     // var i = 5; i ++          i goes to GpReg
+    put_loop_variables_in_registers  : bool = true      // for i in range(blah);    i goes to GpReg
+    put_loop_sources_in_registers    : bool = true      // for i in range(blah);    range(blah).y goes to GpReg (but only of loop variables are in regs too)
+    put_local_variables_in_registers : bool = true      // var i = 5; i ++          i goes to GpReg
     [[do_not_delete]] local_stack : array<Variable?>
     local_stack_depth : array<int>
     [[do_not_delete]] this_function : Function?
     def AllocateRegistersCodeVisitor ( var ctx:EvContext )
         JitVisitor`JitVisitor(self, ctx)
-    def evExpectStack ( expr:ExpressionPtr; stack:uint )
-        self->log("expect stack {stack} {expr.__rtti}.{intptr(expr)}\n")
+    def evExpectStack ( expr:ExpressionPtr; stack:uint; at:LineInfo )
+        self->logAt("expect stack {stack} {expr.__rtti}.{intptr(expr)}", at)
         var eV & = context.expr_res[intptr(expr)]
         if eV is nothing
             eV = [[EvResult stack=stack]]
-    def evExpectCmp ( expr:ExpressionPtr )
-        self->log("expect results in flags {expr.__rtti}.{intptr(expr)}\n")
+    def evExpectCmp ( expr:ExpressionPtr; at:LineInfo )
+        self->logAt("expect results in flags {expr.__rtti}.{intptr(expr)}", at)
         var eV & = context.expr_res[intptr(expr)]
         if eV is nothing
             eV = [[EvResult cmp=CompareType always]]
-    def evRelease ( var res:EvResult )
+    def evRelease ( var res:EvResult; at:LineInfo )
         if res is gpReg
-            self->log("release GP reg {res as gpReg}\n")
+            self->logAt("release GP reg {res as gpReg}",at)
             context.gpa |> free(int(res as gpReg))
         elif res is xmmReg
-            self->log("release XMM reg {res as xmmReg}\n")
+            self->logAt("release XMM reg {res as xmmReg}",at)
             context.xmma |> free(int(res as xmmReg))
-    def releaseGP ( reg:GpTempReg )
+    def releaseGP ( reg:GpTempReg; at:LineInfo )
+        self->logAt("releaseGP {reg}",at)
         context.gpa |> free(int(reg))
-    def allocateGP
+    def allocateGP ( at:LineInfo )
         let idx = context.gpa |> allocate()
         unsafe
             let reg = reinterpret<GpTempReg> idx
-            self->log("allocate GP reg {reg}\n")
+            self->logAt("allocate GP reg {reg}",at)
             return reg
-    def allocateXMM
+    def allocateXMM ( at:LineInfo )
         let idx = context.xmma |> allocate()
         unsafe
             let reg = reinterpret<XmmTempReg> idx
-            self->log("allocate XMM reg {reg}\n")
+            self->logAt("allocate XMM reg {reg}", at)
             return reg
     def allocateTempFrame(bytes:uint)       // TODO: allow 'free' of temp frame?
         let res = context.temp_frame
@@ -94,7 +95,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
         local_stack_depth |> push(length(local_stack))
     def override visitExprBlockExpression(blk:smart_ptr<ExprBlock>;expr:ExpressionPtr) : ExpressionPtr
         var topE & = context.expr_res[intptr(expr)]
-        self->evRelease(topE)
+        self->evRelease(topE,expr.at)
         return expr
     def override visitExprBlock(blk:smart_ptr<ExprBlock>) : ExpressionPtr
         // restore variable stack
@@ -106,7 +107,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
             // TODO: release GP variables on the last use, not on the block end
             if context.temp_var |> key_exists(intptr(pvar))
                 let reg = context.temp_var[intptr(pvar)]
-                self->releaseGP(reg)
+                self->releaseGP(reg,blk.at)
                 self->log("{local_stack[t].name} out of scope, {reg}\n")
         local_stack |> resize(lsd)
         return blk
@@ -124,7 +125,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
         if !arg._type.isRef
             if arg._type |> is_gpreg_type
                 // if its a local variable of the right type, promote to gpReg and done
-                let reg = self->allocateGP()
+                let reg = self->allocateGP(expr.at)
                 context.temp_var[intptr(arg)] = reg
                 self->log("promote {arg.name} to {reg}\n")
                 return
@@ -137,14 +138,14 @@ class AllocateRegistersCodeVisitor : JitVisitor
                 pass
             else
                 //  we say we expect value on the stack
-                self->evExpectStack(arg.init,arg.stackTop)
+                self->evExpectStack(arg.init,arg.stackTop,expr.at)
     def override visitExprLetVariableInit(blk:smart_ptr<ExprLet>;arg:VariablePtr;expr:ExpressionPtr) : ExpressionPtr
         // if result alrady comes on our stack, we are good
         var evI & = context.expr_res[intptr(arg.init)]
         if (evI ?as stack ?? -1u)==arg.stackTop
             return expr
         // after init, we are done with arg.init
-        self->evRelease(evI)
+        self->evRelease(evI,expr.at)
         return  expr
 // variable
     def override visitExprVar(expr:smart_ptr<ExprVar>) : ExpressionPtr
@@ -159,7 +160,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
             elif expr.varFlags.r2v
                 if expr.variable._type |> is_gpreg_type
                     // return local variable as GP register
-                    let reg = self->allocateGP()
+                    let reg = self->allocateGP(expr.at)
                     ev = [[EvResult gpReg=reg]]
                 else
                     self->failed("ExprLetVariable expr.varFlags.local expr.varFlags.r2v, {expr.variable.name} : {describe(expr.variable._type)}", expr.at)
@@ -171,13 +172,13 @@ class AllocateRegistersCodeVisitor : JitVisitor
             if expr.varFlags.r2v
                 if expr.variable._type |> is_gpreg_type
                     // return local variable as GP register
-                    let reg = self->allocateGP()
+                    let reg = self->allocateGP(expr.at)
                     ev = [[EvResult gpReg=reg]]
                 else
                     self->failed("ExprLetVariable expr.varFlags.argument expr.varFlags.r2v, {expr.variable.name} : {describe(expr.variable._type)}", expr.at)
             else
                 // TODO: do we need 'argument' ref type?
-                let reg = self->allocateGP()
+                let reg = self->allocateGP(expr.at)
                 ev = [[EvResult gpReg=reg]]
         else
             self->failed("ExprLetVariable {expr.variable.name} : {describe(expr.variable._type)}", expr.at)
@@ -198,8 +199,8 @@ class AllocateRegistersCodeVisitor : JitVisitor
                         evOP1 = ev
                     else
                         // we allocate new register for result
-                        self->evRelease(ev)
-                        let reg = self->allocateGP()
+                        self->evRelease(ev,expr.at)
+                        let reg = self->allocateGP(expr.at)
                         evOP1 = [[EvResult gpReg=reg]]
             else
                 self->failed("ExprOp1 {expr.op} expr.subexpr._type.isWorkhorseType {describe(expr.subexpr._type)}", expr.at)
@@ -215,8 +216,8 @@ class AllocateRegistersCodeVisitor : JitVisitor
             if expr.left._type |> is_gpreg_type
                 if expr.left._type.isRef    // +=, -=, and such - were left side is ref
                     // we are done with both sides
-                    self->evRelease(evL)
-                    self->evRelease(evR)
+                    self->evRelease(evL,expr.at)
+                    self->evRelease(evR,expr.at)
                 else
                     if evOP2 is cmp
                         if expr.op=="<"
@@ -225,8 +226,8 @@ class AllocateRegistersCodeVisitor : JitVisitor
                             evOP2 = [[EvResult cmp=CompareType equals]]
                         else
                             self->failed("ExprOp2 {expr.op} expr.left._type.isWorkhorseType  expr.left._type.isRef (evOP2 is cmp)", expr.at)
-                        self->evRelease(evL)
-                        self->evRelease(evR)
+                        self->evRelease(evL,expr.at)
+                        self->evRelease(evR,expr.at)
                     else
                         // imm operators
                         if expr.op=="-" || expr.op=="+" || expr.op=="*" || expr.op=="/" || expr.op=="%" || expr.op=="<" || expr.op=="=="
@@ -237,16 +238,16 @@ class AllocateRegistersCodeVisitor : JitVisitor
                                     // reuse left register
                                     context.expr_res[intptr(expr)] = evL
                                     // we release only right
-                                    self->evRelease(evR)
+                                    self->evRelease(evR,expr.at)
                                 else
                                     self->failed("ExprOp2 {expr.op} expr.left._type.isWorkhorseType evL is gpReg right={evR}", expr.at)
                             elif evL is gpRegT
                                 // we allocate new temp register
-                                let nreg = self->allocateGP()
+                                let nreg = self->allocateGP(expr.at)
                                 evOP2 = [[EvResult gpReg=nreg]]
                                 // we release both left and right
-                                self->evRelease(evL)
-                                self->evRelease(evR)
+                                self->evRelease(evL,expr.at)
+                                self->evRelease(evR,expr.at)
                                 self->log("reg {nreg} for {describe(expr)}\n")
                             else
                                 self->failed("ExprOp2 {expr.op} expr.left._type.isWorkhorseType left={evL} right={evR}", expr.at)
@@ -259,14 +260,14 @@ class AllocateRegistersCodeVisitor : JitVisitor
         return expr
 // if-then-else
     def override preVisitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : void
-        self->evExpectCmp(expr.cond)
+        self->evExpectCmp(expr.cond,expr.cond.at)
     def override visitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : ExpressionPtr
         var evCond & = context.expr_res[intptr(expr.cond)]
-        self->evRelease(evCond)
+        self->evRelease(evCond,expr.at)
         return expr
 // op3
     def override preVisitExprOp3(expr:smart_ptr<ExprOp3>): void
-        self->evExpectCmp(expr.subexpr)
+        self->evExpectCmp(expr.subexpr,expr.at)
     def override visitExprOp3(expr:smart_ptr<ExprOp3>) : ExpressionPtr
         // TODO: support result type
         var evS & = context.expr_res[intptr(expr.subexpr)]
@@ -276,65 +277,68 @@ class AllocateRegistersCodeVisitor : JitVisitor
         if evL is gpReg
             // if left one is there - we use that as result
             evOP3 = evL
-            self->evRelease(evR)
+            self->evRelease(evR,expr.right.at)
         elif evR is gpReg
             // if right one is there - we use that as result
             evOP3 = evR
-            self->evRelease(evL)
+            self->evRelease(evL,expr.left.at)
         else
             /// we allocate new register for the result
-            let reg = self->allocateGP()
+            let reg = self->allocateGP(expr.at)
             evOP3 = [[EvResult gpReg=reg]]
-            self->evRelease(evL)
-            self->evRelease(evR)
+            self->evRelease(evL,expr.left.at)
+            self->evRelease(evR,expr.right.at)
         self->log("op3 {evS} ? {evL} : {evR} result in {evS}\n")
-        self->evRelease(evS)
+        self->evRelease(evS,expr.subexpr.at)
         return expr
 // copy
     def override visitExprCopy(expr:smart_ptr<ExprCopy>) : ExpressionPtr
         var evL & = context.expr_res[intptr(expr.left)]
         var evR & = context.expr_res[intptr(expr.right)]
         // after copy we are done with both sides
-        self->evRelease(evL)
-        self->evRelease(evR)
+        self->evRelease(evL,expr.at)
+        self->evRelease(evR,expr.at)
         return expr
 // return
     def override visitExprReturn(expr:smart_ptr<ExprReturn>) : ExpressionPtr
         if expr.subexpr!=null
             // if there is return (subexpr), we are done with it
             var evR & = context.expr_res[intptr(expr.subexpr)]
-            self->evRelease(evR)
+            self->evRelease(evR,expr.at)
         return expr
 // for
     def override preVisitExprFor(expr:smart_ptr<ExprFor>) : void
         if put_loop_variables_in_registers
             for v in expr.iteratorVariables
-                let reg = self->allocateGP()
+                let reg = self->allocateGP(expr.at)
                 context.temp_var[intptr(v)] = reg
             if put_loop_sources_in_registers
                 if is_for_range1(expr)
                     if !is_for_range1_with_unused_var(expr)
                         // if the loop variable is unused, we don't need extra one for the source
-                        let reg = self->allocateGP()
+                        let reg = self->allocateGP(expr.at)
                         context.temp_extra[intptr(expr)] = reg
                     else
                         self->log("range1 for with unused variable {expr.iteratorVariables[0].name}\n")
-    def override preVisitExprForBody(expr:smart_ptr<ExprFor>) : void
-        // we are done with all sources by the time we reach the loop body
-        for src in expr.sources
-            var evS & = context.expr_res[intptr(src)]
-            self->evRelease(evS)
+        else
+            for v in expr.iteratorVariables
+                self->log("loop variable {v.name} [rsp+{uint(v.stackTop)}]\n")
     def override visitExprFor(expr:smart_ptr<ExprFor>) : ExpressionPtr
         if put_loop_variables_in_registers
             for v in expr.iteratorVariables
                 if context.temp_var |> key_exists(intptr(v))
                     let reg = context.temp_var[intptr(v)]
-                    self->releaseGP(reg)
+                    self->releaseGP(reg,expr.at)
             if put_loop_sources_in_registers
                 if is_for_range1(expr)
                     if !is_for_range1_with_unused_var(expr)
                         let reg = context.temp_extra[intptr(expr)]
-                        self->releaseGP(reg)
+                        self->releaseGP(reg,expr.at)
+        // we are done with all sources by the time we are done with loop
+        // body would be too early, cause sources used at the loop end to check
+        for src in expr.sources
+            var evS & = context.expr_res[intptr(src)]
+            self->evRelease(evS,expr.body.at)
         return expr
 // call
     def override visitExprCall(var expr:smart_ptr<ExprCall>) : ExpressionPtr
@@ -351,10 +355,10 @@ class AllocateRegistersCodeVisitor : JitVisitor
             if expr.stackTop != 0u
                 self->failed("visitExprCall stackTop={expr.stackTop}", expr.at)
             for argi in range(length(expr.arguments))
-                self->evExpectStack(expr.arguments[argi],offset+uint(argi)*16u)
+                self->evExpectStack(expr.arguments[argi],offset+uint(argi)*16u,expr.at)
             for arg in expr.arguments
                 var eaV & = context.expr_res[intptr(arg)]
-                self->evRelease(eaV)
+                self->evRelease(eaV,expr.at)
             self->setTransients(expr)
             if expr.func.result != null
                 if expr.func.result.isRef
@@ -362,10 +366,10 @@ class AllocateRegistersCodeVisitor : JitVisitor
                 else
                     var fnR & = context.expr_res[intptr(expr)]
                     if expr.func.result.isVectorType
-                        let reg = self->allocateXMM()
+                        let reg = self->allocateXMM(expr.at)
                         fnR = [[EvResult xmmReg=reg]]
                     else
-                        let reg = self->allocateGP()
+                        let reg = self->allocateGP(expr.at)
                         fnR = [[EvResult gpReg=reg]]
                     self->log("call {expr.func._module.name}::{expr.func.name} returns {fnR}\n")
             self->log("call {expr.func._module.name}::{expr.func.name} temp frame {offset}\n")
@@ -384,7 +388,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
         // release arugments
         for ai in range(length(expr.arguments))
             var evA & = context.expr_res[intptr(expr.arguments[ai])]
-            self->evRelease(evA)
+            self->evRelease(evA,expr.at)
         // range retursn result in an xmm register
-        let xreg = self->allocateXMM()
+        let xreg = self->allocateXMM(expr.at)
         context.expr_res[intptr(expr)] = [[EvResult xmmReg=xreg]]

@@ -66,6 +66,7 @@ def check_xbyak_errors()
     unsafe
         err = reinterpret<GenerationError> GetError()
     if err != GenerationError NONE
+        stackwalk(false,false)
         panic("xbyak - generation error {err}")
 
 [tag_function(xbyak_remove_gen)]

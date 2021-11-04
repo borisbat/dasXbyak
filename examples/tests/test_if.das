@@ -19,12 +19,15 @@ def test_it(a:int)
     if a==13
         printreg(13)
 
+include test_common.inc
+
 [export]
 def main()
-    print("it\n")
-    last_value=0;   test_it(13);    assert(last_value==13)
-    last_value=0;   test_it(1);     assert(last_value==0)
-    print("ite\n")
-    last_value=0;   test_ite(13);   assert(last_value==13)
-    last_value=0;   test_ite(1);    assert(last_value==100001)
+    test_jit_levels <|
+        print("it\n")
+        last_value=0;   test_it(13);    assert(last_value==13)
+        last_value=0;   test_it(1);     assert(last_value==0)
+        print("ite\n")
+        last_value=0;   test_ite(13);   assert(last_value==13)
+        last_value=0;   test_ite(1);    assert(last_value==100001)
 

@@ -329,6 +329,11 @@ class GenerateCodeVisitor : JitVisitor
                                             cmp(REG32(GEN,evL as gpReg),ic)
                                         else
                                             self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR is const", expr.at)
+                                    elif evR is gpReg
+                                        if expr.op=="<" || expr.op=="=="
+                                            cmp(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
+                                        else
+                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR is gpReg", expr.at)
                                     else
                                         self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR={evR}", expr.at)
                                 elif evL is gpRegT
@@ -377,6 +382,14 @@ class GenerateCodeVisitor : JitVisitor
                                                     cmove(REG32(GEN,evL as gpReg),eax)
                                                 else
                                                     self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst bool", expr.at)
+                                            elif expr.op=="%" || expr.op=="/"
+                                                if (evR as iconst)==0ul
+                                                    self->failed("DIVISION BY ZERO", expr.at)
+                                                mov(eax,REG32(GEN,evL as gpReg))
+                                                mov(REG32(GEN,evL as gpReg),evR as iconst)
+                                                cdq();  rdx_has_args = false
+                                                idiv(REG32(GEN,evL as gpReg))
+                                                mov(REG32(GEN,evL as gpReg),expr.op=="%" ? edx : eax)
                                             else
                                                 self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst", expr.at)
                                     elif (evR is gpReg) || (evR is gpRegT)
@@ -793,6 +806,19 @@ class GenerateCodeVisitor : JitVisitor
                 let transients = context.transients[intptr(expr)]
                 var t_offset = 0u
                 var t_total = 0
+                self->log(" GP_MASK={transients.gp_mask} XMM_MASK={transients.xmm_mask}\n")
+                var xmm_total = 0u
+                for t in urange(FIRST_NON_TRANSIENT_XMM_TEMP_REG)
+                    if (transients.xmm_mask & (1u<<t)) != 0u
+                        xmm_total ++
+                sub(rsp,xmm_total * 16u)
+                for t in urange(FIRST_NON_TRANSIENT_XMM_TEMP_REG)
+                    if (transients.xmm_mask & (1u<<t)) != 0u
+                        var txmm : XmmTempReg
+                        unsafe
+                            txmm = reinterpret<XmmTempReg> t
+                        movdqa(ptr[rsp+t_offset],REGXMM(GEN,txmm))
+                        t_offset += 16u
                 for t in urange(FIRST_NON_TRANSIENT_GP_TEMP_REG)
                     if (transients.gp_mask & (1u<<t)) != 0u
                         var tgpr : GpTempReg
@@ -829,6 +855,15 @@ class GenerateCodeVisitor : JitVisitor
                         unsafe
                             let tgpr = reinterpret<GpTempReg> t
                             pop(REG64(GEN,tgpr))
+                var rt_offset = 0u
+                for t in urange(FIRST_NON_TRANSIENT_XMM_TEMP_REG)
+                    if (transients.xmm_mask & (1u<<t)) != 0u
+                        var txmm : XmmTempReg
+                        unsafe
+                            txmm = reinterpret<XmmTempReg> t
+                        movdqa(REGXMM(GEN,txmm),ptr[rsp+rt_offset])
+                        rt_offset += 16u
+                add(rsp,xmm_total * 16u)
                 // move result to xmm0
                 if expr.func.result != null
                     if expr.func.result.isRef

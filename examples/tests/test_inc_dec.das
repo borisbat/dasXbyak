@@ -45,13 +45,16 @@ def r_post_dec_jit ( a : int )
     var b = a
     return b--
 
+include test_common.inc
+
 [export]
 def main()
-    print("inc(10) = {inc_jit(10)}\n"); verify(inc_jit(10)==11)
-    print("dec(10) = {dec_jit(10)}\n"); verify(dec_jit(10)==9)
-    print("post_inc(10) = {post_inc_jit(10)}\n"); verify(post_inc_jit(10)==11)
-    print("post_dec(10) = {post_dec_jit(10)}\n"); verify(post_dec_jit(10)==9)
-    print("r_inc(10) = {r_inc_jit(10)}\n"); verify(r_inc_jit(10)==11)
-    print("r_dec(10) = {r_dec_jit(10)}\n"); verify(r_dec_jit(10)==9)
-    print("r_post_inc(10) = {r_post_inc_jit(10)}\n"); verify(r_post_inc_jit(10)==10)
-    print("r_post_dec(10) = {r_post_dec_jit(10)}\n"); verify(r_post_dec_jit(10)==10)
+    test_jit_levels <|
+        print("inc(10) = {inc_jit(10)}\n"); verify(inc_jit(10)==11)
+        print("dec(10) = {dec_jit(10)}\n"); verify(dec_jit(10)==9)
+        print("post_inc(10) = {post_inc_jit(10)}\n"); verify(post_inc_jit(10)==11)
+        print("post_dec(10) = {post_dec_jit(10)}\n"); verify(post_dec_jit(10)==9)
+        print("r_inc(10) = {r_inc_jit(10)}\n"); verify(r_inc_jit(10)==11)
+        print("r_dec(10) = {r_dec_jit(10)}\n"); verify(r_dec_jit(10)==9)
+        print("r_post_inc(10) = {r_post_inc_jit(10)}\n"); verify(r_post_inc_jit(10)==10)
+        print("r_post_dec(10) = {r_post_dec_jit(10)}\n"); verify(r_post_dec_jit(10)==10)

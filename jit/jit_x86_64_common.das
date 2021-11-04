@@ -180,4 +180,8 @@ class JitVisitor : AstVisitor
     def log(text:string)
         if verbose
             print(text)
+    def logAt(text:string; at:LineInfo)
+        if verbose
+            let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
+            print("{text} at {fname}:{int(at.line)}:{int(at.column)}\n")
 
