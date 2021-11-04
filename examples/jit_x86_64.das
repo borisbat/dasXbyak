@@ -42,7 +42,9 @@ def public generate_x86_64(var func:FunctionPtr) : CodeGenerator?
     unsafe
         delete allocateRegistersVisitor
     if f2a
-        print("jit_x86_64: failed due to errors")
+        print("--------------------------------\n")
+        print("jit_x86_64: failed due to errors\n")
+        print("--------------------------------\n")
         return null
     // verify GP regs
     let temp_gp = length(context.gpa.regs)

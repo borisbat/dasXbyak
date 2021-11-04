@@ -953,6 +953,8 @@ class GenerateCodeVisitor : AstVisitor
                 let evA1 & = context.expr_res[intptr(expr.arguments[1])]
                 if evA1 is gpReg
                     mov(edx,REG32(GEN,evA1 as gpReg))
+                elif evA1 is gpRegT
+                    mov(edx,REG32(GEN,evA1 as gpRegT))
                 elif evA1 is iconst
                     mov(edx,(evA1 as iconst)<<32ul)
                 else
@@ -961,6 +963,8 @@ class GenerateCodeVisitor : AstVisitor
                     mov(eax,REG32(GEN,evA0 as gpReg))
                 elif evA0 is gpRegT
                     mov(eax,REG32(GEN,evA0 as gpRegT))
+                elif evA0 is iconst
+                    mov(eax,evA0 as iconst)
                 else
                     self->error("TODO: support range(2) argument (...,{evA0})",expr.at)
                 shl(rax,32)
