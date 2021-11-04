@@ -161,7 +161,7 @@ def is_for_range1_with_unused_var ( expr:smart_ptr<ExprFor> )
     return false
 
 class JitVisitor : AstVisitor
-    verbose = false
+    verbose : bool
     context : EvContext
     failed_to_generate : bool
     visitor_type : string

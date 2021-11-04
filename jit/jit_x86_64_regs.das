@@ -26,6 +26,10 @@ enum GpTempReg
     R13
     R14
     R15
+    // exta
+    RAX
+    RCX
+    RDX
 
 let MAX_XMM_TEMP_REG = 16
 let FIRST_NON_TRANSIENT_XMM_TEMP_REG = 6
@@ -73,6 +77,12 @@ def REG32 ( var gen:CodeGenerator; r:GpTempReg ) : Reg32 const &
             return gen.r14d
         elif r==GpTempReg R15
             return gen.r15d
+        elif r==GpTempReg RAX
+            return gen.eax
+        elif r==GpTempReg RCX
+            return gen.ecx
+        elif r==GpTempReg RDX
+            return gen.edx
         else
             return gen.eax
 
@@ -100,6 +110,12 @@ def REG64 ( var gen:CodeGenerator; r:GpTempReg ) : Reg64 const &
             return gen.r14
         elif r==GpTempReg R15
             return gen.r15
+        elif r==GpTempReg RAX
+            return gen.rax
+        elif r==GpTempReg RCX
+            return gen.rcx
+        elif r==GpTempReg RDX
+            return gen.rdx
         else
             return gen.rax
 

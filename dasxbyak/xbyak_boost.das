@@ -61,14 +61,23 @@ enum public GenerationError
 def _MM_SHUFFLE(fp3,fp2,fp1,fp0:int)
     return uint8((((fp3) << 6) | ((fp2) << 4) | ((fp1) << 2) | ((fp0))))
 
+def check_xbyak_errors()
+    var err : GenerationError
+    unsafe
+        err = reinterpret<GenerationError> GetError()
+    if err != GenerationError NONE
+        panic("xbyak - generation error {err}")
+
 [tag_function(xbyak_remove_gen)]
 def with_xbyak ( var pgen:CodeGenerator?; blk:block<(var gen:CodeGenerator)> )
     invoke(blk, *pgen)
+    check_xbyak_errors()
 
 [tag_function(xbyak_remove_gen)]
 def with_xbyak ( blk:block<(var gen:CodeGenerator)> )
     var pgen = new CodeGenerator
     invoke(blk, *pgen)
+    check_xbyak_errors()
     return pgen
 
 class XybakVisitor : AstVisitor

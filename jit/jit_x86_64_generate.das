@@ -18,36 +18,16 @@ require zydis
 
 require ast public
 
-class GenerateCodeVisitor : AstVisitor
-    verbose = true
+class GenerateCodeVisitor : JitVisitor
     tab : int
     [[do_not_delete]] gen : CodeGenerator?
-    context : EvContext
     [[do_not_delete]] this_function : Function?
     func_begin : void?
     rdx_has_args : bool                             // rdx contains arg *, as part of the parameters passed
-    failed_to_generate : bool
     loop_stack : array<uint64>
     def GenerateCodeVisitor(var g:CodeGenerator?; var ctx:EvContext )
+        JitVisitor`JitVisitor(self, ctx)
         gen = g
-        context <- ctx
-    def error ( txt:string; at:LineInfo )
-        failed_to_generate = true
-        let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
-        print("\nERROR jit_x86_64(generate): {txt} at {fname}:{int(at.line)}:{int(at.column)}\n")
-        stackwalk(false,false)
-    def failed ( txt:string; at:LineInfo )
-        failed_to_generate = true
-        let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
-        print("\nTODO jit_x86_64(generate): {txt} at {fname}:{int(at.line)}:{int(at.column)}\n")
-        stackwalk(false,false)
-    def check_gen()
-        with_xbyak(gen) <| $ ( GEN )
-            var err : GenerationError
-            unsafe
-                err = reinterpret<GenerationError> GetError()
-            if err != GenerationError NONE
-                panic("xbyak - generation error {err}")
 // ABI
     def getContextOffset
         return context.stack_frame+context.temp_frame+context.save_frame+8u+ARG_CONTEXT
@@ -66,18 +46,36 @@ class GenerateCodeVisitor : AstVisitor
             call(rax)
             add(rsp,32u)
 // helpers
-    def copyReg32 ( reg:GpTempReg; eV:EvResult; at:LineInfo ) : void
+    def copyReg32 ( dest:GpTempReg; srcV:EvResult; at:LineInfo ) : void     //  mov reg, data
         with_xbyak(gen) <| $ ( GEN )
-            if eV is gpReg
-                if reg != eV as gpReg
-                    mov(REG32(GEN,reg),REG32(GEN,eV as gpReg))
+            if srcV is gpReg
+                if dest != (srcV as gpReg)
+                    mov(REG32(GEN,dest),REG32(GEN,srcV as gpReg))
+            elif srcV is gpRegT
+                if dest != (srcV as gpRegT)
+                    mov(REG32(GEN,dest),REG32(GEN,srcV as gpRegT))
+            elif srcV is iconst
+                mov(REG32(GEN,dest),srcV as iconst)
+            elif srcV is stack
+                mov(REG32(GEN,dest),ptr[rsp+(srcV as stack)])
             else
-                self->failed("supprt copy reg32 {eV}", at)
-        self->check_gen()
+                self->failed("copyReg32 {dest} <- {srcV}", at)
+    def loadReg32 ( dest:GpTempReg; srcV:EvResult; at:LineInfo ) : void     //  mov reg, dword[data]
+        with_xbyak(gen) <| $ ( GEN )
+            if srcV is gpReg
+                mov(REG32(GEN,dest),dword[REG32(GEN,srcV as gpReg)])
+            elif srcV is gpRegT
+                mov(REG32(GEN,dest),dword[REG32(GEN,srcV as gpRegT)])
+            else
+                self->failed("loadReg32 {dest} <- {srcV}", at)
+    def setRdxToArgs()
+        if !rdx_has_args
+            with_xbyak(gen) <| $ ( GEN )
+                mov(rdx,ptr[rsp+self->getArgOffset()])
+                rdx_has_args
 // function
     def override preVisitFunction(fun:FunctionPtr) : void
-        if verbose
-            print("(DEF {fun.name} [STACK={context.stack_frame}, TEMP={context.temp_frame}]\n")
+        self->log("(DEF {fun.name} [STACK={context.stack_frame}, TEMP={context.temp_frame}]\n")
         rdx_has_args = true
         this_function = get_ptr(fun)
         unsafe
@@ -107,7 +105,6 @@ class GenerateCodeVisitor : AstVisitor
                         let xmm_reg = reinterpret<XmmTempReg> (t + FIRST_NON_TRANSIENT_XMM_TEMP_REG)
                         push(REGXMM(GEN,xmm_reg))
             sub(rsp,(context.stack_frame+context.temp_frame+8u))                // note: 8u is here to keep the stack aligned
-        self->check_gen()
     def gen_epilogue
         with_xbyak(gen) <| $ ( GEN )
             // note: 8u is here to keep the stack aligned
@@ -129,43 +126,34 @@ class GenerateCodeVisitor : AstVisitor
                         let gp_reg = reinterpret<GpTempReg> ((total_gp_save-t-1) + FIRST_NON_TRANSIENT_GP_TEMP_REG)
                         pop(REG64(GEN,gp_reg))
             ret()
-        self->check_gen()
     def override visitFunction(fun:FunctionPtr) : FunctionPtr
         self->gen_epilogue()
-        self->check_gen()
-        if verbose
-            print(")\n")
+        self->log(")\n")
         return fun
 // const int
     def override preVisitExprConstInt(expr:smart_ptr<ExprConstInt>) : void
-        if verbose
-            print("(INT32 {expr.value})")
+        self->log("(INT32 {expr.value})")
     def override visitExprConstInt(expr:smart_ptr<ExprConstInt>) : ExpressionPtr
         with_xbyak(gen) <| $ ( GEN )
             let ev & = context.expr_res[intptr(expr)]
             if ev is stack
                 mov(dword[rsp+(ev as stack)],uint64(expr.value))
-        self->check_gen()
-        if verbose
-            print(")")
+        self->log(")")
         return expr
 // let
     def override preVisitExprLetVariable(expr:smart_ptr<ExprLet>;arg:VariablePtr;lastArg:bool) : void
-        if verbose
-            print("(LET {arg.name} #{arg.stackTop} ")
+        self->log("(LET {arg.name} #{arg.stackTop} ")
     def override visitExprLetVariable(expr:smart_ptr<ExprLet>;arg:VariablePtr;lastArg:bool) : VariablePtr
         if arg.init==null
             with_xbyak(gen) <| $ ( GEN )
                 let initSize = arg._type.isRef ? 8 : arg._type.sizeOf
-                if initSize==4
+                if initSize==4 || initSize==2 || initSize==1
                     mov(dword[rsp+arg.stackTop],0ul)
                 elif initSize==8
                     mov(qword[rsp+arg.stackTop],0ul)
                 else
-                    self->failed("memzero({arg.name} aka [rsp+{arg.stackTop}],{initSize})",expr.at)
-            self->check_gen()
-        if verbose
-            print(")")
+                    self->failed("visitExprLetVariable arg.init==null initSize={initSize}",expr.at)
+        self->log(")")
         return arg
     def override visitExprLetVariableInit(blk:smart_ptr<ExprLet>;arg:VariablePtr;expr:ExpressionPtr) : ExpressionPtr
         let evI & = context.expr_res[intptr(arg.init)]
@@ -186,106 +174,87 @@ class GenerateCodeVisitor : AstVisitor
                         else
                             self->failed("accept reg by ref value init {evI}",arg.init.at)
                     else
-                        self->failed("accept reg by ref value init {evI} of type {describe(arg._type)}",arg.init.at)
+                        self->failed("ExprLetVariableInit arg.init._type.ref temp_var {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
                 else
-                    if initSize==4
-                        if evI is stack
-                            mov(eax,ptr[rsp+(evI as stack)])
-                        else
-                            self->failed("accept different ref init source {evI}",arg.init.at)
+                    if initSize==4 || initSize==2 || initSize==1
+                        self->copyReg32(GpTempReg RAX, evI, expr.at)
                         mov(ptr[rsp+arg.stackTop],eax)
                     else
-                        self->failed("accept different ref init size {initSize}",arg.init.at)
+                        self->failed("ExprLetVariableInit arg.init._type.ref {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
             else
                 if context.temp_var |> key_exists(intptr(arg))
                     let reg = context.temp_var[intptr(arg)]
-                    if initSize==4
-                        if evI is iconst
-                            mov(REG32(GEN,reg),evI as iconst)
-                        elif evI is gpReg
-                            mov(REG32(GEN,reg),REG32(GEN,evI as gpReg))
-                        else
-                            print("by value init {describe(arg.init)}\n")
-                            self->failed("accept reg by value init {evI}",arg.init.at)
+                    if initSize==4 || initSize==2 || initSize==1
+                        self->copyReg32(reg,evI,expr.at)
                     else
-                        self->failed("accept reg by value init {evI} of type {describe(arg._type)}",arg.init.at)
+                        self->failed("ExprLetVariableInit temp_var {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
                 else
-                    self->failed("accept by value init {evI}",arg.init.at)
-        self->check_gen()
+                    self->failed("ExprLetVariableInit {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
         return  expr
 // variable
     def override preVisitExprVar(expr:smart_ptr<ExprVar>) : void
-        if verbose
-            print("(VAR {expr.name} ")
-            if expr.varFlags.r2v
-                print("R2V ")
+        self->log("(VAR {expr.name} ")
+        if expr.varFlags.r2v
+            self->log("R2V ")
     def override visitExprVar(expr:smart_ptr<ExprVar>) : ExpressionPtr
         let ev & = context.expr_res[intptr(expr)]
         with_xbyak(gen) <| $ ( GEN )
             if expr.varFlags._block
-                self->failed("{expr.variable.name} support block variable", expr.at)
+                self->failed("ExprVar expr.varFlags._block {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
             elif expr.varFlags.local
                 if context.temp_var |> key_exists(intptr(expr.variable))
+                    // this variable is in the register
                     pass
                 elif expr.varFlags.r2v
                     let varSize = expr._type.sizeOf
                     if expr.variable._type |> is_gpreg_type
                         let reg = ev as gpReg
-                        if verbose
-                            print("[{reg}]")
+                        self->log("[{reg}]")
                         if varSize==8
                             mov(REG64(GEN,reg),qword[rsp+expr.variable.stackTop])
                         elif varSize==4
                             mov(REG32(GEN,reg),dword[rsp+expr.variable.stackTop])
                         else
-                            self->failed("{expr.variable.name} support local R2V size of {varSize}", expr.at)
+                            self->failed("ExprVar expr.varFlags.local expr.varFlags.r2v {expr.variable.name}:{describe(expr.variable._type)} varSize={varSize}", expr.at)
                     else
-                        self->failed("{expr.variable.name} support local R2V type {describe(expr.variable._type)}", expr.at)
+                        self->failed("ExprVar expr.varFlags.local {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
             elif expr.varFlags.argument
                 if expr.varFlags.r2v
                     let varSize = expr._type.sizeOf
                     if expr.variable._type |> is_gpreg_type
                         if ev is gpReg
                             let reg = ev as gpReg
-                            if verbose
-                                print("[{reg}]")
-                            if !rdx_has_args
-                                mov(rdx,ptr[rsp+self->getArgOffset()])
-                                rdx_has_args
+                            self->log("[{reg}]")
+                            self->setRdxToArgs()
                             if varSize==8
                                 mov(REG64(GEN,reg),qword[rdx+(expr.argumentIndex*16)])
-                            elif varSize==4
+                            elif varSize==4 || varSize==2 || varSize==1
                                 mov(REG32(GEN,reg),dword[rdx+(expr.argumentIndex*16)])
                             else
-                                self->failed("{expr.variable.name} support argument R2V size of {varSize}", expr.at)
+                                self->failed("ExprVar expr.varFlags.argument expr.varFlags.r2v {expr.variable.name}:{describe(expr.variable._type)} varSize={varSize}", expr.at)
                         else
-                            self->failed("{expr.variable.name} support argument R2V type {describe(expr.variable._type)}", expr.at)
+                            self->failed("ExprVar expr.varFlags.argument expr.varFlags.r2v {expr.variable.name}:{describe(expr.variable._type)} (register should be allocated?)", expr.at)
                     else
-                        self->failed("{expr.variable.name} support local R2V type {describe(expr.variable._type)}", expr.at)
+                        self->failed("ExprVar expr.varFlags.argument expr.varFlags.r2v {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
                 else
                     if ev is gpReg
-                        if !rdx_has_args
-                            mov(rdx,ptr[rsp+self->getArgOffset()])
-                            rdx_has_args
+                        self->setRdxToArgs()
                         lea(REG64(GEN,ev as gpReg),qword[rdx+(expr.argumentIndex*16)])
                     else
-                        self->failed("{expr.variable.name} support argument ref in {ev}", expr.at)
+                        self->failed("ExprVar expr.varFlags.argument {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
             else
-                self->failed("{expr.variable.name} support that other variable type", expr.at)
-        self->check_gen()
-        if verbose
-            print(")")
+                self->failed("ExprVar {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
+        self->log(")")
         return expr
 // op1
     def override preVisitExprOp1(expr:smart_ptr<ExprOp1>) : void
-        if verbose
-            print("(OP1 {expr.op} ")
+        self->log("(OP1 {expr.op} ")
     def override visitExprOp1(expr:smart_ptr<ExprOp1>) : ExpressionPtr
         var ev & = context.expr_res[intptr(expr.subexpr)]
         var evOP1 & = context.expr_res[intptr(expr)]
         with_xbyak(gen) <| $ ( GEN )
             if expr.subexpr._type.isInteger
-                if expr.subexpr._type.baseType==Type tInt
+                if expr.subexpr._type.baseType==Type tInt || expr.subexpr._type.baseType==Type tUInt
                     if expr.subexpr._type.isRef    // ++, --
                         if ev is gpReg
                             if expr.op=="+++" || expr.op=="---"
@@ -296,7 +265,7 @@ class GenerateCodeVisitor : AstVisitor
                                     dec(dword[REG64(GEN,ev as gpReg)])
                                 mov(REG32(GEN,ev as gpReg),eax)
                             else
-                                self->failed("{describe(expr.subexpr)} support {expr.op}", expr.at)
+                                self->failed("ExprOp1 {expr.op} expr.subexpr._type.isRef ev is gpReg", expr.at)
                         elif ev is gpRegT
                             if expr.op=="+++" || expr.op=="---"
                                 assert(evOP1 is gpReg)
@@ -312,22 +281,20 @@ class GenerateCodeVisitor : AstVisitor
                                 else
                                     dec(REG32(GEN,ev as gpRegT))
                             else
-                                self->failed("{describe(expr.subexpr)} support {expr.op}", expr.at)
+                                self->failed("ExprOp1 {expr.op} integer expr.subexpr._type.isRef ev is gpRegT", expr.at)
                         else
-                            self->failed("{describe(expr.subexpr)} support {expr.op}", expr.at)
+                            self->failed("ExprOp1 {expr.op} integer expr.subexpr._type.isRef ev={ev}", expr.at)
                     else
-                        self->failed("{describe(expr.subexpr)} support non ref op", expr.at)
+                        self->failed("ExprOp1 {expr.op} integer !expr.subexpr._type.isRef", expr.at)
                 else
-                    self->failed("{describe(expr.subexpr)} support all other types", expr.at)
+                    self->failed("ExprOp1 {expr.op} integer {describe(expr.subexpr._type)}", expr.at)
             else
-                self->failed("{describe(expr.subexpr)} support all other types", expr.at)
-        if verbose
-            print(")")
+                self->failed("ExprOp1 {expr.op} {describe(expr.subexpr._type)}", expr.at)
+        self->log(")")
         return expr
 // op2
     def override preVisitExprOp2(expr:smart_ptr<ExprOp2>): void
-        if verbose
-            print("(OP2 {expr.op} ")
+        self->log("(OP2 {expr.op} ")
     def override visitExprOp2(expr:smart_ptr<ExprOp2>) : ExpressionPtr
         let evOP2 &  = context.expr_res[intptr(expr)]
         let evL & = context.expr_res[intptr(expr.left)]
@@ -389,8 +356,7 @@ class GenerateCodeVisitor : AstVisitor
                                         self->failed("OP2 {expr.op} int cmp gpREG R {debug(evR)}", expr.at)
                                 else
                                     self->failed("OP2 {expr.op} support evL in {evL}", expr.at)
-                                if verbose
-                                    print(" [{evL}]")
+                                self->log(" [{evL}]")
                             else
                                 self->failed("OP2 {expr.op} support more cmp operators", expr.at)
                         else
@@ -440,8 +406,7 @@ class GenerateCodeVisitor : AstVisitor
                                             self->failed("OP2 {expr.op} int imm gpREG R {debug(evR)}", expr.at)
                                     else
                                         self->failed("OP2 {expr.op} int imm gpREG R {debug(evR)}", expr.at)
-                                    if verbose
-                                        print(" [{evL}]")
+                                    self->log(" [{evL}]")
                                 else
                                     // result is in the result register, which we allocated separately
                                     assert(evOP2 is gpReg)
@@ -519,9 +484,7 @@ class GenerateCodeVisitor : AstVisitor
                     self->failed("OP2 {expr.op} int support {describe(expr.left._type)}", expr.at)
             else
                 self->failed("OP2 {expr.op} support {describe(expr.left._type)}", expr.at)
-        self->check_gen()
-        if verbose
-            print(")")
+        self->log(")")
         return expr
 // if-then-else
     /*
@@ -561,9 +524,7 @@ class GenerateCodeVisitor : AstVisitor
                     GEN |> condJumpIfNot(".if_cond_failed_{intptr(expr)}",evS as cmp)
             else
                 self->failed("supprt if-then-else subexpr in {evS}", expr.at)
-        self->check_gen()
-        if verbose
-            print("\n{repeat("\t",tab)}THEN\n")
+        self->log("\n{repeat("\t",tab)}THEN\n")
     def override preVisitExprIfThenElseElseBlock(expr:smart_ptr<ExprIfThenElse>;elseBlock:ExpressionPtr) : void
         // we are only here, if there is an else block
         with_xbyak(gen) <| $ ( GEN )
@@ -571,21 +532,17 @@ class GenerateCodeVisitor : AstVisitor
             jmp(".if_end_{intptr(expr)}",LabelType T_NEAR)
             // else section starts here
             L(".if_cond_failed_{intptr(expr)}")
-        self->check_gen()
-        if verbose
-            print("\n{repeat("\t",tab)}ELSE\n")
+        self->log("\n{repeat("\t",tab)}ELSE\n")
     def override visitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : ExpressionPtr
         with_xbyak(gen) <| $ ( GEN )
             L(".if_end_{intptr(expr)}")
-        self->check_gen()
         if verbose
             tab --
             print(")\n{repeat("\t",tab)}")
         return expr
 // op3
     def override preVisitExprOp3(expr:smart_ptr<ExprOp3>): void
-        if verbose
-            print("(? ")
+        self->log("(? ")
     def override preVisitExprOp3Left(expr:smart_ptr<ExprOp3>;left:ExpressionPtr): void
         let evS & = context.expr_res[intptr(expr.subexpr)]
         with_xbyak(gen) <| $ ( GEN )
@@ -596,9 +553,7 @@ class GenerateCodeVisitor : AstVisitor
                 GEN |> condJumpIfNot(".cond_right_{intptr(expr)}",evS as cmp)
             else
                 self->failed("supprt cond subexpr in {evS}", expr.at)
-        self->check_gen()
-        if verbose
-            print(" ? ")
+        self->log(" ? ")
     def override preVisitExprOp3Right(expr:smart_ptr<ExprOp3>;right:ExpressionPtr): void
         let eV & = context.expr_res[intptr(expr)]
         let evL & = context.expr_res[intptr(expr.left)]
@@ -606,28 +561,22 @@ class GenerateCodeVisitor : AstVisitor
             self->copyReg32(eV as gpReg,evL,expr.at)
             jmp(".cond_end_{intptr(expr)}",LabelType T_NEAR)
             L(".cond_right_{intptr(expr)}")
-        self->check_gen()
-        if verbose
-            print(" : ")
+        self->log(" : ")
     def override visitExprOp3(expr:smart_ptr<ExprOp3>) : ExpressionPtr
         let eV & = context.expr_res[intptr(expr)]
         let evR & = context.expr_res[intptr(expr.right)]
         with_xbyak(gen) <| $ ( GEN )
             self->copyReg32(eV as gpReg,evR,expr.at)
             L(".cond_end_{intptr(expr)}")
-        self->check_gen()
-        if verbose
-            print(")")
+        self->log(")")
         return expr
 // copy
     def override preVisitExprCopy(expr:smart_ptr<ExprCopy>): void
-        if verbose
-            print("(COPY")
+        self->log("(COPY ")
     def override visitExprCopy(expr:smart_ptr<ExprCopy>) : ExpressionPtr
         let evL & = context.expr_res[intptr(expr.left)]
         let evR & = context.expr_res[intptr(expr.right)]
-        if verbose
-            print("(EVL={evL},EVR={evR})")
+        self->log("EVL={evL},EVR={evR} ")
         with_xbyak(gen) <| $ ( GEN )
             let copySize = expr.left._type.sizeOf
             let pvar = (expr.left is ExprVar) ? get_ptr((expr.left as ExprVar).variable) : null
@@ -641,8 +590,7 @@ class GenerateCodeVisitor : AstVisitor
                             self->failed("copy temp {reg} from {evR}", expr.at)
                     else
                         self->failed("support temp {reg} copy size {copySize}", expr.at)
-                    if verbose
-                        print("(REF COPY {copySize})")
+                    self->log("(REF COPY {copySize})")
                 else
                     self->failed("support temp {reg} copy VALUE", expr.at)
             else
@@ -662,21 +610,16 @@ class GenerateCodeVisitor : AstVisitor
                             self->failed("copy to {evL}", expr.at)
                     else
                         self->failed("support copy size {copySize}", expr.at)
-                    if verbose
-                        print("(REF COPY {copySize})")
+                    self->log("(REF COPY {copySize})")
                 else
                     self->failed("support copy VALUE", expr.at)
-        self->check_gen()
-        if verbose
-            print(")")
+        self->log(")")
         return expr
 // return
     def override preVisitExprReturn(expr:smart_ptr<ExprReturn>) : void
-        if verbose
-            print("(RETURN ")
+        self->log("(RETURN ")
     def override visitExprReturn(expr:smart_ptr<ExprReturn>) : ExpressionPtr
-        if verbose
-            print(")")
+        self->log(")")
         with_xbyak(gen) <| $ ( GEN )
             if expr.subexpr==null
                 self->gen_epilogue()
@@ -711,7 +654,6 @@ class GenerateCodeVisitor : AstVisitor
                 else
                     self->failed("support return of type {describe(expr.subexpr._type)}",expr.at)
             self->gen_epilogue()
-        self->check_gen()
         return expr
 // block
     def override preVisitExprBlock(blk:smart_ptr<ExprBlock>) : void
@@ -720,27 +662,22 @@ class GenerateCodeVisitor : AstVisitor
         tab --
         return blk
     def override preVisitExprBlockExpression(blk:smart_ptr<ExprBlock>;expr:ExpressionPtr): void
-        if verbose
-            print("{repeat("\t",tab)}")
+        self->log("{repeat("\t",tab)}")
     def override visitExprBlockExpression(blk:smart_ptr<ExprBlock>;expr:ExpressionPtr) : ExpressionPtr
-        if verbose
-            print("\n")
+        self->log("\n")
         return expr
 // for
     def override preVisitExprFor(expr:smart_ptr<ExprFor>) : void
-        if verbose
-            print("(FOR ")
+        self->log("(FOR ")
         loop_stack |> push(intptr(expr))
         if is_for_range1(expr)
             pass
         else
             self->failed("support other types of for loop", expr.at)
     def override preVisitExprForVariable(expr:smart_ptr<ExprFor>;svar:VariablePtr;last:bool) : void
-        if verbose
-            print("`{svar.name}` ")
+        self->log("`{svar.name}` ")
     def override preVisitExprForSource(expr:smart_ptr<ExprFor>;source:ExpressionPtr;last:bool) : void
-        if verbose
-            print("(SOURCE ")
+        self->log("(SOURCE ")
     def override visitExprForSource(expr:smart_ptr<ExprFor>;source:ExpressionPtr;last:bool) : ExpressionPtr
         if is_for_range1(expr)
             let evS & = context.expr_res[intptr(source)]
@@ -756,7 +693,6 @@ class GenerateCodeVisitor : AstVisitor
                             movd(REG32(GEN,RV),reg)
                             sub(REG32(GEN,RV),eax)
                             jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)   // verify loop type
-                            self->check_gen()
                         else
                             // regular for range-to-range
                             movd(REG32(GEN,RV),reg)
@@ -778,16 +714,13 @@ class GenerateCodeVisitor : AstVisitor
                         jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                 else
                     self->failed("support for_range_1 source {evS}",expr.at)
-            self->check_gen()
-        if verbose
-            print(")")
+        self->log(")")
         return source
     def override preVisitExprForBody(expr:smart_ptr<ExprFor>) : void
         with_xbyak(gen) <| $ ( GEN )
             align(16ul,true)
             L(".for_loop_{intptr(expr)}")
-        if verbose
-            print("\n")
+        self->log("\n")
     def override visitExprFor(expr:smart_ptr<ExprFor>) : ExpressionPtr
         if is_for_range1(expr)
             let evS & = context.expr_res[intptr(expr.sources[0])]
@@ -814,34 +747,28 @@ class GenerateCodeVisitor : AstVisitor
                     jnz(".for_loop_{intptr(expr)}",LabelType T_NEAR)
                 else
                     self->failed("support for_range_1 source {evS}",expr.at)
-            self->check_gen()
         with_xbyak(gen) <| $ ( GEN )
             L(".for_loop_done_{intptr(expr)}")
-        self->check_gen()
         loop_stack |> pop()
-        if verbose
-            print("{repeat("\t",tab)})")
+        self->log("{repeat("\t",tab)})")
         return expr
 // break
     def override visitExprBreak(expr:smart_ptr<ExprBreak>) : ExpressionPtr
-        if verbose
-            print("(BREAK)")
+        self->log("(BREAK)")
         let loop_ptr = loop_stack |> back
         with_xbyak(gen) <| $ ( GEN )
             jmp(".for_loop_done_{loop_ptr}",LabelType T_NEAR)
         return expr
 // continue
     def override visitExprContinue(expr:smart_ptr<ExprContinue>) : ExpressionPtr
-        if verbose
-            print("(CONTINUE)")
+        self->log("(CONTINUE)")
         let loop_ptr = loop_stack |> back
         with_xbyak(gen) <| $ ( GEN )
             jmp(".for_loop_continue_{loop_ptr}",LabelType T_NEAR)
         return expr
 // call
     def override preVisitExprCall(expr:smart_ptr<ExprCall>): void
-        if verbose
-            print("(CALL `{expr.name}` ")
+        self->log("(CALL `{expr.name}` ")
     def override visitExprCall(var expr:smart_ptr<ExprCall>) : ExpressionPtr
         if !expr.func.flags.builtIn
             rdx_has_args = false            // rdx no longer has args, since we call another function
@@ -878,8 +805,7 @@ class GenerateCodeVisitor : AstVisitor
                     let mangled_name = get_mangled_name(reinterpret<FunctionPtr> expr.func)
                     let MNH = hash(mangled_name)
                     MNH_ADDR = get_function_address(MNH)
-                if verbose
-                    print(" @@{MNH_ADDR} ")
+                self->log(" @@{MNH_ADDR} ")
                 // save used transient registers
                 let recursive_call = expr.func == this_function
                 let transients = context.transients[intptr(expr)]
@@ -939,15 +865,13 @@ class GenerateCodeVisitor : AstVisitor
                                 self->failed("support result size {asize}", expr.at)
                         else
                             self->failed("support result {fnR}", expr.at)
-            self->check_gen()
             return expr
         ////////////////////
         // TODO: calls table
         let call_name = "{expr.func._module.name}::{expr.func.name}"
         if call_name=="$::range"
             self->JIT`range(expr)
-        if verbose
-            print(")")
+        self->log(")")
         return expr
     /////////////////////
     // function templates
@@ -987,6 +911,5 @@ class GenerateCodeVisitor : AstVisitor
                 shl(rax,32)
                 shrd(rax,rdx,uint8(32))
                 movd(REGXMM(GEN,xreg),rax)
-            self->check_gen()
-            if verbose
-                print(" [{xreg}]")
+            self->log(" [{xreg}]")
+

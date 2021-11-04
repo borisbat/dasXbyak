@@ -30,10 +30,11 @@ def allocate_regs(var func : FunctionPtr)
         delete allocateRegistersVisitor
     return <- cont
 
-def public generate_x86_64(var func:FunctionPtr; show_disasm:bool ) : CodeGenerator?
+def public generate_x86_64(var func:FunctionPtr; show_disasm:bool; verbose:bool ) : CodeGenerator?
     var context : EvContext
     var allocateRegistersVisitor = new AllocateRegistersCodeVisitor(context)
     var allocateRegistersVisitorAdapter <- make_visitor(*allocateRegistersVisitor)
+    allocateRegistersVisitor.verbose = verbose
     visit(func, allocateRegistersVisitorAdapter)
     let f2a = allocateRegistersVisitor.failed_to_generate
     context <- allocateRegistersVisitor.context
@@ -64,6 +65,7 @@ def public generate_x86_64(var func:FunctionPtr; show_disasm:bool ) : CodeGenera
     *gen |> inLocalLabel()
     var generateCodeVisitor = new GenerateCodeVisitor(gen,context)
     var generateCodeVisitorAdapter <- make_visitor(*generateCodeVisitor)
+    generateCodeVisitor.verbose = verbose
     visit(func, generateCodeVisitorAdapter)
     let f2g = generateCodeVisitor.failed_to_generate
     generateCodeVisitorAdapter := null
@@ -94,17 +96,19 @@ class Jit_x86_64_Macro : AstFunctionAnnotation
             unsafe
                 if get_ptr(this_program()) != null
                     var fnptr <- find_module_function_via_rtti(find_module_via_rtti(this_program(),PMOD),PFUN)
-                    var gen = generate_x86_64(fnptr,SHOW_DISASM)
+                    var gen = generate_x86_64(fnptr,SHOW_DISASM,VERBOSE)
                     if gen != null
                         *gen |> instrument_jit(reinterpret<function> PFUN)
                     fnptr := null
                 else
                     panic("missing 'options rtti'")
         let show_disasm = find_arg("asm",args) ?as tBool ?? false
+        let verbose = find_arg("verbose",args) ?as tBool ?? false
         apply_template(qblock) <| $ ( rules )
             rules |> replaceVariable("PFUN") <| new [[ExprAddr() target:=func.name]]
             rules |> replaceVariable("PMOD") <| new [[ExprConstString() value:=compiling_module().name]]
             rules |> replaceVariable("SHOW_DISASM") <| new [[ExprConstBool() value=show_disasm]]
+            rules |> replaceVariable("VERBOSE") <| new [[ExprConstBool() value=verbose]]
         var qres <- move_unquote_block(qblock)
         qres.blockFlags ^= ExprBlockFlags isClosure
         var reg <- setup_call_list("all`things`jit", func.at, true)
