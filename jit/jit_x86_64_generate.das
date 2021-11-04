@@ -60,14 +60,6 @@ class GenerateCodeVisitor : JitVisitor
                 mov(REG32(GEN,dest),ptr[rsp+(srcV as stack)])
             else
                 self->failed("copyReg32 {dest} <- {srcV}", at)
-    def loadReg32 ( dest:GpTempReg; srcV:EvResult; at:LineInfo ) : void     //  mov reg, dword[data]
-        with_xbyak(gen) <| $ ( GEN )
-            if srcV is gpReg
-                mov(REG32(GEN,dest),dword[REG32(GEN,srcV as gpReg)])
-            elif srcV is gpRegT
-                mov(REG32(GEN,dest),dword[REG32(GEN,srcV as gpRegT)])
-            else
-                self->failed("loadReg32 {dest} <- {srcV}", at)
     def setRdxToArgs()
         if !rdx_has_args
             with_xbyak(gen) <| $ ( GEN )
@@ -172,7 +164,7 @@ class GenerateCodeVisitor : JitVisitor
                         elif evI is gpRegT
                             mov(REG32(GEN,reg),REG32(GEN,evI as gpRegT))
                         else
-                            self->failed("accept reg by ref value init {evI}",arg.init.at)
+                            self->failed("ExprLetVariableInit arg.init._type.ref temp_var {arg.name}:{arg._type} evI={evI}",arg.init.at)
                     else
                         self->failed("ExprLetVariableInit arg.init._type.ref temp_var {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
                 else
@@ -310,9 +302,9 @@ class GenerateCodeVisitor : JitVisitor
                                 if evR is gpRegT
                                     add(REG32(GEN,reg),REG32(GEN,evR as gpRegT))
                                 else
-                                    self->failed("OP2 temp {reg} {expr.op} int ref R{evR}", expr.at)
+                                    self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef temp evR={evR}", expr.at)
                             else
-                                self->failed("OP2 {expr.op} int ref", expr.at)
+                                self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef", expr.at)
                         else
                             if expr.op=="+="
                                 if evL is stack
@@ -321,11 +313,11 @@ class GenerateCodeVisitor : JitVisitor
                                     elif evR is gpRegT
                                         add(dword[rsp+(evL as stack)],REG32(GEN,evR as gpRegT))
                                     else
-                                        self->failed("OP2 {expr.op} int ref R{evR}", expr.at)
+                                        self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef evR={evR}", expr.at)
                                 else
-                                    self->failed("OP2 {expr.op} int ref L{evL}", expr.at)
+                                    self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef evL={evL}", expr.at)
                             else
-                                self->failed("OP2 {expr.op} int ref", expr.at)
+                                self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef", expr.at)
                     else
                         if evOP2 is cmp
                             if expr.op=="<" || expr.op=="=="
@@ -336,9 +328,9 @@ class GenerateCodeVisitor : JitVisitor
                                         if expr.op=="<" || expr.op=="=="
                                             cmp(REG32(GEN,evL as gpReg),ic)
                                         else
-                                            self->failed("{expr.op} int cmp unsupported here", expr.at)
+                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR is const", expr.at)
                                     else
-                                        self->failed("OP2 {expr.op} int cmp gpREG R {debug(evR)}", expr.at)
+                                        self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR={evR}", expr.at)
                                 elif evL is gpRegT
                                     // result is in the left register, which we reused during allocation
                                     if evR is iconst
@@ -346,19 +338,19 @@ class GenerateCodeVisitor : JitVisitor
                                         if expr.op=="<" || expr.op=="=="
                                             cmp(REG32(GEN,evL as gpRegT),ic)
                                         else
-                                            self->failed("{expr.op} int cmp unsupported here", expr.at)
+                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evR is const", expr.at)
                                     elif evR is gpReg
                                         if expr.op=="<" || expr.op=="=="
                                             cmp(REG32(GEN,evL as gpRegT),REG32(GEN,evR as gpReg))
                                         else
-                                            self->failed("{expr.op} int cmp unsupported here", expr.at)
+                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evR is gpReg", expr.at)
                                     else
-                                        self->failed("OP2 {expr.op} int cmp gpREG R {debug(evR)}", expr.at)
+                                        self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evR={evR}", expr.at)
                                 else
-                                    self->failed("OP2 {expr.op} support evL in {evL}", expr.at)
+                                    self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evL={evL} evR={evR}", expr.at)
                                 self->log(" [{evL}]")
                             else
-                                self->failed("OP2 {expr.op} support more cmp operators", expr.at)
+                                self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp}", expr.at)
                         else
                             if expr.op=="+" || expr.op=="-" || expr.op=="%" || expr.op=="/" || expr.op=="<" || expr.op=="=="
                                 if evL is gpReg
@@ -375,18 +367,18 @@ class GenerateCodeVisitor : JitVisitor
                                                 add(REG32(GEN,evL as gpReg),ic)
                                             elif expr.op=="-"
                                                 sub(REG32(GEN,evL as gpReg),ic)
-                                            elif expr.op=="<"
+                                            elif expr.op=="<" || expr.op=="=="
                                                 cmp(REG32(GEN,evL as gpReg),ic)
                                                 mov(REG32(GEN,evL as gpReg),0ul)
                                                 mov(eax,1ul)
-                                                cmovl(REG32(GEN,evL as gpReg),eax)
-                                            elif expr.op=="=="
-                                                cmp(REG32(GEN,evL as gpReg),ic)
-                                                mov(REG32(GEN,evL as gpReg),0ul)
-                                                mov(eax,1ul)
-                                                cmove(REG32(GEN,evL as gpReg),eax)
+                                                if expr.op=="<"
+                                                    cmovl(REG32(GEN,evL as gpReg),eax)
+                                                elif expr.op=="=="
+                                                    cmove(REG32(GEN,evL as gpReg),eax)
+                                                else
+                                                    self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst bool", expr.at)
                                             else
-                                                self->failed("{expr.op} unsupported here", expr.at)
+                                                self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst", expr.at)
                                     elif (evR is gpReg) || (evR is gpRegT)
                                         let regR = (evR is gpReg) ? (evR as gpReg) : (evR as gpRegT)
                                         if expr.op=="+"
@@ -403,9 +395,9 @@ class GenerateCodeVisitor : JitVisitor
                                             idiv(REG32(GEN,regR))
                                             mov(REG32(GEN,evL as gpReg),expr.op=="%" ? edx : eax)
                                         else
-                                            self->failed("OP2 {expr.op} int imm gpREG R {debug(evR)}", expr.at)
+                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, (evR is gpReg || evR is gpRegT)", expr.at)
                                     else
-                                        self->failed("OP2 {expr.op} int imm gpREG R {debug(evR)}", expr.at)
+                                        self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR={evR}", expr.at)
                                     self->log(" [{evL}]")
                                 else
                                     // result is in the result register, which we allocated separately
@@ -416,7 +408,7 @@ class GenerateCodeVisitor : JitVisitor
                                         elif expr.op=="-"
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpReg))-uint(evR as iconst)])
                                         else
-                                            self->failed("OP2 {expr.op} support that op", expr.at)
+                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL is gpReg && evR is iconst", expr.at)
                                     if (evL is gpRegT) && (evR is iconst)
                                         if expr.op=="+"
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpRegT))+uint(evR as iconst)])
@@ -431,59 +423,36 @@ class GenerateCodeVisitor : JitVisitor
                                             idiv(REG32(GEN,evOP2 as gpReg))
                                             mov(REG32(GEN,evOP2 as gpReg),expr.op=="%" ? edx : eax)
                                         else
-                                            self->failed("OP2 {expr.op} support that op", expr.at)
+                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL s gpRegT && evR is iconst", expr.at)
                                     else
                                         if expr.op=="%" || expr.op=="/"
                                             rdx_has_args = false
-                                            // left
-                                            if evL is gpReg
-                                                mov(eax,REG32(GEN,evL as gpReg))
-                                            elif evL is gpRegT
-                                                mov(eax,REG32(GEN,evL as gpRegT))
-                                            else
-                                                self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
-                                            // right
-                                            if expr.op=="%"
-                                                if evR is iconst
-                                                    mov(ecx,evR as iconst)
-                                                elif evR is gpReg
-                                                    mov(ecx,REG32(GEN,evR as gpReg))
-                                                elif evR is gpRegT
-                                                    mov(ecx,REG32(GEN,evR as gpRegT))
-                                                else
-                                                    self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
-                                                cmp(ecx,0u)
-                                                jnz(".div_{intptr(expr)}",LabelType T_AUTO)
-                                                self->JIT`exception("division by zero")
-                                                L(".div_{intptr(expr)}")
-                                                cdq();  rdx_has_args = false
-                                                idiv(ecx)
-                                            else
-                                                self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
-                                            //  EDX:EAX / ECX. Quotient saved to EAX, remainder in EDX
+                                            self->copyReg32(GpTempReg RAX, evL, expr.at)
+                                            self->copyReg32(GpTempReg RCX, evR, expr.at)
+                                            cmp(ecx,0u)
+                                            jnz(".div_{intptr(expr)}",LabelType T_AUTO)
+                                            self->JIT`exception("division by zero")
+                                            L(".div_{intptr(expr)}")
+                                            cdq();  rdx_has_args = false
+                                            idiv(ecx)
                                             mov(REG32(GEN,evOP2 as gpReg),expr.op=="%" ? edx : eax)
                                         else
-                                            // left
-                                            if evL is gpReg
-                                                mov(REG32(GEN,evOP2 as gpReg),REG32(GEN,evL as gpReg))
-                                            else
-                                                self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
-                                            // right
+                                            self->copyReg32(evOP2 as gpReg,evL,expr.at)
                                             if evR is iconst
                                                 if expr.op=="+"
                                                     add(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
                                                 elif expr.op=="-"
                                                     sub(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
                                                 else
-                                                    self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
+                                                    self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evR is iconst", expr.at)
                                             else
-                                                self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
+                                                self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evR={evR}", expr.at)
                             else
-                                self->failed("OP2 {expr.op} int imm", expr.at)
+                                self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer", expr.at)
                 else
-                    self->failed("OP2 {expr.op} int support {describe(expr.left._type)}", expr.at)
+                    self->failed("ExprOp2 {expr.op} expr.left._type.isInteger {describe(expr.left._type)}", expr.at)
             else
-                self->failed("OP2 {expr.op} support {describe(expr.left._type)}", expr.at)
+                self->failed("ExprOp2 {expr.op} {describe(expr.left._type)}", expr.at)
         self->log(")")
         return expr
 // if-then-else
