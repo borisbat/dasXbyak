@@ -157,4 +157,4 @@ def is_for_range1_with_unused_var ( expr:smart_ptr<ExprFor> )
     let flags = expr.iteratorVariables[0].access_flags
     if !flags.access_ref && !flags.access_get
         return true
-    return true
+    return false

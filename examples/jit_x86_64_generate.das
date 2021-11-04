@@ -27,6 +27,7 @@ class GenerateCodeVisitor : AstVisitor
     func_begin : void?
     rdx_has_args : bool                             // rdx contains arg *, as part of the parameters passed
     failed_to_generate : bool
+    loop_stack : array<uint64>
     def GenerateCodeVisitor(var g:CodeGenerator?; var ctx:EvContext )
         gen = g
         context <- ctx
@@ -371,8 +372,25 @@ class GenerateCodeVisitor : AstVisitor
                                             self->failed("{expr.op} int cmp unsupported here", expr.at)
                                     else
                                         self->failed("OP2 {expr.op} int cmp gpREG R {debug(evR)}", expr.at)
-                                    if verbose
-                                        print(" [{evL}]")
+                                elif evL is gpRegT
+                                    // result is in the left register, which we reused during allocation
+                                    if evR is iconst
+                                        let ic = uint(evR as iconst)
+                                        if expr.op=="<" || expr.op=="=="
+                                            cmp(REG32(GEN,evL as gpRegT),ic)
+                                        else
+                                            self->failed("{expr.op} int cmp unsupported here", expr.at)
+                                    elif evR is gpReg
+                                        if expr.op=="<" || expr.op=="=="
+                                            cmp(REG32(GEN,evL as gpRegT),REG32(GEN,evR as gpReg))
+                                        else
+                                            self->failed("{expr.op} int cmp unsupported here", expr.at)
+                                    else
+                                        self->failed("OP2 {expr.op} int cmp gpREG R {debug(evR)}", expr.at)
+                                else
+                                    self->failed("OP2 {expr.op} support evL in {evL}", expr.at)
+                                if verbose
+                                    print(" [{evL}]")
                             else
                                 self->failed("OP2 {expr.op} support more cmp operators", expr.at)
                         else
@@ -429,13 +447,25 @@ class GenerateCodeVisitor : AstVisitor
                                     if (evL is gpReg) && (evR is iconst)
                                         if expr.op=="+"
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpReg))+uint(evR as iconst)])
-                                        else
+                                        elif expr.op=="-"
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpReg))-uint(evR as iconst)])
+                                        else
+                                            self->failed("OP2 {expr.op} support that op", expr.at)
                                     if (evL is gpRegT) && (evR is iconst)
                                         if expr.op=="+"
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpRegT))+uint(evR as iconst)])
-                                        else
+                                        elif expr.op=="-"
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpRegT))-uint(evR as iconst)])
+                                        elif expr.op=="%" || expr.op=="/"
+                                            if (evR as iconst)==0ul
+                                                self->failed("DIVISION BY ZERO", expr.at)
+                                            mov(REG32(GEN,evOP2 as gpReg),evR as iconst)
+                                            mov(eax,REG32(GEN,evL as gpRegT))
+                                            cdq();  rdx_has_args = false
+                                            idiv(REG32(GEN,evOP2 as gpReg))
+                                            mov(REG32(GEN,evOP2 as gpReg),expr.op=="%" ? edx : eax)
+                                        else
+                                            self->failed("OP2 {expr.op} support that op", expr.at)
                                     else
                                         if expr.op=="%" || expr.op=="/"
                                             rdx_has_args = false
@@ -493,6 +523,23 @@ class GenerateCodeVisitor : AstVisitor
             print(")")
         return expr
 // if-then-else
+    /*
+        if a==blah print1 else print2
+                cmp a, blah
+                jne else
+                print1
+                goto end
+            else:
+                print2
+            end:
+    */
+    /*
+        if a==blah print1
+                cmp a, blah
+                jne end
+                print1
+            end:
+    */
     def override preVisitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : void
         if verbose
             tab ++
@@ -502,25 +549,32 @@ class GenerateCodeVisitor : AstVisitor
         with_xbyak(gen) <| $ ( GEN )
             if evS is gpReg
                 test(REG32(GEN,evS as gpReg),REG32(GEN,evS as gpReg))
-                jz(".if_true_{intptr(expr)}",LabelType T_NEAR)
+                if expr.if_false==null
+                    jz(".if_end_{intptr(expr)}",LabelType T_NEAR)
+                else
+                    jz(".if_cond_failed_{intptr(expr)}",LabelType T_NEAR)
             elif evS is cmp
-                GEN |> condJumpIfNot(".if_true_{intptr(expr)}",evS as cmp)
+                if expr.if_false==null
+                    GEN |> condJumpIfNot(".if_end_{intptr(expr)}",evS as cmp)
+                else
+                    GEN |> condJumpIfNot(".if_cond_failed_{intptr(expr)}",evS as cmp)
             else
                 self->failed("supprt if-then-else subexpr in {evS}", expr.at)
         self->check_gen()
         if verbose
             print("\n{repeat("\t",tab)}THEN\n")
     def override preVisitExprIfThenElseElseBlock(expr:smart_ptr<ExprIfThenElse>;elseBlock:ExpressionPtr) : void
+        // we are only here, if there is an else block
         with_xbyak(gen) <| $ ( GEN )
+            // we jump towards the end of it
             jmp(".if_end_{intptr(expr)}",LabelType T_NEAR)
-            L(".if_true_{intptr(expr)}")
+            // else section starts here
+            L(".if_cond_failed_{intptr(expr)}")
         self->check_gen()
         if verbose
             print("\n{repeat("\t",tab)}ELSE\n")
     def override visitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : ExpressionPtr
         with_xbyak(gen) <| $ ( GEN )
-            if expr.if_false==null
-                L(".if_true_{intptr(expr)}")
             L(".if_end_{intptr(expr)}")
         self->check_gen()
         if verbose
@@ -659,6 +713,7 @@ class GenerateCodeVisitor : AstVisitor
     def override preVisitExprFor(expr:smart_ptr<ExprFor>) : void
         if verbose
             print("(FOR ")
+        loop_stack |> push(intptr(expr))
         if is_for_range1(expr)
             pass
         else
@@ -720,6 +775,7 @@ class GenerateCodeVisitor : AstVisitor
         if is_for_range1(expr)
             let evS & = context.expr_res[intptr(expr.sources[0])]
             with_xbyak(gen) <| $ ( GEN )
+                L(".for_loop_continue_{intptr(expr)}")
                 let iSP = expr.iteratorVariables[0].stackTop
                 if evS is xmmReg
                     if context.temp_var |> key_exists(intptr(expr.iteratorVariables[0]))
@@ -745,6 +801,7 @@ class GenerateCodeVisitor : AstVisitor
         with_xbyak(gen) <| $ ( GEN )
             L(".for_loop_done_{intptr(expr)}")
         self->check_gen()
+        loop_stack |> pop()
         if verbose
             print("{repeat("\t",tab)})")
         return expr
@@ -752,11 +809,17 @@ class GenerateCodeVisitor : AstVisitor
     def override visitExprBreak(expr:smart_ptr<ExprBreak>) : ExpressionPtr
         if verbose
             print("(BREAK)")
+        let loop_ptr = loop_stack |> back
+        with_xbyak(gen) <| $ ( GEN )
+            jmp(".for_loop_done_{loop_ptr}",LabelType T_NEAR)
         return expr
 // continue
     def override visitExprContinue(expr:smart_ptr<ExprContinue>) : ExpressionPtr
         if verbose
             print("(CONTINUE)")
+        let loop_ptr = loop_stack |> back
+        with_xbyak(gen) <| $ ( GEN )
+            jmp(".for_loop_continue_{loop_ptr}",LabelType T_NEAR)
         return expr
 // call
     def override preVisitExprCall(expr:smart_ptr<ExprCall>): void
@@ -775,6 +838,13 @@ class GenerateCodeVisitor : AstVisitor
                             mov(dword[rsp+(offset+uint(ai)*16u)],REG32(GEN,eA as gpReg))
                         elif asize==8
                             mov(qword[rsp+(offset+uint(ai)*16u)],REG64(GEN,eA as gpReg))
+                        else
+                            self->error("TODO: support reg call argument size {asize}",expr.at)
+                    elif eA is gpRegT
+                        if asize==4
+                            mov(dword[rsp+(offset+uint(ai)*16u)],REG32(GEN,eA as gpRegT))
+                        elif asize==8
+                            mov(qword[rsp+(offset+uint(ai)*16u)],REG64(GEN,eA as gpRegT))
                         else
                             self->error("TODO: support reg call argument size {asize}",expr.at)
                     elif eA is iconst
@@ -878,21 +948,23 @@ class GenerateCodeVisitor : AstVisitor
                     self->error("TODO: support range(1) argument {evA0}",expr.at)
             // range(int,int)
             elif length(expr.arguments)==2 && expr.arguments[0]._type.baseType==Type tInt && expr.arguments[1]._type.baseType==Type tInt
+                rdx_has_args = false
                 let evA0 & = context.expr_res[intptr(expr.arguments[0])]
                 let evA1 & = context.expr_res[intptr(expr.arguments[1])]
+                if evA1 is gpReg
+                    mov(edx,REG32(GEN,evA1 as gpReg))
+                elif evA1 is iconst
+                    mov(edx,(evA1 as iconst)<<32ul)
+                else
+                    self->error("TODO: support range(2) argument ({evA1},...)",expr.at)
                 if evA0 is gpReg
                     mov(eax,REG32(GEN,evA0 as gpReg))
-                    shl(rax,32)
-                elif evA0 is iconst
-                    mov(rax,(evA0 as iconst)<<32ul)
+                elif evA0 is gpRegT
+                    mov(eax,REG32(GEN,evA0 as gpRegT))
                 else
-                    self->error("TODO: support range(2) argument ({evA0},...)",expr.at)
-                if evA1 is gpReg
-                    mov(eax,REG32(GEN,evA1 as gpReg))
-                elif evA1 is gpRegT
-                    mov(eax,REG32(GEN,evA1 as gpRegT))
-                else
-                    self->error("TODO: support range(2) argument (...,{evA1})",expr.at)
+                    self->error("TODO: support range(2) argument (...,{evA0})",expr.at)
+                shl(rax,32)
+                shrd(rax,rdx,uint8(32))
                 movd(REGXMM(GEN,xreg),rax)
             self->check_gen()
             if verbose

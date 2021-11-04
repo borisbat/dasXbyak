@@ -330,6 +330,9 @@ class AllocateRegistersCodeVisitor : AstVisitor
                         // if the loop variable is unused, we don't need extra one for the source
                         let reg = self->allocateGP()
                         context.temp_extra[intptr(expr)] = reg
+                    else
+                        if verbose
+                            print("range1 for with unused variable {expr.iteratorVariables[0].name}\n")
     def override visitExprFor(expr:smart_ptr<ExprFor>) : ExpressionPtr
         if put_loop_variables_in_registers
             for v in expr.iteratorVariables
