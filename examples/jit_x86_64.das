@@ -67,16 +67,21 @@ def mask ( var regs:RegAllocator; maxReg:int )
 enum CompareType
     always
     less
+    equals
 
 def condJump ( var gen:CodeGenerator; lab:string; cond:CompareType )
     if cond==CompareType less
         jl(gen,lab,LabelType T_NEAR)
+    elif cond==CompareType equals
+        je(gen,lab,LabelType T_NEAR)
     else
         panic("unsupported jump {cond}")
 
 def condJumpIfNot ( var gen:CodeGenerator; lab:string; cond:CompareType )
     if cond==CompareType less
         jge(gen,lab,LabelType T_NEAR)
+    elif cond==CompareType equals
+        jne(gen,lab,LabelType T_NEAR)
     else
         panic("unsupported jump {cond}")
 
@@ -170,14 +175,19 @@ class AllocateRegistersCodeVisitor : AstVisitor
     [[do_not_delete]] local_stack : array<Variable?>
     local_stack_depth : array<int>
     [[do_not_delete]] this_function : Function?
+    failed_to_allocate : bool
     def AllocateRegistersCodeVisitor
         pass
-    def error ( txt:string; at:LineInfo )
+    def error ( txt:string; at:LineInfo; atX:LineInfo )
+        failed_to_allocate = true
         let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
         print("ERROR jit_x86_64(allocate_registers): {txt} at {fname}:{int(at.line)}:{int(at.column)}\n")
+        stackwalk(false,false)
     def failed ( txt:string; at:LineInfo )
+        failed_to_allocate = true
         let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
         print("TODO jit_x86_64(allocate_registers): {txt} at {fname}:{int(at.line)}:{int(at.column)}\n")
+        stackwalk(false,false)
     def evExpectStack ( expr:ExpressionPtr; stack:uint )
         if verbose
             print("expect stack {stack} {expr.__rtti}.{intptr(expr)}\n")
@@ -347,13 +357,15 @@ class AllocateRegistersCodeVisitor : AstVisitor
                     if evOP2 is cmp
                         if expr.op=="<"
                             evOP2 = [[EvResult cmp=CompareType less]]
+                        elif expr.op=="=="
+                            evOP2 = [[EvResult cmp=CompareType equals]]
                         else
                             self->failed("OP2 {expr.op} support cmp result for more operators", expr.at)
                         self->evRelease(evL)
                         self->evRelease(evR)
                     else
                         // imm operators
-                        if expr.op=="-" || expr.op=="+" || expr.op=="<"
+                        if expr.op=="-" || expr.op=="+" || expr.op=="*" || expr.op=="/" || expr.op=="%" || expr.op=="<" || expr.op=="=="
                             if evL is gpReg                                 // left is reg
                                 if (evR is iconst) || (evR is gpReg)        // right is const, or reg
                                     // reuse left register
@@ -487,15 +499,20 @@ class AllocateRegistersCodeVisitor : AstVisitor
         // TODO: calls table
         let call_name = "{expr.func._module.name}::{expr.func.name}"
         if call_name=="$::range"
-            assert(length(expr.arguments)==1 && expr.arguments[0]._type.baseType==Type tInt)
-            var evA0 & = context.expr_res[intptr(expr.arguments[0])]
-            // range returns int2 in xmm register
-            let xreg = self->allocateXMM()
-            self->evRelease(evA0)
-            context.expr_res[intptr(expr)] = [[EvResult xmmReg=xreg]]
+            self->JIT`range(expr)
         else
             self->failed("support all other functions", expr.at)
         return expr
+    /////////////////////
+    // function templates
+    def JIT`range(var expr:smart_ptr<ExprCall>)
+        // release arugments
+        for ai in range(length(expr.arguments))
+            var evA & = context.expr_res[intptr(expr.arguments[ai])]
+            self->evRelease(evA)
+        // range retursn result in an xmm register
+        let xreg = self->allocateXMM()
+        context.expr_res[intptr(expr)] = [[EvResult xmmReg=xreg]]
 
 class GenerateCodeVisitor : AstVisitor
     verbose = true
@@ -505,15 +522,20 @@ class GenerateCodeVisitor : AstVisitor
     [[do_not_delete]] this_function : Function?
     func_begin : void?
     rdx_has_args : bool                             // rdx contains arg *, as part of the parameters passed
+    failed_to_generate : bool
     def GenerateCodeVisitor(var g:CodeGenerator?; var ctx:EvContext )
         gen = g
         context <- ctx
     def error ( txt:string; at:LineInfo )
+        failed_to_generate = true
         let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
         print("\nERROR jit_x86_64(generate): {txt} at {fname}:{int(at.line)}:{int(at.column)}\n")
+        stackwalk(false,false)
     def failed ( txt:string; at:LineInfo )
+        failed_to_generate = true
         let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
         print("\nTODO jit_x86_64(generate): {txt} at {fname}:{int(at.line)}:{int(at.column)}\n")
+        stackwalk(false,false)
     def check_gen()
         with_xbyak(gen) <| $ ( GEN )
             var err : GenerationError
@@ -778,7 +800,7 @@ class GenerateCodeVisitor : AstVisitor
                             else
                                 self->failed("OP2 {expr.op} support more cmp operators", expr.at)
                         else
-                            if expr.op=="+" || expr.op=="-" || expr.op=="<"
+                            if expr.op=="+" || expr.op=="-" || expr.op=="%" || expr.op=="/" || expr.op=="<" || expr.op=="=="
                                 if evL is gpReg
                                     // result is in the left register, which we reused during allocation
                                     if evR is iconst
@@ -798,13 +820,25 @@ class GenerateCodeVisitor : AstVisitor
                                                 mov(REG32(GEN,evL as gpReg),0ul)
                                                 mov(eax,1ul)
                                                 cmovl(REG32(GEN,evL as gpReg),eax)
+                                            elif expr.op=="=="
+                                                cmp(REG32(GEN,evL as gpReg),ic)
+                                                mov(REG32(GEN,evL as gpReg),0ul)
+                                                mov(eax,1ul)
+                                                cmove(REG32(GEN,evL as gpReg),eax)
                                             else
                                                 self->failed("{expr.op} unsupported here", expr.at)
                                     elif evR is gpReg
                                         if expr.op=="+"
                                             add(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
-                                        else
+                                        elif expr.op=="-"
                                             sub(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
+                                        elif expr.op=="%" || expr.op=="/"
+                                            sub(rdx,rdx);   rdx_has_args = false
+                                            mov(eax,REG32(GEN,evL as gpReg))
+                                            idiv(REG32(GEN,evR as gpReg))
+                                            mov(REG32(GEN,evL as gpReg),expr.op=="%" ? edx : eax)
+                                        else
+                                            self->failed("OP2 {expr.op} int imm gpREG R {debug(evR)}", expr.at)
                                     else
                                         self->failed("OP2 {expr.op} int imm gpREG R {debug(evR)}", expr.at)
                                     if verbose
@@ -823,19 +857,46 @@ class GenerateCodeVisitor : AstVisitor
                                         else
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpRegT))-uint(evR as iconst)])
                                     else
-                                        // left
-                                        if evL is gpReg
-                                            mov(REG32(GEN,evOP2 as gpReg),REG32(GEN,evL as gpReg))
-                                        else
-                                            self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
-                                        // right
-                                        if evR is iconst
-                                            if expr.op=="+"
-                                                add(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
+                                        if expr.op=="%" || expr.op=="/"
+                                            sub(rdx,rdx);   rdx_has_args = false
+                                            // left
+                                            if evL is gpReg
+                                                mov(eax,REG32(GEN,evL as gpReg))
+                                            elif evL is gpRegT
+                                                mov(eax,REG32(GEN,evL as gpRegT))
                                             else
-                                                sub(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
+                                                self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
+                                            // right
+                                            if expr.op=="%"
+                                                if evR is iconst
+                                                    mov(ecx,evR as iconst)
+                                                elif evR is gpReg
+                                                    mov(ecx,REG32(GEN,evR as gpReg))
+                                                elif evR is gpRegT
+                                                    mov(ecx,REG32(GEN,evR as gpRegT))
+                                                else
+                                                    self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
+                                                idiv(ecx)
+                                            else
+                                                self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
+                                            //  EDX:EAX / ECX. Quotient saved to EAX, remainder in EDX
+                                            mov(REG32(GEN,evOP2 as gpReg),expr.op=="%" ? edx : eax)
                                         else
-                                            self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
+                                            // left
+                                            if evL is gpReg
+                                                mov(REG32(GEN,evOP2 as gpReg),REG32(GEN,evL as gpReg))
+                                            else
+                                                self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
+                                            // right
+                                            if evR is iconst
+                                                if expr.op=="+"
+                                                    add(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
+                                                elif expr.op=="-"
+                                                    sub(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
+                                                else
+                                                    self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
+                                            else
+                                                self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
                             else
                                 self->failed("OP2 {expr.op} int imm", expr.at)
                 else
@@ -1080,7 +1141,7 @@ class GenerateCodeVisitor : AstVisitor
     def override preVisitExprCall(expr:smart_ptr<ExprCall>): void
         if verbose
             print("CALL `{expr.name}` ")
-    def override visitExprCall(expr:smart_ptr<ExprCall>) : ExpressionPtr
+    def override visitExprCall(var expr:smart_ptr<ExprCall>) : ExpressionPtr
         if !expr.func.flags.builtIn
             rdx_has_args = false            // rdx no longer has args, since we call another function
             with_xbyak(gen) <| $ ( GEN )
@@ -1167,22 +1228,46 @@ class GenerateCodeVisitor : AstVisitor
         // TODO: calls table
         let call_name = "{expr.func._module.name}::{expr.func.name}"
         if call_name=="$::range"
-            assert(length(expr.arguments)==1 && expr.arguments[0]._type.baseType==Type tInt)
-            let evA0 & = context.expr_res[intptr(expr.arguments[0])]
+            self->JIT`range(expr)
+        if verbose
+            print(")")
+        return expr
+    /////////////////////
+    // function templates
+    def JIT`range(var expr:smart_ptr<ExprCall>)
+        with_xbyak(gen) <| $ ( GEN )
             let evR & = context.expr_res[intptr(expr)]
             let xreg = evR as xmmReg
-            with_xbyak(gen) <| $ ( GEN )
+            // range(int)
+            if length(expr.arguments)==1 && expr.arguments[0]._type.baseType==Type tInt
+                let evA0 & = context.expr_res[intptr(expr.arguments[0])]
                 if evA0 is gpReg
                     shl(REG64(GEN,evA0 as gpReg),32)
                     movd(REGXMM(GEN,xreg),REG64(GEN,evA0 as gpReg))
                 else
                     self->error("TODO: support range(1) argument {evA0}",expr.at)
+            // range(int,int)
+            elif length(expr.arguments)==2 && expr.arguments[0]._type.baseType==Type tInt && expr.arguments[1]._type.baseType==Type tInt
+                let evA0 & = context.expr_res[intptr(expr.arguments[0])]
+                let evA1 & = context.expr_res[intptr(expr.arguments[1])]
+                if evA0 is gpReg
+                    mov(eax,REG32(GEN,evA0 as gpReg))
+                    shl(rax,32)
+                elif evA0 is iconst
+                    mov(rax,(evA0 as iconst)<<32ul)
+                else
+                    self->error("TODO: support range(2) argument ({evA0},...)",expr.at)
+                if evA1 is gpReg
+                    mov(eax,REG32(GEN,evA1 as gpReg))
+                elif evA1 is gpRegT
+                    mov(eax,REG32(GEN,evA1 as gpRegT))
+                else
+                    self->error("TODO: support range(2) argument (...,{evA1})",expr.at)
+                movd(REGXMM(GEN,xreg),rax)
             self->check_gen()
             if verbose
                 print(" [{xreg}]")
-        if verbose
-            print(")")
-        return expr
+
 
 def allocate_regs(var func : FunctionPtr)
     var allocateRegistersVisitor = new AllocateRegistersCodeVisitor()
@@ -1201,9 +1286,15 @@ def public generate_x86_64(var func:FunctionPtr) : CodeGenerator?
     var context <- allocateRegistersVisitor.context
     if allocateRegistersVisitor.verbose
         context |> dump
+    let f2a = allocateRegistersVisitor.failed_to_allocate
     allocateRegistersVisitorAdapter := null
     unsafe
         delete allocateRegistersVisitor
+/*
+    if f2a
+        print("jit_x86_64: failed due to errors")
+        return null
+*/
     // verify GP regs
     let temp_gp = length(context.gpa.regs)
     if temp_gp > MAX_GP_TEMP_REG
@@ -1220,6 +1311,7 @@ def public generate_x86_64(var func:FunctionPtr) : CodeGenerator?
     var generateCodeVisitor = new GenerateCodeVisitor(gen,context)
     var generateCodeVisitorAdapter <- make_visitor(*generateCodeVisitor)
     visit(func, generateCodeVisitorAdapter)
+    let f2g = generateCodeVisitor.failed_to_generate
     generateCodeVisitorAdapter := null
     *gen |> outLocalLabel()
     unsafe
@@ -1232,6 +1324,10 @@ def public generate_x86_64(var func:FunctionPtr) : CodeGenerator?
         let err = reinterpret<GenerationError> GetError()
         if err != GenerationError NONE
             panic("xbyak - generation error {err}")
+    if f2g
+        print("jit_x86_64: failed to generate\n")
+        unsafe
+            delete gen
     return gen
 
 [function_macro(name="jit_x86_64")]
@@ -1240,12 +1336,14 @@ class Jit_x86_64_Macro : AstFunctionAnnotation
         func.sideEffectFlags |= bitfield(int(SideEffects userScenario))
         var qblock <- quote() <|
             unsafe
-                if true
-                    var fnptr <- find_module_function_via_rtti(find_module_via_rtti(PMOD),PFUN)
+                if get_ptr(this_program()) != null
+                    var fnptr <- find_module_function_via_rtti(find_module_via_rtti(this_program(),PMOD),PFUN)
                     var gen = generate_x86_64(fnptr)
                     if gen != null
                         *gen |> instrument_jit(reinterpret<function> PFUN)
                     fnptr := null
+                else
+                    panic("missing 'options rtti'")
         apply_template(qblock) <| $ ( rules )
             rules |> replaceVariable("PFUN") <| new [[ExprAddr() target:=func.name]]
             rules |> replaceVariable("PMOD") <| new [[ExprConstString() value:=compiling_module().name]]
