@@ -56,7 +56,13 @@ def div_jit ( a, b: int )
 
 [export]
 def main()
-    for i in range(1,10)
+
+    print("mod_jit(30,0) = {mod_jit(30,0)}\n")
+
+    return
+
+    for i in range(-10,10)
+        print("i = {i}\n")
         print("mod_jit(30,{i}) = {mod_jit(30,i)}\n")
         print("div_jit(30,{i}) = {div_jit(30,i)}\n")
 

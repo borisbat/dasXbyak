@@ -366,6 +366,8 @@ class AllocateRegistersCodeVisitor : AstVisitor
                     else
                         // imm operators
                         if expr.op=="-" || expr.op=="+" || expr.op=="*" || expr.op=="/" || expr.op=="%" || expr.op=="<" || expr.op=="=="
+                            if expr.op=="%" || expr.op=="/"                 // this operators require context for the exceptions
+                                context.use_context = true
                             if evL is gpReg                                 // left is reg
                                 if (evR is iconst) || (evR is gpReg)        // right is const, or reg
                                     // reuse left register
@@ -833,8 +835,12 @@ class GenerateCodeVisitor : AstVisitor
                                         elif expr.op=="-"
                                             sub(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
                                         elif expr.op=="%" || expr.op=="/"
-                                            sub(rdx,rdx);   rdx_has_args = false
+                                            cmp(REG32(GEN,evR as gpReg),REG32(GEN,evR as gpReg))
+                                            jnz(".div_{intptr(expr)}",LabelType T_AUTO)
+                                            self->JIT`exception("division by zero")
+                                            L(".div_{intptr(expr)}")
                                             mov(eax,REG32(GEN,evL as gpReg))
+                                            cdq();  rdx_has_args = false
                                             idiv(REG32(GEN,evR as gpReg))
                                             mov(REG32(GEN,evL as gpReg),expr.op=="%" ? edx : eax)
                                         else
@@ -858,7 +864,7 @@ class GenerateCodeVisitor : AstVisitor
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpRegT))-uint(evR as iconst)])
                                     else
                                         if expr.op=="%" || expr.op=="/"
-                                            sub(rdx,rdx);   rdx_has_args = false
+                                            rdx_has_args = false
                                             // left
                                             if evL is gpReg
                                                 mov(eax,REG32(GEN,evL as gpReg))
@@ -876,6 +882,11 @@ class GenerateCodeVisitor : AstVisitor
                                                     mov(ecx,REG32(GEN,evR as gpRegT))
                                                 else
                                                     self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
+                                                cmp(ecx,ecx)
+                                                jnz(".div_{intptr(expr)}",LabelType T_AUTO)
+                                                self->JIT`exception("division by zero")
+                                                L(".div_{intptr(expr)}")
+                                                cdq();  rdx_has_args = false
                                                 idiv(ecx)
                                             else
                                                 self->failed("OP2 {expr.op} int {evOP2} = {evL} {expr.op} R? {evR} {describe(expr)}", expr.at)
@@ -907,6 +918,15 @@ class GenerateCodeVisitor : AstVisitor
         if verbose
             print(")")
         return expr
+    def JIT`exception(text:string):void
+        with_xbyak(gen) <| $ ( GEN )
+            let ctx_offset = self->getContextOffset()
+            mov(rcx,jit_generate_const_string(text))    // rcx is exception text
+            mov(rdx,ptr[rsp+ctx_offset])                // rdx is Context *
+            sub(rsp,32u)
+            mov(rax,JIT_exception())
+            call(rax)
+            add(rsp,32u)
 // op3
     def copyReg32 ( reg:GpTempReg; eV:EvResult; at:LineInfo ) : void
         with_xbyak(gen) <| $ ( GEN )
@@ -938,7 +958,6 @@ class GenerateCodeVisitor : AstVisitor
         with_xbyak(gen) <| $ ( GEN )
             self->copyReg32(eV as gpReg,evL,expr.at)
             jmp(".cond_end_{intptr(expr)}",LabelType T_NEAR)
-            align(16ul,true)
             L(".cond_right_{intptr(expr)}")
         self->check_gen()
         if verbose
