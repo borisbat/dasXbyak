@@ -41,6 +41,7 @@ IF (NOT DAS_XBYAK_INCLUDED)
 
 	ADD_MODULE_DAS(jit jit jit_x86_64_alloc_regs)
 	ADD_MODULE_DAS(jit jit jit_x86_64_regs)
+	ADD_MODULE_DAS(jit jit jit_x86_64_generate_base)
 	ADD_MODULE_DAS(jit jit jit_x86_64_generate)
 	ADD_MODULE_DAS(jit jit jit_x86_64_common)
 	ADD_MODULE_DAS(jit jit jit_x86_64)

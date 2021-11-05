@@ -6,6 +6,7 @@ module jit_x86_64_generate shared public
 
 require jit_x86_64_regs
 require jit_x86_64_common
+require jit_x86_64_generate_base
 
 require daslib/ast_boost
 require daslib/strings_boost
@@ -18,54 +19,15 @@ require zydis
 
 require ast public
 
-class GenerateCodeVisitor : JitVisitor
+class GenerateCodeVisitor : GenerateCodeVisitorBase
     assume_no_exceptions : bool = false
     tab : int
-    [[do_not_delete]] gen : CodeGenerator?
     [[do_not_delete]] this_function : Function?
     func_begin : void?
-    rdx_has_args : bool                             // rdx contains arg *, as part of the parameters passed
     loop_stack : array<uint64>
     def GenerateCodeVisitor(var g:CodeGenerator?; var ctx:EvContext )
-        JitVisitor`JitVisitor(self, ctx)
+        GenerateCodeVisitorBase`GenerateCodeVisitorBase(self, g, ctx)
         gen = g
-// ABI
-    def getContextOffset
-        return context.stack_frame+context.temp_frame+context.save_frame+8u+ARG_CONTEXT
-    def getArgOffset
-        return context.stack_frame+context.temp_frame+context.save_frame+8u+ARG_ARGUMENTS
-    def getCmresOffset
-        return context.stack_frame+context.temp_frame+context.save_frame+8u+ARG_CMRES
-// exception
-    def JIT`exception(text:string):void
-        with_xbyak(gen) <| $ ( GEN )
-            let ctx_offset = getContextOffset()
-            mov(rcx,jit_generate_const_string(text))    // rcx is exception text
-            mov(rdx,ptr[rsp+ctx_offset])                // rdx is Context *
-            sub(rsp,32u)
-            mov(rax,JIT_exception())
-            call(rax)
-            add(rsp,32u)
-// helpers
-    def copyReg32 ( dest:GpTempReg; srcV:EvResult; at:LineInfo ) : void     //  mov reg, data
-        with_xbyak(gen) <| $ ( GEN )
-            if srcV is gpReg
-                if dest != (srcV as gpReg)
-                    mov(REG32(GEN,dest),REG32(GEN,srcV as gpReg))
-            elif srcV is gpRegT
-                if dest != (srcV as gpRegT)
-                    mov(REG32(GEN,dest),REG32(GEN,srcV as gpRegT))
-            elif srcV is iconst
-                mov(REG32(GEN,dest),srcV as iconst)
-            elif srcV is stack
-                mov(REG32(GEN,dest),ptr[rsp+(srcV as stack)])
-            else
-                failed("copyReg32 {dest} <- {srcV}", at)
-    def setRdxToArgs()
-        if !rdx_has_args
-            with_xbyak(gen) <| $ ( GEN )
-                mov(rdx,ptr[rsp+getArgOffset()])
-                rdx_has_args
 // function
     def override preVisitFunction(fun:FunctionPtr) : void
         log("(DEF {fun.name} [STACK={context.stack_frame}, TEMP={context.temp_frame}]\n")
@@ -323,41 +285,10 @@ class GenerateCodeVisitor : JitVisitor
                     else
                         if evOP2 is cmp
                             if expr.op=="<" || expr.op=="=="
-                                if evL is gpReg
-                                    // result is in the left register, which we reused during allocation
-                                    if evR is iconst
-                                        let ic = uint(evR as iconst)
-                                        if expr.op=="<" || expr.op=="=="
-                                            cmp(REG32(GEN,evL as gpReg),ic)
-                                        else
-                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR is const", expr.at)
-                                    elif evR is gpReg
-                                        if expr.op=="<" || expr.op=="=="
-                                            cmp(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
-                                        else
-                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR is gpReg", expr.at)
-                                    else
-                                        failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR={evR}", expr.at)
-                                elif evL is gpRegT
-                                    // result is in the left register, which we reused during allocation
-                                    if evR is iconst
-                                        let ic = uint(evR as iconst)
-                                        if expr.op=="<" || expr.op=="=="
-                                            cmp(REG32(GEN,evL as gpRegT),ic)
-                                        else
-                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evR is const", expr.at)
-                                    elif evR is gpReg
-                                        if expr.op=="<" || expr.op=="=="
-                                            cmp(REG32(GEN,evL as gpRegT),REG32(GEN,evR as gpReg))
-                                        else
-                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evR is gpReg", expr.at)
-                                    else
-                                        failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evR={evR}", expr.at)
-                                else
-                                    failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evL={evL} evR={evR}", expr.at)
+                                cmpAnyAny32(evL,evR,expr.at,GpTempReg RAX)
                                 log(" [{evL}]")
                             else
-                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp}", expr.at)
+                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp", expr.at)
                         else
                             if expr.op=="+" || expr.op=="-" || expr.op=="%" || expr.op=="/" || expr.op=="<" || expr.op=="=="
                                 if evL is gpReg
@@ -448,6 +379,8 @@ class GenerateCodeVisitor : JitVisitor
                                                 div_reg = evR as gpReg
                                             elif evR is gpRegT
                                                 div_reg = evR as gpRegT
+                                            else
+                                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evR={evR}", expr.at)
                                             copyReg32(div_reg, evR, expr.at)
                                             if !assume_no_exceptions
                                                 test(REG32(GEN,div_reg),REG32(GEN,div_reg))
@@ -748,13 +681,7 @@ class GenerateCodeVisitor : JitVisitor
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(RV, rA0, expr.at)
-                                if rA1 is gpReg
-                                    cmp(REG32(GEN,rA1 as gpReg),REG32(GEN,RV))
-                                elif rA1 is gpRegT
-                                    cmp(REG32(GEN,rA1 as gpRegT),REG32(GEN,RV))
-                                else
-                                    copyReg32(GpTempReg RAX, rA1, expr.at)
-                                    cmp(eax,REG32(GEN,RV))
+                                cmpAnyReg32(rA1,RV,expr.at,GpTempReg RAX)
                                 jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                     else
                         let iSP = expr.iteratorVariables[0].stackTop
@@ -780,9 +707,8 @@ class GenerateCodeVisitor : JitVisitor
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
-                                copyReg32(GpTempReg RCX, rA1, expr.at)
                                 mov(dword[rsp+iSP],eax)
-                                cmp(ecx,eax)
+                                cmpAnyReg32(rA1,GpTempReg RAX,expr.at,GpTempReg RCX)
                                 jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                 else
                     failed("ExprFor is_for_range1 evS={evS}",expr.at)
@@ -814,12 +740,7 @@ class GenerateCodeVisitor : JitVisitor
                             else
                                 let ra = expr.sources[0] as ExprCall
                                 let rA & = evResGet(ra.arguments[length(ra.arguments)==1 ? 0 : 1])
-                                if rA is gpReg
-                                    cmp(REG32(GEN,RV),REG32(GEN,rA as gpReg))
-                                elif rA is gpRegT
-                                    cmp(REG32(GEN,RV),REG32(GEN,rA as gpRegT))
-                                else
-                                    failed("ExprFor !is_for_range1 rA={rA}",expr.at)
+                                cmpRegAny32(RV,rA,expr.at)
                     else
                         if is_for_range1_with_unused_var(expr)
                             dec(dword[rsp+iSP])
@@ -831,12 +752,7 @@ class GenerateCodeVisitor : JitVisitor
                             else
                                 let ra = expr.sources[0] as ExprCall
                                 let rA & = evResGet(ra.arguments[length(ra.arguments)==1 ? 0 : 1])
-                                if rA is gpReg
-                                    cmp(dword[rsp+iSP],REG32(GEN,rA as gpReg))
-                                elif rA is gpRegT
-                                    cmp(dword[rsp+iSP],REG32(GEN,rA as gpRegT))
-                                else
-                                    failed("ExprFor !is_for_range1 rA={rA}",expr.at)
+                                cmpStackAny32(int(iSP),rA,expr.at,GpTempReg RAX)
                     jnz(".for_loop_{intptr(expr)}",LabelType T_AUTO)
                 else
                     failed("ExprFor is_for_range1 evS={evS}",expr.at)
@@ -911,7 +827,7 @@ class GenerateCodeVisitor : JitVisitor
                 for t in urange(FIRST_NON_TRANSIENT_XMM_TEMP_REG)
                     if (transients.xmm_mask & (1u<<t)) != 0u
                         xmm_total ++
-                if xmm_total != 0u
+                if xmm_total != 0u                                  // TODO: if no gp transients and xmm transients, we generate double sub(rsp,const)
                     sub(rsp,xmm_total * 16u)
                 for t in urange(FIRST_NON_TRANSIENT_XMM_TEMP_REG)
                     if (transients.xmm_mask & (1u<<t)) != 0u
@@ -964,7 +880,7 @@ class GenerateCodeVisitor : JitVisitor
                             txmm = reinterpret<XmmTempReg> t
                         movdqa(REGXMM(GEN,txmm),ptr[rsp+rt_offset])
                         rt_offset += 16u
-                if xmm_total != 0u
+                if xmm_total != 0u                                          // TODO: if no gp transients and xmm transients, we generate double add(rsp,const)
                     add(rsp,xmm_total * 16u)
                 // move result to xmm0
                 if expr.func.result != null
@@ -997,8 +913,7 @@ class GenerateCodeVisitor : JitVisitor
     def JIT`range(var expr:smart_ptr<ExprCall>)
         with_xbyak(gen) <| $ ( GEN )
             let evR & = evResGet(expr)
-            if evR is skip
-                // if skip is set, someone else is taking over the result and wants inputs
+            if evR is skip  // if skip is set, someone else is taking over the result and wants inputs
                 return
             let xreg = evR as xmmReg
             // range(int)
@@ -1007,29 +922,20 @@ class GenerateCodeVisitor : JitVisitor
                 if evA0 is gpReg
                     shl(REG64(GEN,evA0 as gpReg),32)
                     movd(REGXMM(GEN,xreg),REG64(GEN,evA0 as gpReg))
+                elif evA0 is gpRegT
+                    shl(REG64(GEN,evA0 as gpRegT),32)
+                    movd(REGXMM(GEN,xreg),REG64(GEN,evA0 as gpRegT))
                 else
-                    error("$::range evA0={evA0}",expr.at)
+                    copyReg32(GpTempReg RAX,evA0,expr.at)
+                    shl(rax,32)
+                    movd(REGXMM(GEN,xreg),rax)
             // range(int,int)
             elif length(expr.arguments)==2 && expr.arguments[0]._type.baseType==Type tInt && expr.arguments[1]._type.baseType==Type tInt
                 rdx_has_args = false
                 let evA0 & = evResGet(expr.arguments[0])
                 let evA1 & = evResGet(expr.arguments[1])
-                if evA1 is gpReg
-                    mov(edx,REG32(GEN,evA1 as gpReg))
-                elif evA1 is gpRegT
-                    mov(edx,REG32(GEN,evA1 as gpRegT))
-                elif evA1 is iconst
-                    mov(edx,(evA1 as iconst)<<32ul)
-                else
-                    error("$::range (evA1={evA1},...)",expr.at)
-                if evA0 is gpReg
-                    mov(eax,REG32(GEN,evA0 as gpReg))
-                elif evA0 is gpRegT
-                    mov(eax,REG32(GEN,evA0 as gpRegT))
-                elif evA0 is iconst
-                    mov(eax,evA0 as iconst)
-                else
-                    error("$::range (...,evA0={evA0})",expr.at)
+                copyReg32(GpTempReg RDX,evA1,expr.at)
+                copyReg32(GpTempReg RAX,evA0,expr.at)
                 shl(rax,32)
                 shrd(rax,rdx,uint8(32))
                 movd(REGXMM(GEN,xreg),rax)
