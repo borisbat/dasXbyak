@@ -38,7 +38,7 @@ class GenerateCodeVisitor : JitVisitor
 // exception
     def JIT`exception(text:string):void
         with_xbyak(gen) <| $ ( GEN )
-            let ctx_offset = self->getContextOffset()
+            let ctx_offset = getContextOffset()
             mov(rcx,jit_generate_const_string(text))    // rcx is exception text
             mov(rdx,ptr[rsp+ctx_offset])                // rdx is Context *
             sub(rsp,32u)
@@ -59,15 +59,15 @@ class GenerateCodeVisitor : JitVisitor
             elif srcV is stack
                 mov(REG32(GEN,dest),ptr[rsp+(srcV as stack)])
             else
-                self->failed("copyReg32 {dest} <- {srcV}", at)
+                failed("copyReg32 {dest} <- {srcV}", at)
     def setRdxToArgs()
         if !rdx_has_args
             with_xbyak(gen) <| $ ( GEN )
-                mov(rdx,ptr[rsp+self->getArgOffset()])
+                mov(rdx,ptr[rsp+getArgOffset()])
                 rdx_has_args
 // function
     def override preVisitFunction(fun:FunctionPtr) : void
-        self->log("(DEF {fun.name} [STACK={context.stack_frame}, TEMP={context.temp_frame}]\n")
+        log("(DEF {fun.name} [STACK={context.stack_frame}, TEMP={context.temp_frame}]\n")
         rdx_has_args = true
         this_function = get_ptr(fun)
         unsafe
@@ -119,22 +119,22 @@ class GenerateCodeVisitor : JitVisitor
                         pop(REG64(GEN,gp_reg))
             ret()
     def override visitFunction(fun:FunctionPtr) : FunctionPtr
-        self->gen_epilogue()
-        self->log(")\n")
+        gen_epilogue()
+        log(")\n")
         return fun
 // const int
     def override preVisitExprConstInt(expr:smart_ptr<ExprConstInt>) : void
-        self->log("(INT32 {expr.value})")
+        log("(INT32 {expr.value})")
     def override visitExprConstInt(expr:smart_ptr<ExprConstInt>) : ExpressionPtr
         with_xbyak(gen) <| $ ( GEN )
             let ev & = context.expr_res[intptr(expr)]
             if ev is stack
                 mov(dword[rsp+(ev as stack)],uint64(expr.value))
-        self->log(")")
+        log(")")
         return expr
 // let
     def override preVisitExprLetVariable(expr:smart_ptr<ExprLet>;arg:VariablePtr;lastArg:bool) : void
-        self->log("(LET {arg.name} #{arg.stackTop} ")
+        log("(LET {arg.name} #{arg.stackTop} ")
     def override visitExprLetVariable(expr:smart_ptr<ExprLet>;arg:VariablePtr;lastArg:bool) : VariablePtr
         if arg.init==null
             with_xbyak(gen) <| $ ( GEN )
@@ -144,8 +144,8 @@ class GenerateCodeVisitor : JitVisitor
                 elif initSize==8
                     mov(qword[rsp+arg.stackTop],0ul)
                 else
-                    self->failed("visitExprLetVariable arg.init==null initSize={initSize}",expr.at)
-        self->log(")")
+                    failed("visitExprLetVariable arg.init==null initSize={initSize}",expr.at)
+        log(")")
         return arg
     def override visitExprLetVariableInit(blk:smart_ptr<ExprLet>;arg:VariablePtr;expr:ExpressionPtr) : ExpressionPtr
         let evI & = context.expr_res[intptr(arg.init)]
@@ -164,35 +164,35 @@ class GenerateCodeVisitor : JitVisitor
                         elif evI is gpRegT
                             mov(REG32(GEN,reg),REG32(GEN,evI as gpRegT))
                         else
-                            self->failed("ExprLetVariableInit arg.init._type.ref temp_var {arg.name}:{arg._type} evI={evI}",arg.init.at)
+                            failed("ExprLetVariableInit arg.init._type.ref temp_var {arg.name}:{arg._type} evI={evI}",arg.init.at)
                     else
-                        self->failed("ExprLetVariableInit arg.init._type.ref temp_var {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
+                        failed("ExprLetVariableInit arg.init._type.ref temp_var {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
                 else
                     if initSize==4 || initSize==2 || initSize==1
-                        self->copyReg32(GpTempReg RAX, evI, expr.at)
+                        copyReg32(GpTempReg RAX, evI, expr.at)
                         mov(ptr[rsp+arg.stackTop],eax)
                     else
-                        self->failed("ExprLetVariableInit arg.init._type.ref {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
+                        failed("ExprLetVariableInit arg.init._type.ref {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
             else
                 if context.temp_var |> key_exists(intptr(arg))
                     let reg = context.temp_var[intptr(arg)]
                     if initSize==4 || initSize==2 || initSize==1
-                        self->copyReg32(reg,evI,expr.at)
+                        copyReg32(reg,evI,expr.at)
                     else
-                        self->failed("ExprLetVariableInit temp_var {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
+                        failed("ExprLetVariableInit temp_var {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
                 else
-                    self->failed("ExprLetVariableInit {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
+                    failed("ExprLetVariableInit {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
         return  expr
 // variable
     def override preVisitExprVar(expr:smart_ptr<ExprVar>) : void
-        self->log("(VAR {expr.name} ")
+        log("(VAR {expr.name} ")
         if expr.varFlags.r2v
-            self->log("R2V ")
+            log("R2V ")
     def override visitExprVar(expr:smart_ptr<ExprVar>) : ExpressionPtr
         let ev & = context.expr_res[intptr(expr)]
         with_xbyak(gen) <| $ ( GEN )
             if expr.varFlags._block
-                self->failed("ExprVar expr.varFlags._block {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
+                failed("ExprVar expr.varFlags._block {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
             elif expr.varFlags.local
                 if context.temp_var |> key_exists(intptr(expr.variable))
                     // this variable is in the register
@@ -201,46 +201,46 @@ class GenerateCodeVisitor : JitVisitor
                     let varSize = expr._type.sizeOf
                     if expr.variable._type |> is_gpreg_type
                         let reg = ev as gpReg
-                        self->log("[{reg}]")
+                        log("[{reg}]")
                         if varSize==8
                             mov(REG64(GEN,reg),qword[rsp+expr.variable.stackTop])
                         elif varSize==4
                             mov(REG32(GEN,reg),dword[rsp+expr.variable.stackTop])
                         else
-                            self->failed("ExprVar expr.varFlags.local expr.varFlags.r2v {expr.variable.name}:{describe(expr.variable._type)} varSize={varSize}", expr.at)
+                            failed("ExprVar expr.varFlags.local expr.varFlags.r2v {expr.variable.name}:{describe(expr.variable._type)} varSize={varSize}", expr.at)
                     else
-                        self->failed("ExprVar expr.varFlags.local {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
+                        failed("ExprVar expr.varFlags.local {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
             elif expr.varFlags.argument
                 if expr.varFlags.r2v
                     let varSize = expr._type.sizeOf
                     if expr.variable._type |> is_gpreg_type
                         if ev is gpReg
                             let reg = ev as gpReg
-                            self->log("[{reg}]")
-                            self->setRdxToArgs()
+                            log("[{reg}]")
+                            setRdxToArgs()
                             if varSize==8
                                 mov(REG64(GEN,reg),qword[rdx+(expr.argumentIndex*16)])
                             elif varSize==4 || varSize==2 || varSize==1
                                 mov(REG32(GEN,reg),dword[rdx+(expr.argumentIndex*16)])
                             else
-                                self->failed("ExprVar expr.varFlags.argument expr.varFlags.r2v {expr.variable.name}:{describe(expr.variable._type)} varSize={varSize}", expr.at)
+                                failed("ExprVar expr.varFlags.argument expr.varFlags.r2v {expr.variable.name}:{describe(expr.variable._type)} varSize={varSize}", expr.at)
                         else
-                            self->failed("ExprVar expr.varFlags.argument expr.varFlags.r2v {expr.variable.name}:{describe(expr.variable._type)} (register should be allocated?)", expr.at)
+                            failed("ExprVar expr.varFlags.argument expr.varFlags.r2v {expr.variable.name}:{describe(expr.variable._type)} (register should be allocated?)", expr.at)
                     else
-                        self->failed("ExprVar expr.varFlags.argument expr.varFlags.r2v {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
+                        failed("ExprVar expr.varFlags.argument expr.varFlags.r2v {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
                 else
                     if ev is gpReg
-                        self->setRdxToArgs()
+                        setRdxToArgs()
                         lea(REG64(GEN,ev as gpReg),qword[rdx+(expr.argumentIndex*16)])
                     else
-                        self->failed("ExprVar expr.varFlags.argument {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
+                        failed("ExprVar expr.varFlags.argument {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
             else
-                self->failed("ExprVar {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
-        self->log(")")
+                failed("ExprVar {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
+        log(")")
         return expr
 // op1
     def override preVisitExprOp1(expr:smart_ptr<ExprOp1>) : void
-        self->log("(OP1 {expr.op} ")
+        log("(OP1 {expr.op} ")
     def override visitExprOp1(expr:smart_ptr<ExprOp1>) : ExpressionPtr
         var ev & = context.expr_res[intptr(expr.subexpr)]
         var evOP1 & = context.expr_res[intptr(expr)]
@@ -257,7 +257,7 @@ class GenerateCodeVisitor : JitVisitor
                                     dec(dword[REG64(GEN,ev as gpReg)])
                                 mov(REG32(GEN,ev as gpReg),eax)
                             else
-                                self->failed("ExprOp1 {expr.op} expr.subexpr._type.isRef ev is gpReg", expr.at)
+                                failed("ExprOp1 {expr.op} expr.subexpr._type.isRef ev is gpReg", expr.at)
                         elif ev is gpRegT
                             if expr.op=="+++" || expr.op=="---"
                                 assert(evOP1 is gpReg)
@@ -273,20 +273,20 @@ class GenerateCodeVisitor : JitVisitor
                                 else
                                     dec(REG32(GEN,ev as gpRegT))
                             else
-                                self->failed("ExprOp1 {expr.op} integer expr.subexpr._type.isRef ev is gpRegT", expr.at)
+                                failed("ExprOp1 {expr.op} integer expr.subexpr._type.isRef ev is gpRegT", expr.at)
                         else
-                            self->failed("ExprOp1 {expr.op} integer expr.subexpr._type.isRef ev={ev}", expr.at)
+                            failed("ExprOp1 {expr.op} integer expr.subexpr._type.isRef ev={ev}", expr.at)
                     else
-                        self->failed("ExprOp1 {expr.op} integer !expr.subexpr._type.isRef", expr.at)
+                        failed("ExprOp1 {expr.op} integer !expr.subexpr._type.isRef", expr.at)
                 else
-                    self->failed("ExprOp1 {expr.op} integer {describe(expr.subexpr._type)}", expr.at)
+                    failed("ExprOp1 {expr.op} integer {describe(expr.subexpr._type)}", expr.at)
             else
-                self->failed("ExprOp1 {expr.op} {describe(expr.subexpr._type)}", expr.at)
-        self->log(")")
+                failed("ExprOp1 {expr.op} {describe(expr.subexpr._type)}", expr.at)
+        log(")")
         return expr
 // op2
     def override preVisitExprOp2(expr:smart_ptr<ExprOp2>): void
-        self->log("(OP2 {expr.op} ")
+        log("(OP2 {expr.op} ")
     def override visitExprOp2(expr:smart_ptr<ExprOp2>) : ExpressionPtr
         let evOP2 &  = context.expr_res[intptr(expr)]
         let evL & = context.expr_res[intptr(expr.left)]
@@ -302,9 +302,9 @@ class GenerateCodeVisitor : JitVisitor
                                 if evR is gpRegT
                                     add(REG32(GEN,reg),REG32(GEN,evR as gpRegT))
                                 else
-                                    self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef temp evR={evR}", expr.at)
+                                    failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef temp evR={evR}", expr.at)
                             else
-                                self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef", expr.at)
+                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef", expr.at)
                         else
                             if expr.op=="+="
                                 if evL is stack
@@ -313,11 +313,11 @@ class GenerateCodeVisitor : JitVisitor
                                     elif evR is gpRegT
                                         add(dword[rsp+(evL as stack)],REG32(GEN,evR as gpRegT))
                                     else
-                                        self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef evR={evR}", expr.at)
+                                        failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef evR={evR}", expr.at)
                                 else
-                                    self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef evL={evL}", expr.at)
+                                    failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef evL={evL}", expr.at)
                             else
-                                self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef", expr.at)
+                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef", expr.at)
                     else
                         if evOP2 is cmp
                             if expr.op=="<" || expr.op=="=="
@@ -328,14 +328,14 @@ class GenerateCodeVisitor : JitVisitor
                                         if expr.op=="<" || expr.op=="=="
                                             cmp(REG32(GEN,evL as gpReg),ic)
                                         else
-                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR is const", expr.at)
+                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR is const", expr.at)
                                     elif evR is gpReg
                                         if expr.op=="<" || expr.op=="=="
                                             cmp(REG32(GEN,evL as gpReg),REG32(GEN,evR as gpReg))
                                         else
-                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR is gpReg", expr.at)
+                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR is gpReg", expr.at)
                                     else
-                                        self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR={evR}", expr.at)
+                                        failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpReg, evR={evR}", expr.at)
                                 elif evL is gpRegT
                                     // result is in the left register, which we reused during allocation
                                     if evR is iconst
@@ -343,19 +343,19 @@ class GenerateCodeVisitor : JitVisitor
                                         if expr.op=="<" || expr.op=="=="
                                             cmp(REG32(GEN,evL as gpRegT),ic)
                                         else
-                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evR is const", expr.at)
+                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evR is const", expr.at)
                                     elif evR is gpReg
                                         if expr.op=="<" || expr.op=="=="
                                             cmp(REG32(GEN,evL as gpRegT),REG32(GEN,evR as gpReg))
                                         else
-                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evR is gpReg", expr.at)
+                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evR is gpReg", expr.at)
                                     else
-                                        self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evR={evR}", expr.at)
+                                        failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evR={evR}", expr.at)
                                 else
-                                    self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evL={evL} evR={evR}", expr.at)
-                                self->log(" [{evL}]")
+                                    failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp evL is gpRegT, evL={evL} evR={evR}", expr.at)
+                                log(" [{evL}]")
                             else
-                                self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp}", expr.at)
+                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp}", expr.at)
                         else
                             if expr.op=="+" || expr.op=="-" || expr.op=="%" || expr.op=="/" || expr.op=="<" || expr.op=="=="
                                 if evL is gpReg
@@ -381,17 +381,17 @@ class GenerateCodeVisitor : JitVisitor
                                                 elif expr.op=="=="
                                                     cmove(REG32(GEN,evL as gpReg),eax)
                                                 else
-                                                    self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst bool", expr.at)
+                                                    failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst bool", expr.at)
                                             elif expr.op=="%" || expr.op=="/"
                                                 if (evR as iconst)==0ul
-                                                    self->failed("DIVISION BY ZERO", expr.at)
+                                                    failed("DIVISION BY ZERO", expr.at)
                                                 mov(eax,REG32(GEN,evL as gpReg))
                                                 mov(REG32(GEN,evL as gpReg),evR as iconst)
                                                 cdq();  rdx_has_args = false
                                                 idiv(REG32(GEN,evL as gpReg))
                                                 mov(REG32(GEN,evL as gpReg),expr.op=="%" ? edx : eax)
                                             else
-                                                self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst", expr.at)
+                                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst", expr.at)
                                     elif (evR is gpReg) || (evR is gpRegT)
                                         let regR = (evR is gpReg) ? (evR as gpReg) : (evR as gpRegT)
                                         if expr.op=="+"
@@ -401,17 +401,17 @@ class GenerateCodeVisitor : JitVisitor
                                         elif expr.op=="%" || expr.op=="/"
                                             cmp(REG32(GEN,regR),0u)
                                             jne(".div_{intptr(expr)}",LabelType T_AUTO)
-                                            self->JIT`exception("division by zero")
+                                            JIT`exception("division by zero")
                                             L(".div_{intptr(expr)}")
                                             mov(eax,REG32(GEN,evL as gpReg))
                                             cdq();  rdx_has_args = false
                                             idiv(REG32(GEN,regR))
                                             mov(REG32(GEN,evL as gpReg),expr.op=="%" ? edx : eax)
                                         else
-                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, (evR is gpReg || evR is gpRegT)", expr.at)
+                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, (evR is gpReg || evR is gpRegT)", expr.at)
                                     else
-                                        self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR={evR}", expr.at)
-                                    self->log(" [{evL}]")
+                                        failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR={evR}", expr.at)
+                                    log(" [{evL}]")
                                 else
                                     // result is in the result register, which we allocated separately
                                     assert(evOP2 is gpReg)
@@ -421,7 +421,7 @@ class GenerateCodeVisitor : JitVisitor
                                         elif expr.op=="-"
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpReg))-uint(evR as iconst)])
                                         else
-                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL is gpReg && evR is iconst", expr.at)
+                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL is gpReg && evR is iconst", expr.at)
                                     if (evL is gpRegT) && (evR is iconst)
                                         if expr.op=="+"
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpRegT))+uint(evR as iconst)])
@@ -429,44 +429,44 @@ class GenerateCodeVisitor : JitVisitor
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpRegT))-uint(evR as iconst)])
                                         elif expr.op=="%" || expr.op=="/"
                                             if (evR as iconst)==0ul
-                                                self->failed("DIVISION BY ZERO", expr.at)
+                                                failed("DIVISION BY ZERO", expr.at)
                                             mov(REG32(GEN,evOP2 as gpReg),evR as iconst)
                                             mov(eax,REG32(GEN,evL as gpRegT))
                                             cdq();  rdx_has_args = false
                                             idiv(REG32(GEN,evOP2 as gpReg))
                                             mov(REG32(GEN,evOP2 as gpReg),expr.op=="%" ? edx : eax)
                                         else
-                                            self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL s gpRegT && evR is iconst", expr.at)
+                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL s gpRegT && evR is iconst", expr.at)
                                     else
                                         if expr.op=="%" || expr.op=="/"
                                             rdx_has_args = false
-                                            self->copyReg32(GpTempReg RAX, evL, expr.at)
-                                            self->copyReg32(GpTempReg RCX, evR, expr.at)
+                                            copyReg32(GpTempReg RAX, evL, expr.at)
+                                            copyReg32(GpTempReg RCX, evR, expr.at)
                                             cmp(ecx,0u)
                                             jnz(".div_{intptr(expr)}",LabelType T_AUTO)
-                                            self->JIT`exception("division by zero")
+                                            JIT`exception("division by zero")
                                             L(".div_{intptr(expr)}")
                                             cdq();  rdx_has_args = false
                                             idiv(ecx)
                                             mov(REG32(GEN,evOP2 as gpReg),expr.op=="%" ? edx : eax)
                                         else
-                                            self->copyReg32(evOP2 as gpReg,evL,expr.at)
+                                            copyReg32(evOP2 as gpReg,evL,expr.at)
                                             if evR is iconst
                                                 if expr.op=="+"
                                                     add(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
                                                 elif expr.op=="-"
                                                     sub(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
                                                 else
-                                                    self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evR is iconst", expr.at)
+                                                    failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evR is iconst", expr.at)
                                             else
-                                                self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evR={evR}", expr.at)
+                                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evR={evR}", expr.at)
                             else
-                                self->failed("ExprOp2 {expr.op} expr.left._type.isInteger integer", expr.at)
+                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer", expr.at)
                 else
-                    self->failed("ExprOp2 {expr.op} expr.left._type.isInteger {describe(expr.left._type)}", expr.at)
+                    failed("ExprOp2 {expr.op} expr.left._type.isInteger {describe(expr.left._type)}", expr.at)
             else
-                self->failed("ExprOp2 {expr.op} {describe(expr.left._type)}", expr.at)
-        self->log(")")
+                failed("ExprOp2 {expr.op} {describe(expr.left._type)}", expr.at)
+        log(")")
         return expr
 // if-then-else
     /*
@@ -505,14 +505,14 @@ class GenerateCodeVisitor : JitVisitor
                 else
                     GEN |> condJumpIfNot(".if_cond_failed_{intptr(expr)}",evS as cmp)
             else
-                self->failed("ExprIfThenElse evS={evS}", expr.at)
-        self->log("\n{repeat("\t",tab)}THEN\n")
+                failed("ExprIfThenElse evS={evS}", expr.at)
+        log("\n{repeat("\t",tab)}THEN\n")
     def override preVisitExprIfThenElseElseBlock(expr:smart_ptr<ExprIfThenElse>;elseBlock:ExpressionPtr) : void
         // we are only here, if there is an else block
         with_xbyak(gen) <| $ ( GEN )
             jmp(".if_end_{intptr(expr)}",LabelType T_NEAR)
             L(".if_cond_failed_{intptr(expr)}")
-        self->log("\n{repeat("\t",tab)}ELSE\n")
+        log("\n{repeat("\t",tab)}ELSE\n")
     def override visitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : ExpressionPtr
         with_xbyak(gen) <| $ ( GEN )
             L(".if_end_{intptr(expr)}")
@@ -531,7 +531,7 @@ class GenerateCodeVisitor : JitVisitor
 .cond_end:
 */
     def override preVisitExprOp3(expr:smart_ptr<ExprOp3>): void
-        self->log("(? ")
+        log("(? ")
     def override preVisitExprOp3Left(expr:smart_ptr<ExprOp3>;left:ExpressionPtr): void
         let evS & = context.expr_res[intptr(expr.subexpr)]
         with_xbyak(gen) <| $ ( GEN )
@@ -541,31 +541,31 @@ class GenerateCodeVisitor : JitVisitor
             elif evS is cmp
                 GEN |> condJumpIfNot(".cond_right_{intptr(expr)}",evS as cmp)
             else
-                self->failed("supprt cond subexpr in {evS}", expr.at)
-        self->log(" ? ")
+                failed("supprt cond subexpr in {evS}", expr.at)
+        log(" ? ")
     def override preVisitExprOp3Right(expr:smart_ptr<ExprOp3>;right:ExpressionPtr): void
         let eV & = context.expr_res[intptr(expr)]
         let evL & = context.expr_res[intptr(expr.left)]
         with_xbyak(gen) <| $ ( GEN )
-            self->copyReg32(eV as gpReg,evL,expr.at)
+            copyReg32(eV as gpReg,evL,expr.at)
             jmp(".cond_end_{intptr(expr)}",LabelType T_NEAR)
             L(".cond_right_{intptr(expr)}")
-        self->log(" : ")
+        log(" : ")
     def override visitExprOp3(expr:smart_ptr<ExprOp3>) : ExpressionPtr
         let eV & = context.expr_res[intptr(expr)]
         let evR & = context.expr_res[intptr(expr.right)]
         with_xbyak(gen) <| $ ( GEN )
-            self->copyReg32(eV as gpReg,evR,expr.at)
+            copyReg32(eV as gpReg,evR,expr.at)
             L(".cond_end_{intptr(expr)}")
-        self->log(")")
+        log(")")
         return expr
 // copy
     def override preVisitExprCopy(expr:smart_ptr<ExprCopy>): void
-        self->log("(COPY ")
+        log("(COPY ")
     def override visitExprCopy(expr:smart_ptr<ExprCopy>) : ExpressionPtr
         let evL & = context.expr_res[intptr(expr.left)]
         let evR & = context.expr_res[intptr(expr.right)]
-        self->log("EVL={evL},EVR={evR} ")
+        log("EVL={evL},EVR={evR} ")
         with_xbyak(gen) <| $ ( GEN )
             let copySize = expr.left._type.sizeOf
             let pvar = (expr.left is ExprVar) ? get_ptr((expr.left as ExprVar).variable) : null
@@ -576,12 +576,12 @@ class GenerateCodeVisitor : JitVisitor
                         if evR is gpRegT
                             mov(REG32(GEN,reg),REG32(GEN,evR as gpRegT))
                         else
-                            self->failed("ExprCopy temp expr.right._type.isRef {reg} evR={evR}", expr.at)
+                            failed("ExprCopy temp expr.right._type.isRef {reg} evR={evR}", expr.at)
                     else
-                        self->failed("ExprCopy temp expr.right._type.isRef {reg} copySize={copySize}", expr.at)
-                    self->log("(REF COPY {copySize})")
+                        failed("ExprCopy temp expr.right._type.isRef {reg} copySize={copySize}", expr.at)
+                    log("(REF COPY {copySize})")
                 else
-                    self->failed("ExprCopy temp {reg}", expr.at)
+                    failed("ExprCopy temp {reg}", expr.at)
             else
                 if expr.right._type.isRef
                     if copySize==4
@@ -591,43 +591,43 @@ class GenerateCodeVisitor : JitVisitor
                         elif evR is stack
                             mov(eax,dword[rsp+(evR as stack)])
                         else
-                            self->failed("ExprCopy temp expr.right._type.isRef evR={evR}", expr.at)
+                            failed("ExprCopy temp expr.right._type.isRef evR={evR}", expr.at)
                         if evL is gpReg
                             print("WARNING: TO STACK AS GPREG, VERIFY?\n")    // i think its dword[REG64...]
                             mov(dword[rsp+REG64(GEN,evL as gpReg)],eax)
                         elif evL is stack
                             mov(dword[rsp+(evL as stack)],eax)
                         else
-                            self->failed("ExprCopy temp expr.right._type.isRef evL={evL}", expr.at)
+                            failed("ExprCopy temp expr.right._type.isRef evL={evL}", expr.at)
                     else
-                        self->failed("ExprCopy expr.right._type.isRef copySize={copySize}", expr.at)
-                    self->log("(REF COPY {copySize})")
+                        failed("ExprCopy expr.right._type.isRef copySize={copySize}", expr.at)
+                    log("(REF COPY {copySize})")
                 else
-                    self->failed("ExprCopy !expr.right._type.isRef", expr.at)
-        self->log(")")
+                    failed("ExprCopy !expr.right._type.isRef", expr.at)
+        log(")")
         return expr
 // return
     def override preVisitExprReturn(expr:smart_ptr<ExprReturn>) : void
-        self->log("(RETURN ")
+        log("(RETURN ")
     def override visitExprReturn(expr:smart_ptr<ExprReturn>) : ExpressionPtr
-        self->log(")")
+        log(")")
         with_xbyak(gen) <| $ ( GEN )
             if expr.subexpr==null
-                self->gen_epilogue()
+                gen_epilogue()
             elif expr.returnFlags.returnReference
-                self->failed("ExprReturn expr.returnFlags.returnReference", expr.at)
+                failed("ExprReturn expr.returnFlags.returnReference", expr.at)
             elif expr.returnFlags.returnInBlock
-                self->failed("ExprReturn expr.returnFlags.returnInBlock", expr.at)
+                failed("ExprReturn expr.returnFlags.returnInBlock", expr.at)
             elif expr.returnFlags.returnCallCMRES
-                self->failed("ExprReturn expr.returnFlags.returnCallCMRES", expr.at)
+                failed("ExprReturn expr.returnFlags.returnCallCMRES", expr.at)
             elif expr.returnFlags.returnCMRES
-                self->failed("ExprReturn expr.returnFlags.returnCMRES", expr.at)
+                failed("ExprReturn expr.returnFlags.returnCMRES", expr.at)
             elif expr.returnFlags.takeOverRightStack
-                self->failed("ExprReturn expr.returnFlags.takeOverRightStack", expr.at)
+                failed("ExprReturn expr.returnFlags.takeOverRightStack", expr.at)
             else
                 let evR & = context.expr_res[intptr(expr.subexpr)]
                 if length(expr.subexpr._type.dim)!=0
-                    self->failed("ExprReturn expr.subexpr._type.dim", expr.at)
+                    failed("ExprReturn expr.subexpr._type.dim", expr.at)
                 if expr.subexpr._type |> is_gpreg_type
                     let returnSize = expr.subexpr._type.sizeOf
                     if returnSize==1 || returnSize==2 || returnSize==4
@@ -639,12 +639,12 @@ class GenerateCodeVisitor : JitVisitor
                             mov(eax,evR as iconst)
                             movd(xmm0,eax)
                         else
-                            self->failed("ExprReturn evR={evR}", expr.at)
+                            failed("ExprReturn evR={evR}", expr.at)
                     else
-                        self->failed("ExprReturn returnSize={returnSize}", expr.at)
+                        failed("ExprReturn returnSize={returnSize}", expr.at)
                 else
-                    self->failed("ExprReturn {describe(expr.subexpr._type)}",expr.at)
-            self->gen_epilogue()
+                    failed("ExprReturn {describe(expr.subexpr._type)}",expr.at)
+            gen_epilogue()
         return expr
 // block
     def override preVisitExprBlock(blk:smart_ptr<ExprBlock>) : void
@@ -653,22 +653,22 @@ class GenerateCodeVisitor : JitVisitor
         tab --
         return blk
     def override preVisitExprBlockExpression(blk:smart_ptr<ExprBlock>;expr:ExpressionPtr): void
-        self->log("{repeat("\t",tab)}")
+        log("{repeat("\t",tab)}")
     def override visitExprBlockExpression(blk:smart_ptr<ExprBlock>;expr:ExpressionPtr) : ExpressionPtr
-        self->log("\n")
+        log("\n")
         return expr
 // for
     def override preVisitExprFor(expr:smart_ptr<ExprFor>) : void
-        self->log("(FOR ")
+        log("(FOR ")
         loop_stack |> push(intptr(expr))
         if is_for_range1(expr)
             pass
         else
-            self->failed("ExprFor !is_for_range1",expr.at)
+            failed("ExprFor !is_for_range1",expr.at)
     def override preVisitExprForVariable(expr:smart_ptr<ExprFor>;svar:VariablePtr;last:bool) : void
-        self->log("`{svar.name}` ")
+        log("`{svar.name}` ")
     def override preVisitExprForSource(expr:smart_ptr<ExprFor>;source:ExpressionPtr;last:bool) : void
-        self->log("(SOURCE ")
+        log("(SOURCE ")
     def override visitExprForSource(expr:smart_ptr<ExprFor>;source:ExpressionPtr;last:bool) : ExpressionPtr
         if is_for_range1(expr)
             let evS & = context.expr_res[intptr(source)]
@@ -704,16 +704,16 @@ class GenerateCodeVisitor : JitVisitor
                         cmp(eax,dword[rsp+iSP])
                         jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                 else
-                    self->failed("ExprFor is_for_range1 evS={evS}",expr.at)
+                    failed("ExprFor is_for_range1 evS={evS}",expr.at)
         else
-            self->failed("ExprFor !is_for_range1",expr.at)
-        self->log(")")
+            failed("ExprFor !is_for_range1",expr.at)
+        log(")")
         return source
     def override preVisitExprForBody(expr:smart_ptr<ExprFor>) : void
         with_xbyak(gen) <| $ ( GEN )
             align(16ul,true)
             L(".for_loop_{intptr(expr)}")
-        self->log("\n")
+        log("\n")
     def override visitExprFor(expr:smart_ptr<ExprFor>) : ExpressionPtr
         if is_for_range1(expr)
             let evS & = context.expr_res[intptr(expr.sources[0])]
@@ -739,31 +739,31 @@ class GenerateCodeVisitor : JitVisitor
                         cmp(dword[rsp+iSP],eax)
                     jnz(".for_loop_{intptr(expr)}",LabelType T_NEAR)
                 else
-                    self->failed("ExprFor is_for_range1 evS={evS}",expr.at)
+                    failed("ExprFor is_for_range1 evS={evS}",expr.at)
         else
-            self->failed("ExprFor !is_for_range1",expr.at)
+            failed("ExprFor !is_for_range1",expr.at)
         with_xbyak(gen) <| $ ( GEN )
             L(".for_loop_done_{intptr(expr)}")
         loop_stack |> pop()
-        self->log("{repeat("\t",tab)})")
+        log("{repeat("\t",tab)})")
         return expr
 // break
     def override visitExprBreak(expr:smart_ptr<ExprBreak>) : ExpressionPtr
-        self->log("(BREAK)")
+        log("(BREAK)")
         let loop_ptr = loop_stack |> back
         with_xbyak(gen) <| $ ( GEN )
             jmp(".for_loop_done_{loop_ptr}",LabelType T_NEAR)
         return expr
 // continue
     def override visitExprContinue(expr:smart_ptr<ExprContinue>) : ExpressionPtr
-        self->log("(CONTINUE)")
+        log("(CONTINUE)")
         let loop_ptr = loop_stack |> back
         with_xbyak(gen) <| $ ( GEN )
             jmp(".for_loop_continue_{loop_ptr}",LabelType T_NEAR)
         return expr
 // call
     def override preVisitExprCall(expr:smart_ptr<ExprCall>): void
-        self->log("(CALL `{expr.name}` ")
+        log("(CALL `{expr.name}` ")
     def override visitExprCall(var expr:smart_ptr<ExprCall>) : ExpressionPtr
         if !expr.func.flags.builtIn
             rdx_has_args = false            // rdx no longer has args, since we call another function
@@ -778,35 +778,35 @@ class GenerateCodeVisitor : JitVisitor
                         elif asize==8
                             mov(qword[rsp+(offset+uint(ai)*16u)],REG64(GEN,eA as gpReg))
                         else
-                            self->error("ExprCall eA is gpReg, asize={asize}",expr.at)
+                            error("ExprCall eA is gpReg, asize={asize}",expr.at)
                     elif eA is gpRegT
                         if asize==4
                             mov(dword[rsp+(offset+uint(ai)*16u)],REG32(GEN,eA as gpRegT))
                         elif asize==8
                             mov(qword[rsp+(offset+uint(ai)*16u)],REG64(GEN,eA as gpRegT))
                         else
-                            self->error("ExprCall eA is gpRegT, asize={asize}",expr.at)
+                            error("ExprCall eA is gpRegT, asize={asize}",expr.at)
                     elif eA is iconst
                         if asize==4
                             mov(dword[rsp+(offset+uint(ai)*16u)],eA as iconst)
                         elif asize==8
                             mov(qword[rsp+(offset+uint(ai)*16u)],eA as iconst)
                         else
-                            self->error("ExprCall eA is iconst, asize={asize}",expr.at)
+                            error("ExprCall eA is iconst, asize={asize}",expr.at)
                     else
-                        self->error("ExprCall eA={eA}",expr.at)
+                        error("ExprCall eA={eA}",expr.at)
                 var MNH_ADDR : uint64
                 unsafe
                     let mangled_name = get_mangled_name(reinterpret<FunctionPtr> expr.func)
                     let MNH = hash(mangled_name)
                     MNH_ADDR = get_function_address(MNH)
-                self->log(" @@{MNH_ADDR} ")
+                log(" @@{MNH_ADDR} ")
                 // save used transient registers
                 let recursive_call = expr.func == this_function
                 let transients = context.transients[intptr(expr)]
                 var t_offset = 0u
                 var t_total = 0
-                self->log(" GP_MASK={transients.gp_mask} XMM_MASK={transients.xmm_mask}\n")
+                log(" GP_MASK={transients.gp_mask} XMM_MASK={transients.xmm_mask}\n")
                 var xmm_total = 0u
                 for t in urange(FIRST_NON_TRANSIENT_XMM_TEMP_REG)
                     if (transients.xmm_mask & (1u<<t)) != 0u
@@ -830,14 +830,14 @@ class GenerateCodeVisitor : JitVisitor
                         t_total ++
                 if recursive_call
                     // setup arguments
-                    let ctx_offset = self->getContextOffset()
+                    let ctx_offset = getContextOffset()
                     if context.use_context                          // in recursive call, if context is not used - don't pass
                         mov(rcx,qword[rsp+(ctx_offset+t_offset)])   // rcx is Context *
                     lea(rdx,ptr[rsp+(offset+t_offset)])             // rdx is ARGS
                     // sub(r8,r8)                                   // r8 is CMRES
                 else
                     // setup arguments
-                    let ctx_offset = self->getContextOffset()
+                    let ctx_offset = getContextOffset()
                     mov(rcx,uint64(MNH_ADDR))                   // rcx is MNH
                     lea(rdx,ptr[rsp+(offset+t_offset)])         // rdx is ARGS
                     mov(r8,ptr[rsp+(ctx_offset+t_offset)])      // r8  is Context *
@@ -869,7 +869,7 @@ class GenerateCodeVisitor : JitVisitor
                 // move result to xmm0
                 if expr.func.result != null
                     if expr.func.result.isRef
-                        self->error("ExprCall expr.func.result.isRef",expr.at)
+                        error("ExprCall expr.func.result.isRef",expr.at)
                     elif expr.func.result.isVoid
                         pass    // if void - no output
                     else
@@ -881,16 +881,16 @@ class GenerateCodeVisitor : JitVisitor
                             elif asize==8
                                 mov(REG64(GEN,fnR as gpReg),xmm0)
                             else
-                                self->error("ExprCall rsize={asize}",expr.at)
+                                error("ExprCall rsize={asize}",expr.at)
                         else
-                            self->error("ExprCall fnR={fnR}",expr.at)
+                            error("ExprCall fnR={fnR}",expr.at)
             return expr
         ////////////////////
         // TODO: calls table
         let call_name = "{expr.func._module.name}::{expr.func.name}"
         if call_name=="$::range"
-            self->JIT`range(expr)
-        self->log(")")
+            JIT`range(expr)
+        log(")")
         return expr
     /////////////////////
     // function templates
@@ -905,7 +905,7 @@ class GenerateCodeVisitor : JitVisitor
                     shl(REG64(GEN,evA0 as gpReg),32)
                     movd(REGXMM(GEN,xreg),REG64(GEN,evA0 as gpReg))
                 else
-                    self->error("$::range evA0={evA0}",expr.at)
+                    error("$::range evA0={evA0}",expr.at)
             // range(int,int)
             elif length(expr.arguments)==2 && expr.arguments[0]._type.baseType==Type tInt && expr.arguments[1]._type.baseType==Type tInt
                 rdx_has_args = false
@@ -918,7 +918,7 @@ class GenerateCodeVisitor : JitVisitor
                 elif evA1 is iconst
                     mov(edx,(evA1 as iconst)<<32ul)
                 else
-                    self->error("$::range (evA1={evA1},...)",expr.at)
+                    error("$::range (evA1={evA1},...)",expr.at)
                 if evA0 is gpReg
                     mov(eax,REG32(GEN,evA0 as gpReg))
                 elif evA0 is gpRegT
@@ -926,9 +926,9 @@ class GenerateCodeVisitor : JitVisitor
                 elif evA0 is iconst
                     mov(eax,evA0 as iconst)
                 else
-                    self->error("$::range (...,evA0={evA0})",expr.at)
+                    error("$::range (...,evA0={evA0})",expr.at)
                 shl(rax,32)
                 shrd(rax,rdx,uint8(32))
                 movd(REGXMM(GEN,xreg),rax)
-            self->log(" [{xreg}]")
+            log(" [{xreg}]")
 
