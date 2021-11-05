@@ -228,12 +228,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
                     evRelease(evR,expr.at)
                 else
                     if evOP2 is cmp
-                        if expr.op=="<"
-                            evOP2 = [[EvResult cmp=CompareType less]]
-                        elif expr.op=="=="
-                            evOP2 = [[EvResult cmp=CompareType equals]]
-                        else
-                            failed("ExprOp2 {expr.op} expr.left._type.isWorkhorseType  expr.left._type.isRef (evOP2 is cmp)", expr.at)
+                        evOP2 = [[EvResult cmp=getCompareOp(expr.op)]]
                         evRelease(evL,expr.at)
                         evRelease(evR,expr.at)
                     else

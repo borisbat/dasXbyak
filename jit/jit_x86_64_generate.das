@@ -285,7 +285,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                     else
                         if evOP2 is cmp
                             if expr.op=="<" || expr.op=="=="
-                                cmpAnyAny32(evL,evR,expr.at,GpTempReg RAX)
+                                cmpAnyAny32(evL,evR,evOP2 as cmp,GpTempReg RAX,expr.at)
                                 log(" [{evL}]")
                             else
                                 failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp", expr.at)
@@ -681,7 +681,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(RV, rA0, expr.at)
-                                cmpAnyReg32(rA1,RV,expr.at,GpTempReg RAX)
+                                cmpAnyReg32(rA1,RV,CompareType less_equals,GpTempReg RAX,expr.at)
                                 jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                     else
                         let iSP = expr.iteratorVariables[0].stackTop
@@ -708,7 +708,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],eax)
-                                cmpAnyReg32(rA1,GpTempReg RAX,expr.at,GpTempReg RCX)
+                                cmpAnyReg32(rA1,GpTempReg RAX,CompareType less_equals,GpTempReg RCX,expr.at)
                                 jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                 else
                     failed("ExprFor is_for_range1 evS={evS}",expr.at)
@@ -740,7 +740,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             else
                                 let ra = expr.sources[0] as ExprCall
                                 let rA & = evResGet(ra.arguments[length(ra.arguments)==1 ? 0 : 1])
-                                cmpRegAny32(RV,rA,expr.at)
+                                cmpRegAny32(RV,rA,CompareType not_equals,expr.at)
                     else
                         if is_for_range1_with_unused_var(expr)
                             dec(dword[rsp+iSP])
@@ -752,7 +752,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             else
                                 let ra = expr.sources[0] as ExprCall
                                 let rA & = evResGet(ra.arguments[length(ra.arguments)==1 ? 0 : 1])
-                                cmpStackAny32(int(iSP),rA,expr.at,GpTempReg RAX)
+                                cmpStackAny32(int(iSP),rA,CompareType not_equals,GpTempReg RAX,expr.at)
                     jnz(".for_loop_{intptr(expr)}",LabelType T_AUTO)
                 else
                     failed("ExprFor is_for_range1 evS={evS}",expr.at)

@@ -56,7 +56,7 @@ class GenerateCodeVisitorBase : JitVisitor
                 mov(REG32(GEN,dest),ptr[rsp+(srcV as stack)])
             else
                 failed("copyReg32 mov({dest},{srcV})", at)
-    def cmpRegAny32 ( left:GpTempReg; right:EvResult; at:LineInfo ) : void                      //  cmp reg32, *
+    def cmpRegAny32 ( left:GpTempReg; right:EvResult; cop:CompareType; at:LineInfo ) : void                      //  cmp reg32, *
         with_xbyak(gen) <| $ ( GEN )
             if right is gpReg
                 cmp(REG32(GEN,left),REG32(GEN,right as gpReg))
@@ -67,8 +67,8 @@ class GenerateCodeVisitorBase : JitVisitor
             elif right is stack
                 cmp(REG32(GEN,left),ptr[rsp+(right as stack)])
             else
-                failed("cmpReg32 cmp({left},{right})", at)
-    def cmpAnyReg32 ( left:EvResult; right:GpTempReg; at:LineInfo; spill:GpTempReg ) : void     //  cmp *, reg32
+                failed("cmpReg32 cmp({left},{right})  // {cop}", at)
+    def cmpAnyReg32 ( left:EvResult; right:GpTempReg; cop:CompareType; spill:GpTempReg; at:LineInfo ) : void     //  cmp *, reg32
         with_xbyak(gen) <| $ ( GEN )
             if left is gpReg
                 cmp(REG32(GEN,left as gpReg),REG32(GEN,right))
@@ -80,8 +80,8 @@ class GenerateCodeVisitorBase : JitVisitor
             elif left is stack
                 cmp(ptr[rsp+(left as stack)],REG32(GEN,right))
             else
-                failed("cmpReg32 {left} <- {right}", at)
-    def cmpStackAny32 ( iSP:int; righ:EvResult; at:LineInfo; spill:GpTempReg ) : void
+                failed("cmpReg32 cmp({left},{right}) // {cop}", at)
+    def cmpStackAny32 ( iSP:int; righ:EvResult; cop:CompareType; spill:GpTempReg; at:LineInfo ) : void     //  cmp [rsp+xxx], *
         with_xbyak(gen) <| $ ( GEN )
             if righ is gpReg
                 cmp(dword[rsp+iSP],REG32(GEN,righ as gpReg))
@@ -93,18 +93,18 @@ class GenerateCodeVisitorBase : JitVisitor
                 mov(REG32(GEN,spill),dword[rsp+(righ as stack)])
                 cmp(dword[rsp+iSP],REG32(GEN,spill))
             else
-                failed("cmpStackAny32 cmp([rsp+{iSP}],{righ})",at)
-    def cmpAnyAny32 ( left, right : EvResult; at:LineInfo; spill:GpTempReg ) : void
+                failed("cmpStackAny32 cmp([rsp+{iSP}],{righ}) // {cop}",at)
+    def cmpAnyAny32 ( left, right : EvResult; cop:CompareType; spill:GpTempReg; at:LineInfo ) : void     //  cmp *, *
         if left is gpReg
-            cmpRegAny32(left as gpReg,right,at)
+            cmpRegAny32(left as gpReg,right,cop,at)
         elif left is gpRegT
-            cmpRegAny32(left as gpRegT,right,at)
+            cmpRegAny32(left as gpRegT,right,cop,at)
         elif right is gpReg
-            cmpAnyReg32(left,right as gpReg,at,spill)
+            cmpAnyReg32(left,right as gpReg,cop,spill,at)
         elif right is gpRegT
-            cmpAnyReg32(left,right as gpRegT,at,spill)
+            cmpAnyReg32(left,right as gpRegT,cop,spill,at)
         else
-            failed("cmpAnyAny32 cmp({left},{right})", at)
+            failed("cmpAnyAny32 cmp({left},{right}) // {cop}", at)
     def setRdxToArgs()
         if !rdx_has_args
             with_xbyak(gen) <| $ ( GEN )

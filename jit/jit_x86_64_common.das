@@ -61,23 +61,45 @@ def mask ( var regs:RegAllocator; maxReg:int )
 enum CompareType
     always
     less
+    less_equals
     equals
+    not_equals
 
 def condJump ( var gen:CodeGenerator; lab:string; cond:CompareType )
     if cond==CompareType less
         jl(gen,lab,LabelType T_AUTO)
+    elif cond==CompareType less_equals
+        jle(gen,lab,LabelType T_AUTO)
     elif cond==CompareType equals
         je(gen,lab,LabelType T_AUTO)
+    elif cond==CompareType not_equals
+        jne(gen,lab,LabelType T_AUTO)
     else
         panic("unsupported jump {cond}")
 
 def condJumpIfNot ( var gen:CodeGenerator; lab:string; cond:CompareType )
     if cond==CompareType less
         jge(gen,lab,LabelType T_AUTO)
+    elif cond==CompareType less_equals
+        jg(gen,lab,LabelType T_AUTO)
     elif cond==CompareType equals
         jne(gen,lab,LabelType T_AUTO)
+    elif cond==CompareType not_equals
+        je(gen,lab,LabelType T_AUTO)
     else
         panic("unsupported jump {cond}")
+
+def getCompareOp ( op:das_string )
+    return getCompareOp(string(op))
+
+def getCompareOp ( op:string )
+    if op=="<"
+        return CompareType less
+    elif op=="=="
+        return CompareType equals
+    else
+        panic("unsupported compare operation {op}")
+        return CompareType always
 
 variant EvResult
     nothing : bool
