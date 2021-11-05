@@ -61,7 +61,9 @@ include profile_common.inc
 [export]
 def main()
     if false
-        let v = 4
+        let v = 5
+        JIT_MAX_OPT_LEVEL = 0
+        all`things`jit()
         print("primes_jit({v})  = {primes_jit(v)}\n")
         print("primesI_jit({v}) = {primesI_jit(v)}\n")
         print("primes({v})      = {primes(v)}\n")

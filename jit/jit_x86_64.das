@@ -21,6 +21,7 @@ require zydis
 require ast public
 
 var public JIT_MAX_OPT_LEVEL = 3
+let public JIT_MAX_POSSIBLE_OPT_LEVEL = 3
 var public JIT_VERBOSE = false
 var public JIT_DISASM = false
 var public JIT_REPORT_REG_PRESSURE = false
@@ -34,19 +35,15 @@ def private allocate_regs(var func : FunctionPtr; var context:EvContext; verbose
     allocateRegistersVisitor.verbose = verbose
     if opt_level == 3
         allocateRegistersVisitor.put_loop_variables_in_registers = true
-        allocateRegistersVisitor.put_loop_sources_in_registers = true
         allocateRegistersVisitor.put_local_variables_in_registers = true
     elif opt_level == 2
         allocateRegistersVisitor.put_loop_variables_in_registers = true
-        allocateRegistersVisitor.put_loop_sources_in_registers = false
-        allocateRegistersVisitor.put_local_variables_in_registers = true
-    elif opt_level == 1
-        allocateRegistersVisitor.put_loop_variables_in_registers = true
-        allocateRegistersVisitor.put_loop_sources_in_registers = false
         allocateRegistersVisitor.put_local_variables_in_registers = false
+    elif opt_level == 1
+        allocateRegistersVisitor.put_loop_variables_in_registers = false
+        allocateRegistersVisitor.put_local_variables_in_registers = true
     elif opt_level == 0
         allocateRegistersVisitor.put_loop_variables_in_registers = false
-        allocateRegistersVisitor.put_loop_sources_in_registers = false
         allocateRegistersVisitor.put_local_variables_in_registers = false
     else
         panic("opt_level {opt_level} is not supported")

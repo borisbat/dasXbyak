@@ -85,6 +85,7 @@ def REG32 ( var gen:CodeGenerator; r:GpTempReg ) : Reg32 const &
         elif r==GpTempReg RDX
             return gen.edx
         else
+            panic("REG32 fails with {r}")
             return gen.eax
 
 def REG64 ( var gen:CodeGenerator; r:GpTempReg ) : Reg64 const &
@@ -118,6 +119,7 @@ def REG64 ( var gen:CodeGenerator; r:GpTempReg ) : Reg64 const &
         elif r==GpTempReg RDX
             return gen.rdx
         else
+            panic("REG64 fails with {r}")
             return gen.rax
 
 def REGXMM ( var gen:CodeGenerator; r:XmmTempReg ) : Xmm const &
@@ -155,4 +157,5 @@ def REGXMM ( var gen:CodeGenerator; r:XmmTempReg ) : Xmm const &
         elif r==XmmTempReg XMM15
             return gen.xmm15
         else
+            panic("REGXMM fails with {r}")
             return gen.xmm0

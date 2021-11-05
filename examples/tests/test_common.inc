@@ -1,5 +1,5 @@
 def test_jit_levels ( blk:block )
-    for opt_level in range(4)
+    for opt_level in range(JIT_MAX_POSSIBLE_OPT_LEVEL+1)
         print("--------------------------\n")
         print("JIT_OPTLEVEL = {opt_level}\n")
         print("--------------------------\n")

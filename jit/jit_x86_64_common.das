@@ -7,6 +7,7 @@ module jit_x86_64_common shared public
 require jit_x86_64_regs public
 
 require ast public
+require daslib/ast_boost
 require dasxbyak/xbyak_boost
 require math
 
@@ -80,12 +81,13 @@ def condJumpIfNot ( var gen:CodeGenerator; lab:string; cond:CompareType )
 
 variant EvResult
     nothing : bool
-    stack   : uint
+    stack   : uint          // [rsp+stack]
     gpReg   : GpTempReg     // any GP register
     gpRegT  : GpTempReg     // variable replaced via register
-    xmmReg  : XmmTempReg
-    iconst  : uint64
-    cmp     : CompareType
+    xmmReg  : XmmTempReg    // any XMM register
+    iconst  : uint64        // constant
+    cmp     : CompareType   // result in flags, from the cmp instruction
+    skip    : bool          // do nothing, processing will be done in the levels above
 
 struct Transients
     gp_mask  : uint
@@ -94,7 +96,6 @@ struct Transients
 struct EvContext
     expr_res   : table<uint64; EvResult>
     temp_var   : table<uint64; GpTempReg>
-    temp_extra : table<uint64; GpTempReg>
     tf_offset  : table<uint64; uint>
     transients : table<uint64; Transients>
     gpa : RegAllocator
@@ -143,7 +144,7 @@ def is_gpreg_type ( t:TypeDeclPtr )
         return true
     return true
 
-def is_for_range1 ( expr:smart_ptr<ExprFor> )
+def is_for_range1 ( expr:smart_ptr<ExprFor> )                   // for blah in ANY_RANGE
     if length(expr.sources)!=1
         return false
     if length(expr.sources[0]._type.dim)!=0
@@ -152,7 +153,16 @@ def is_for_range1 ( expr:smart_ptr<ExprFor> )
         return false
     return true
 
-def is_for_range1_with_unused_var ( expr:smart_ptr<ExprFor> )
+def is_for_range1_RANGE ( expr:smart_ptr<ExprFor> )             // for blah in range(...)
+    if !is_for_range1(expr)
+        return false
+    if expr.sources[0] is ExprCall
+        let ec = expr.sources[0] as ExprCall
+        if ec.func.name=="range" && ec.func._module.name=="$"
+            return true
+    return false
+
+def is_for_range1_with_unused_var ( expr:smart_ptr<ExprFor> )   // for blah in ANY_RANGE, but blah is unused
     if !is_for_range1(expr)
         return false
     let flags = expr.iteratorVariables[0].access_flags
@@ -184,4 +194,15 @@ class JitVisitor : AstVisitor
         if verbose
             let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
             print("{text} at {fname}:{int(at.line)}:{int(at.column)}\n")
-
+    def evResSet ( expr:ExpressionPtr ) : EvResult &
+        unsafe
+            return context.expr_res[intptr(expr)]
+    def evResSetp ( expr:Expression? ) : EvResult &
+        unsafe
+            return context.expr_res[intptr(expr)]
+    def evResGet ( expr:ExpressionPtr ) : EvResult const &
+        unsafe
+            return context.expr_res[intptr(expr)]
+    def evResGetp ( expr:Expression? ) : EvResult const &
+        unsafe
+            return context.expr_res[intptr(expr)]

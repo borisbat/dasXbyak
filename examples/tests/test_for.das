@@ -11,7 +11,9 @@ def verify_seq(var t:array<int>)
         print("sequence length mismatch")
         assert(false)
     for T,S in t,seq
-        assert(T==S)
+        if T!=S
+            print("sequence mismatch {T} vs {S}")
+            assert(false)
     delete seq
     delete t
 
@@ -37,6 +39,30 @@ def test_continue(a,b:int)
             continue
         printreg(t)
 
+[jit_x86_64]
+def test_range_1a_v(a:int)
+    for t in range(a)
+        printreg(t)
+
+[jit_x86_64]
+def test_range_1a_0(a:int)
+    var j = 0
+    for t in range(a)
+        printreg(j)
+        j ++
+
+[jit_x86_64]
+def test_range_2a_v(a,b:int)
+    for t in range(a,b)
+        printreg(t)
+
+[jit_x86_64]
+def test_range_2a_0(a,b:int)
+    var j = a
+    for t in range(a,b)
+        printreg(j)
+        j ++
+
 [export]
 def main()
     /*
@@ -45,6 +71,28 @@ def main()
     print("test_continue(0,10)\n")
     test_continue(0,10);    verify_seq([{for t in range(0,10); t; where t % 2 != 0}])
     */
+
+    // range 1
+    test_jit_levels <|
+        print("test_range_1a_v(5)\n")
+        test_range_1a_v(5);    verify_seq([{for t in range(0,5); t}])
+        print("test_range_1a_0(5)\n")
+        test_range_1a_0(5);    verify_seq([{for t in range(0,5); t}])
+
+    // range2
+    test_jit_levels <|
+        print("test_range_2a_v(2, 5)\n")
+        test_range_2a_v(2,5);    verify_seq([{for t in range(2,5); t}])
+        print("test_range_2a_0(2, 5)\n")
+        test_range_2a_0(2,5);    verify_seq([{for t in range(2,5); t}])
+        print("test_range_2a_v(5, 5)\n")
+        test_range_2a_v(5,5);    verify_seq([{for t in range(5,5); t}])
+        print("test_range_2a_0(5, 5)\n")
+        test_range_2a_0(5,5);    verify_seq([{for t in range(5,5); t}])
+        print("test_range_2a_v(50, 5)\n")
+        test_range_2a_v(50,5);    verify_seq([{for t in range(50,5); t}])
+        print("test_range_2a_0(50, 5)\n")
+        test_range_2a_0(50,5);    verify_seq([{for t in range(50,5); t}])
 
     test_jit_levels <|
         print("test_range(0,5)\n")
