@@ -65,17 +65,17 @@ enum CompareType
 
 def condJump ( var gen:CodeGenerator; lab:string; cond:CompareType )
     if cond==CompareType less
-        jl(gen,lab,LabelType T_NEAR)
+        jl(gen,lab,LabelType T_AUTO)
     elif cond==CompareType equals
-        je(gen,lab,LabelType T_NEAR)
+        je(gen,lab,LabelType T_AUTO)
     else
         panic("unsupported jump {cond}")
 
 def condJumpIfNot ( var gen:CodeGenerator; lab:string; cond:CompareType )
     if cond==CompareType less
-        jge(gen,lab,LabelType T_NEAR)
+        jge(gen,lab,LabelType T_AUTO)
     elif cond==CompareType equals
-        jne(gen,lab,LabelType T_NEAR)
+        jne(gen,lab,LabelType T_AUTO)
     else
         panic("unsupported jump {cond}")
 

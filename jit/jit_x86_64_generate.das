@@ -504,9 +504,9 @@ class GenerateCodeVisitor : JitVisitor
             if evS is gpReg
                 test(REG32(GEN,evS as gpReg),REG32(GEN,evS as gpReg))
                 if expr.if_false==null
-                    jz(".if_end_{intptr(expr)}",LabelType T_NEAR)
+                    jz(".if_end_{intptr(expr)}",LabelType T_AUTO)
                 else
-                    jz(".if_cond_failed_{intptr(expr)}",LabelType T_NEAR)
+                    jz(".if_cond_failed_{intptr(expr)}",LabelType T_AUTO)
             elif evS is cmp
                 if expr.if_false==null
                     GEN |> condJumpIfNot(".if_end_{intptr(expr)}",evS as cmp)
@@ -518,7 +518,7 @@ class GenerateCodeVisitor : JitVisitor
     def override preVisitExprIfThenElseElseBlock(expr:smart_ptr<ExprIfThenElse>;elseBlock:ExpressionPtr) : void
         // we are only here, if there is an else block
         with_xbyak(gen) <| $ ( GEN )
-            jmp(".if_end_{intptr(expr)}",LabelType T_NEAR)
+            jmp(".if_end_{intptr(expr)}",LabelType T_AUTO)
             L(".if_cond_failed_{intptr(expr)}");  rdx_has_args = false
         log("\n{repeat("\t",tab)}ELSE\n")
     def override visitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : ExpressionPtr
@@ -545,7 +545,7 @@ class GenerateCodeVisitor : JitVisitor
         with_xbyak(gen) <| $ ( GEN )
             if evS is gpReg
                 test(REG32(GEN,evS as gpReg),REG32(GEN,evS as gpReg))
-                jz(".cond_right_{intptr(expr)}",LabelType T_NEAR)
+                jz(".cond_right_{intptr(expr)}",LabelType T_AUTO)
             elif evS is cmp
                 GEN |> condJumpIfNot(".cond_right_{intptr(expr)}",evS as cmp)
             else
@@ -556,7 +556,7 @@ class GenerateCodeVisitor : JitVisitor
         let evL & = evResGet(expr.left)
         with_xbyak(gen) <| $ ( GEN )
             copyReg32(eV as gpReg,evL,expr.at)
-            jmp(".cond_end_{intptr(expr)}",LabelType T_NEAR)
+            jmp(".cond_end_{intptr(expr)}",LabelType T_AUTO)
             L(".cond_right_{intptr(expr)}");  rdx_has_args = false
         log(" : ")
     def override visitExprOp3(expr:smart_ptr<ExprOp3>) : ExpressionPtr
@@ -690,13 +690,13 @@ class GenerateCodeVisitor : JitVisitor
                             shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
                             movd(REG32(GEN,RV),reg)
                             sub(REG32(GEN,RV),eax)
-                            jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
+                            jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                         else
                             movd(REG32(GEN,RV),reg)
                             shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
                             movd(eax,reg)
                             cmp(eax,REG32(GEN,RV))
-                            jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
+                            jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                     else
                         let iSP = expr.iteratorVariables[0].stackTop
                         if is_for_range1_with_unused_var(expr)
@@ -705,14 +705,14 @@ class GenerateCodeVisitor : JitVisitor
                             movd(ecx,reg)
                             sub(ecx,eax)
                             mov(dword[rsp+iSP],ecx)
-                            jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
+                            jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                         else
                             movd(eax,reg)
                             mov(dword[rsp+iSP],eax)
                             shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
                             movd(ecx,reg)
                             cmp(ecx,eax)
-                            jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
+                            jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                 elif evS is skip
                     let rA = source as ExprCall
                     let rA0 & = evResGet(rA.arguments[0])
@@ -722,7 +722,7 @@ class GenerateCodeVisitor : JitVisitor
                             if length(rA.arguments)==1
                                 copyReg32(RV, rA0, expr.at)
                                 test(REG32(GEN,RV),REG32(GEN,RV))
-                                jz(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
+                                jz(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(RV, rA1, expr.at)
@@ -733,7 +733,7 @@ class GenerateCodeVisitor : JitVisitor
                                 else
                                     copyReg32(GpTempReg RAX, rA0, expr.at)
                                     sub(REG32(GEN,RV),eax)
-                                jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
+                                jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                         else
                             if length(rA.arguments)==1
                                 sub(REG32(GEN,RV),REG32(GEN,RV))
@@ -744,7 +744,7 @@ class GenerateCodeVisitor : JitVisitor
                                 else
                                     copyReg32(GpTempReg RAX, rA0, expr.at)
                                     test(eax,eax)
-                                jz(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
+                                jz(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(RV, rA0, expr.at)
@@ -755,7 +755,7 @@ class GenerateCodeVisitor : JitVisitor
                                 else
                                     copyReg32(GpTempReg RAX, rA1, expr.at)
                                     cmp(eax,REG32(GEN,RV))
-                                jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
+                                jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                     else
                         let iSP = expr.iteratorVariables[0].stackTop
                         if is_for_range1_with_unused_var(expr)
@@ -763,27 +763,27 @@ class GenerateCodeVisitor : JitVisitor
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],eax)
                                 test(eax,eax)
-                                jz(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
+                                jz(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 copyReg32(GpTempReg RCX, rA1, expr.at)
                                 sub(ecx,eax)
                                 mov(dword[rsp+iSP],ecx)
-                                jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
+                                jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                         else
                             if length(rA.arguments)==1
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],0ul)
                                 test(eax,eax)
-                                jz(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
+                                jz(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 copyReg32(GpTempReg RCX, rA1, expr.at)
                                 mov(dword[rsp+iSP],eax)
                                 cmp(ecx,eax)
-                                jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
+                                jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                 else
                     failed("ExprFor is_for_range1 evS={evS}",expr.at)
         else
@@ -837,7 +837,7 @@ class GenerateCodeVisitor : JitVisitor
                                     cmp(dword[rsp+iSP],REG32(GEN,rA as gpRegT))
                                 else
                                     failed("ExprFor !is_for_range1 rA={rA}",expr.at)
-                    jnz(".for_loop_{intptr(expr)}",LabelType T_NEAR)
+                    jnz(".for_loop_{intptr(expr)}",LabelType T_AUTO)
                 else
                     failed("ExprFor is_for_range1 evS={evS}",expr.at)
         else
@@ -852,14 +852,14 @@ class GenerateCodeVisitor : JitVisitor
         log("(BREAK)")
         let loop_ptr = loop_stack |> back
         with_xbyak(gen) <| $ ( GEN )
-            jmp(".for_loop_done_{loop_ptr}",LabelType T_NEAR)
+            jmp(".for_loop_done_{loop_ptr}",LabelType T_AUTO)
         return expr
 // continue
     def override visitExprContinue(expr:smart_ptr<ExprContinue>) : ExpressionPtr
         log("(CONTINUE)")
         let loop_ptr = loop_stack |> back
         with_xbyak(gen) <| $ ( GEN )
-            jmp(".for_loop_continue_{loop_ptr}",LabelType T_NEAR)
+            jmp(".for_loop_continue_{loop_ptr}",LabelType T_AUTO)
         return expr
 // call
     def override preVisitExprCall(expr:smart_ptr<ExprCall>): void
