@@ -21,7 +21,7 @@ def fibR_jit(n:int)
 def fibI(n:int)
     var last = 0
     var cur = 1
-    for i in range( n-1)
+    for i in range(n-1)
         let tmp = cur
         cur += last
         last = tmp

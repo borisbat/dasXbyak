@@ -72,7 +72,7 @@ def private allocate_regs(var func : FunctionPtr; var context:EvContext; verbose
         return false
     return true
 
-def public generate_x86_64(var func:FunctionPtr; show_disasm:bool; verbose:bool; opt_level:int ) : CodeGenerator?
+def public generate_x86_64(var func:FunctionPtr; show_disasm:bool; verbose:bool; opt_level:int; no_exceptions:bool ) : CodeGenerator?
     var context : EvContext
     var ok = false
     ok = allocate_regs(func, context, verbose, opt_level)
@@ -86,6 +86,7 @@ def public generate_x86_64(var func:FunctionPtr; show_disasm:bool; verbose:bool;
     var generateCodeVisitor = new GenerateCodeVisitor(gen,context)
     var generateCodeVisitorAdapter <- make_visitor(*generateCodeVisitor)
     generateCodeVisitor.verbose = verbose
+    generateCodeVisitor.assume_no_exceptions = no_exceptions
     visit(func, generateCodeVisitorAdapter)
     let f2g = generateCodeVisitor.failed_to_generate
     generateCodeVisitorAdapter := null
@@ -116,7 +117,7 @@ class Jit_x86_64_Macro : AstFunctionAnnotation
             unsafe
                 if get_ptr(this_program()) != null
                     var fnptr <- find_module_function_via_rtti(find_module_via_rtti(this_program(),PMOD),PFUN)
-                    var gen = generate_x86_64(fnptr,SHOW_DISASM,VERBOSE || JIT_VERBOSE, OPTLEVEL)
+                    var gen = generate_x86_64(fnptr,SHOW_DISASM,VERBOSE || JIT_VERBOSE, OPTLEVEL, NO_EXCEPTIONS)
                     if gen != null
                         *gen |> instrument_jit(reinterpret<function> PFUN)
                     fnptr := null
@@ -125,12 +126,14 @@ class Jit_x86_64_Macro : AstFunctionAnnotation
         let show_disasm = find_arg("asm",args) ?as tBool ?? false
         let verbose = find_arg("verbose",args) ?as tBool ?? false
         let opt_level = find_arg("o",args) ?as tInt ?? 3
+        let no_exceptions = find_arg("no_exceptions",args) ?as tBool ?? false
         apply_template(qblock) <| $ ( rules )
             rules |> replaceVariable("PFUN") <| new [[ExprAddr() target:=func.name]]
             rules |> replaceVariable("PMOD") <| new [[ExprConstString() value:=compiling_module().name]]
             rules |> replaceVariable("SHOW_DISASM") <| new [[ExprConstBool() value=show_disasm]]
             rules |> replaceVariable("VERBOSE") <| new [[ExprConstBool() value=verbose]]
             rules |> replaceVariable("OPTLEVEL") <| new [[ExprConstInt() value=opt_level]]
+            rules |> replaceVariable("NO_EXCEPTIONS") <| new [[ExprConstBool() value=no_exceptions]]
         var qres <- move_unquote_block(qblock)
         qres.blockFlags ^= ExprBlockFlags isClosure
         var reg <- setup_call_list("all`things`jit", func.at, true)

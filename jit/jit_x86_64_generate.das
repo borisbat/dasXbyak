@@ -19,6 +19,7 @@ require zydis
 require ast public
 
 class GenerateCodeVisitor : JitVisitor
+    assume_no_exceptions : bool = false
     tab : int
     [[do_not_delete]] gen : CodeGenerator?
     [[do_not_delete]] this_function : Function?
@@ -400,10 +401,11 @@ class GenerateCodeVisitor : JitVisitor
                                         elif expr.op=="-"
                                             sub(REG32(GEN,evL as gpReg),REG32(GEN,regR))
                                         elif expr.op=="%" || expr.op=="/"
-                                            cmp(REG32(GEN,regR),0u)
-                                            jne(".div_{intptr(expr)}",LabelType T_AUTO)
-                                            JIT`exception("division by zero")
-                                            L(".div_{intptr(expr)}")
+                                            if !assume_no_exceptions
+                                                test(REG32(GEN,regR),REG32(GEN,regR))
+                                                jne(".div_{intptr(expr)}",LabelType T_AUTO)
+                                                JIT`exception("division by zero")
+                                                L(".div_{intptr(expr)}")
                                             mov(eax,REG32(GEN,evL as gpReg))
                                             cdq()
                                             idiv(REG32(GEN,regR));  rdx_has_args = false
@@ -443,10 +445,11 @@ class GenerateCodeVisitor : JitVisitor
                                             rdx_has_args = false
                                             copyReg32(GpTempReg RAX, evL, expr.at)
                                             copyReg32(GpTempReg RCX, evR, expr.at)
-                                            cmp(ecx,0u)
-                                            jnz(".div_{intptr(expr)}",LabelType T_AUTO)
-                                            JIT`exception("division by zero")
-                                            L(".div_{intptr(expr)}")
+                                            if !assume_no_exceptions
+                                                test(ecx,ecx)
+                                                jnz(".div_{intptr(expr)}",LabelType T_AUTO)
+                                                JIT`exception("division by zero")
+                                                L(".div_{intptr(expr)}")
                                             cdq()
                                             idiv(ecx);  rdx_has_args = false
                                             mov(REG32(GEN,evOP2 as gpReg),expr.op=="%" ? edx : eax)

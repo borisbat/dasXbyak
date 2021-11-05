@@ -5,14 +5,14 @@ require testProfile
 options rtti
 require jit/jit_x86_64
 
-[jit_x86_64]
+[jit_x86_64(no_exceptions)]
 def isprime_jit(n:int)
     for i in range(2, n)
         if (n % i == 0)
             return false
     return true
 
-[jit_x86_64]
+[jit_x86_64(no_exceptions)]
 def primes_jit(n:int)
     var count = 0
     for i in range(2, n+1)
@@ -45,7 +45,7 @@ def primesI(n:int)
 				break
     return count
 
-[jit_x86_64]
+[jit_x86_64(no_exceptions)]
 def primesI_jit(n:int)
     var count = 0
     for i in range(2, n+1)
