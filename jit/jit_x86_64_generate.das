@@ -718,10 +718,14 @@ class GenerateCodeVisitor : JitVisitor
                                 jz(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
-                                copyReg32(GpTempReg RAX, rA1, expr.at)
-                                copyReg32(GpTempReg RCX, rA0, expr.at)
-                                sub(eax,ecx)
-                                mov(REG32(GEN,RV),eax)
+                                copyReg32(RV, rA1, expr.at)
+                                if rA0 is gpReg
+                                    sub(REG32(GEN,RV),REG32(GEN,rA0 as gpReg))
+                                elif rA0 is gpRegT
+                                    sub(REG32(GEN,RV),REG32(GEN,rA0 as gpRegT))
+                                else
+                                    copyReg32(GpTempReg RAX, rA0, expr.at)
+                                    sub(REG32(GEN,RV),eax)
                                 jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                         else
                             if length(rA.arguments)==1
