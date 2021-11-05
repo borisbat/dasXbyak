@@ -442,16 +442,20 @@ class GenerateCodeVisitor : JitVisitor
                                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL s gpRegT && evR is iconst", expr.at)
                                     else
                                         if expr.op=="%" || expr.op=="/"
-                                            rdx_has_args = false
                                             copyReg32(GpTempReg RAX, evL, expr.at)
-                                            copyReg32(GpTempReg RCX, evR, expr.at)
+                                            var div_reg = GpTempReg RCX
+                                            if evR is gpReg
+                                                div_reg = evR as gpReg
+                                            elif evR is gpRegT
+                                                div_reg = evR as gpRegT
+                                            copyReg32(div_reg, evR, expr.at)
                                             if !assume_no_exceptions
-                                                test(ecx,ecx)
+                                                test(REG32(GEN,div_reg),REG32(GEN,div_reg))
                                                 jnz(".div_{intptr(expr)}",LabelType T_AUTO)
                                                 JIT`exception("division by zero")
                                                 L(".div_{intptr(expr)}")
                                             cdq()
-                                            idiv(ecx);  rdx_has_args = false
+                                            idiv(REG32(GEN,div_reg));  rdx_has_args = false
                                             mov(REG32(GEN,evOP2 as gpReg),expr.op=="%" ? edx : eax)
                                         else
                                             copyReg32(evOP2 as gpReg,evL,expr.at)
