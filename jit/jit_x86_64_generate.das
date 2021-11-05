@@ -19,6 +19,11 @@ require zydis
 
 require ast public
 
+/*
+    all boolean compare operations spill in the ecx
+    that way we can compare imul, idiv results directly
+*/
+
 class GenerateCodeVisitor : GenerateCodeVisitorBase
     assume_no_exceptions : bool = false
     tab : int
@@ -285,7 +290,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                     else
                         if evOP2 is cmp
                             if expr.op=="<" || expr.op=="=="
-                                cmpAnyAny32(evL,evR,evOP2 as cmp,GpTempReg RAX,expr.at)
+                                cmpAnyAny32(evL,evR,evOP2 as cmp,GpTempReg RCX,expr.at)
                                 log(" [{evL}]")
                             else
                                 failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp", expr.at)
@@ -308,11 +313,11 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                             elif expr.op=="<" || expr.op=="=="
                                                 cmp(REG32(GEN,evL as gpReg),ic)
                                                 mov(REG32(GEN,evL as gpReg),0ul)
-                                                mov(eax,1ul)
+                                                mov(ecx,1ul)
                                                 if expr.op=="<"
-                                                    cmovl(REG32(GEN,evL as gpReg),eax)
+                                                    cmovl(REG32(GEN,evL as gpReg),ecx)
                                                 elif expr.op=="=="
-                                                    cmove(REG32(GEN,evL as gpReg),eax)
+                                                    cmove(REG32(GEN,evL as gpReg),ecx)
                                                 else
                                                     failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst bool", expr.at)
                                             elif expr.op=="%" || expr.op=="/"
@@ -322,7 +327,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                                 mov(REG32(GEN,evL as gpReg),evR as iconst)
                                                 cdq()
                                                 idiv(REG32(GEN,evL as gpReg));  rdx_has_args = false
-                                                mov(REG32(GEN,evL as gpReg),expr.op=="%" ? edx : eax)
+                                                copyRegReg32(evL as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
                                             else
                                                 failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst", expr.at)
                                     elif (evR is gpReg) || (evR is gpRegT)
@@ -340,7 +345,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                             mov(eax,REG32(GEN,evL as gpReg))
                                             cdq()
                                             idiv(REG32(GEN,regR));  rdx_has_args = false
-                                            mov(REG32(GEN,evL as gpReg),expr.op=="%" ? edx : eax)
+                                            copyRegReg32(evL as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
                                         else
                                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, (evR is gpReg || evR is gpRegT)", expr.at)
                                     else
@@ -364,11 +369,11 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                         elif expr.op=="%" || expr.op=="/"
                                             if (evR as iconst)==0ul
                                                 failed("DIVISION BY ZERO", expr.at)
-                                            mov(REG32(GEN,evOP2 as gpReg),evR as iconst)
+                                            mov(ecx,evR as iconst)
                                             mov(eax,REG32(GEN,evL as gpRegT))
                                             cdq()
-                                            idiv(REG32(GEN,evOP2 as gpReg));  rdx_has_args = false
-                                            mov(REG32(GEN,evOP2 as gpReg),expr.op=="%" ? edx : eax)
+                                            idiv(ecx);  rdx_has_args = false
+                                            copyRegReg32(evOP2 as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
                                         else
                                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL s gpRegT && evR is iconst", expr.at)
                                     else
@@ -389,7 +394,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                                 L(".div_{intptr(expr)}")
                                             cdq()
                                             idiv(REG32(GEN,div_reg));  rdx_has_args = false
-                                            mov(REG32(GEN,evOP2 as gpReg),expr.op=="%" ? edx : eax)
+                                            copyRegReg32(evOP2 as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
                                         else
                                             copyReg32(evOP2 as gpReg,evL,expr.at)
                                             if evR is iconst

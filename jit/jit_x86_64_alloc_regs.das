@@ -25,6 +25,11 @@ class AllocateRegistersCodeVisitor : JitVisitor
     [[do_not_delete]] this_function : Function?
     def AllocateRegistersCodeVisitor ( var ctx:EvContext )
         JitVisitor`JitVisitor(self, ctx)
+    def evExpectSpecials ( expr:ExpressionPtr; spc:Specials; at:LineInfo )
+        logAt("expect specials {spc} {expr.__rtti}.{intptr(expr)}", at)
+        let key = intptr(expr)
+        if ! context.specials |> key_exists(key)
+            context.specials[key] = spc
     def evExpectStack ( expr:ExpressionPtr; stack:uint; at:LineInfo )
         logAt("expect stack {stack} {expr.__rtti}.{intptr(expr)}", at)
         var eV & = evResSet(expr)
@@ -42,8 +47,11 @@ class AllocateRegistersCodeVisitor : JitVisitor
             eV = [[EvResult skip=true]]
     def evRelease ( var res:EvResult; at:LineInfo )
         if res is gpReg
-            logAt("release GP reg {res as gpReg}",at)
-            context.gpa |> free(int(res as gpReg))
+            let reg = res as gpReg
+            if reg==GpTempReg RAX || reg==GpTempReg RDX || reg==GpTempReg RCX
+                return
+            logAt("release GP reg {reg}",at)
+            context.gpa |> free(int(reg))
         elif res is xmmReg
             logAt("release XMM reg {res as xmmReg}",at)
             context.xmma |> free(int(res as xmmReg))
@@ -216,6 +224,24 @@ class AllocateRegistersCodeVisitor : JitVisitor
             failed("ExprOp1 {expr.op} {describe(expr.subexpr._type)}", expr.at)
         return expr
 // op2
+    def override preVisitExprOp2(expr:smart_ptr<ExprOp2>): void
+        var evL & = evResSet(expr.left)
+        var evR & = evResSet(expr.right)
+        var evOP2 & = evResSet(expr)
+        if expr.left._type.isWorkhorseType
+            if expr.left._type |> is_gpreg_type
+                if expr.left._type.isRef
+                    pass
+                else
+                    if evOP2 is cmp
+                        if expr.op=="<" || expr.op=="=="
+                            if starts_with(expr.right.__rtti,"ExprConst")
+                                // we can accept special on the left, is right is const
+                                evExpectSpecials(expr.left, Specials RAX | Specials RDX | Specials RCX, expr.at)
+                            else
+                                // we can accept special on the right always
+                                evExpectSpecials(expr.right, Specials RAX | Specials RDX | Specials RCX, expr.at)
+
     def override visitExprOp2(expr:smart_ptr<ExprOp2>) : ExpressionPtr
         var evL & = evResSet(expr.left)
         var evR & = evResSet(expr.right)
@@ -234,8 +260,15 @@ class AllocateRegistersCodeVisitor : JitVisitor
                     else
                         // imm operators
                         if expr.op=="-" || expr.op=="+" || expr.op=="*" || expr.op=="/" || expr.op=="%" || expr.op=="<" || expr.op=="=="
-                            if expr.op=="%" || expr.op=="/"                 // this operators require context for the exceptions
+                            // this operators require context for the exceptions
+                            if expr.op=="%" || expr.op=="/"
                                 context.use_context = true
+                                let spec = evSpecialsGet(expr)
+                                if (expr.op=="/" && spec.RAX) || (expr.op=="%" && spec.RDX)
+                                    evResSet(expr) = [[EvResult gpReg=(expr.op=="/" ? GpTempReg RAX : GpTempReg RDX)]]
+                                    evRelease(evL,expr.at)
+                                    evRelease(evR,expr.at)
+                                    return expr
                             if evL is gpReg                                             // left is reg
                                 if (evR is iconst) || (evR is gpReg) || (evR is gpRegT) // right is const, or reg
                                     // reuse left register

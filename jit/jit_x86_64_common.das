@@ -101,6 +101,11 @@ def getCompareOp ( op:string )
         panic("unsupported compare operation {op}")
         return CompareType always
 
+bitfield Specials           // this is how operations like /, which require idiv know, that they can return result in RAX or RDX
+    RAX
+    RDX
+    RCX
+
 variant EvResult
     nothing : bool
     stack   : uint          // [rsp+stack]
@@ -120,6 +125,7 @@ struct EvContext
     temp_var   : table<uint64; GpTempReg>
     tf_offset  : table<uint64; uint>
     transients : table<uint64; Transients>
+    specials   : table<uint64; Specials>
     gpa : RegAllocator
     xmma : RegAllocator
     temp_frame  : uint      // where temp buffers are allocated (like calls)
@@ -216,6 +222,11 @@ class JitVisitor : AstVisitor
         if verbose
             let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
             print("{text} at {fname}:{int(at.line)}:{int(at.column)}\n")
+    def evSpecialsGet ( expr:ExpressionPtr ) : Specials
+        return context.specials?[intptr(expr)] ?? [[Specials]]
+    def evSpecialsHas ( expr:ExpressionPtr; regs:Specials ) : bool
+        let spc = context.specials?[intptr(expr)] ?? [[Specials]]
+        return (spc & regs)==regs
     def evResSet ( expr:ExpressionPtr ) : EvResult &
         unsafe
             return context.expr_res[intptr(expr)]

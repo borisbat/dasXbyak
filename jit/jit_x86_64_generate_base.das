@@ -42,7 +42,12 @@ class GenerateCodeVisitorBase : JitVisitor
             call(rax)
             add(rsp,32u)
 // helpers
-    def copyReg32 ( dest:GpTempReg; srcV:EvResult; at:LineInfo ) : void                         //  mov reg32, data
+    def copyRegReg32 ( dest,src:GpTempReg; at:LineInfo ) : void                                                //  mov reg32, reg32
+        if dest==src
+            return
+        with_xbyak(gen) <| $ ( GEN )
+            mov(REG32(GEN,dest),REG32(GEN,src))
+    def copyReg32 ( dest:GpTempReg; srcV:EvResult; at:LineInfo ) : void                                         //  mov reg32, data
         with_xbyak(gen) <| $ ( GEN )
             if srcV is gpReg
                 if dest != (srcV as gpReg)
@@ -63,7 +68,12 @@ class GenerateCodeVisitorBase : JitVisitor
             elif right is gpRegT
                 cmp(REG32(GEN,left),REG32(GEN,right as gpRegT))
             elif right is iconst
-                cmp(REG32(GEN,left),uint(right as iconst))
+                let ic = right as iconst
+                if ic==0ul && (cop==CompareType equals || cop==CompareType not_equals)
+                    // cmp reg, 0 can be promoted to test reg,reg if all we do is testing for equals or not equals
+                    test(REG32(GEN,left),REG32(GEN,left))
+                else
+                    cmp(REG32(GEN,left),uint(right as iconst))
             elif right is stack
                 cmp(REG32(GEN,left),ptr[rsp+(right as stack)])
             else
@@ -75,8 +85,13 @@ class GenerateCodeVisitorBase : JitVisitor
             elif left is gpRegT
                 cmp(REG32(GEN,left as gpRegT),REG32(GEN,right))
             elif left is iconst
-                mov(REG32(GEN,spill),left as iconst)
-                cmp(REG32(GEN,spill),REG32(GEN,right))
+                let ic = left as iconst
+                if ic==0ul && (cop==CompareType equals || cop==CompareType not_equals)
+                    // cmp 0, reg can be promoted to test reg,reg if all we do is testing for equals or not equals
+                    test(REG32(GEN,right),REG32(GEN,right))
+                else
+                    mov(REG32(GEN,spill),left as iconst)
+                    cmp(REG32(GEN,spill),REG32(GEN,right))
             elif left is stack
                 cmp(ptr[rsp+(left as stack)],REG32(GEN,right))
             else

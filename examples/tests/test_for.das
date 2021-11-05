@@ -21,6 +21,13 @@ def printreg(t:int)
     seq |> push(t)
 
 [jit_x86_64]
+def test_continue(a,b:int)
+    for t in range(a,b)
+        if t % 2 == 0
+            continue
+        printreg(t)
+
+[jit_x86_64]
 def test_range(a,b:int)
     for t in range(a,b)
         printreg(t)
@@ -31,13 +38,6 @@ def test_break(a,b,c:int)
         printreg(t)
         if t==c
             break
-
-[jit_x86_64]
-def test_continue(a,b:int)
-    for t in range(a,b)
-        if t % 2 == 0
-            continue
-        printreg(t)
 
 [jit_x86_64]
 def test_range_1a_v(a:int)
@@ -65,13 +65,6 @@ def test_range_2a_0(a,b:int)
 
 [export]
 def main()
-    /*
-    JIT_MAX_OPT_LEVEL = 0
-    all`things`jit()
-    print("test_continue(0,10)\n")
-    test_continue(0,10);    verify_seq([{for t in range(0,10); t; where t % 2 != 0}])
-    */
-
     // range 1
     test_jit_levels <|
         print("test_range_1a_v(5)\n")
