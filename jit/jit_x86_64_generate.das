@@ -683,7 +683,7 @@ class GenerateCodeVisitor : JitVisitor
                             shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
                             movd(REG32(GEN,RV),reg)
                             sub(REG32(GEN,RV),eax)
-                            jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)   // verify loop type
+                            jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                         else
                             movd(REG32(GEN,RV),reg)
                             shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
@@ -715,26 +715,36 @@ class GenerateCodeVisitor : JitVisitor
                             if length(rA.arguments)==1
                                 copyReg32(RV, rA0, expr.at)
                                 test(REG32(GEN,RV),REG32(GEN,RV))
-                                jz(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)   // verify loop type
+                                jz(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(GpTempReg RAX, rA1, expr.at)
                                 copyReg32(GpTempReg RCX, rA0, expr.at)
                                 sub(eax,ecx)
                                 mov(REG32(GEN,RV),eax)
-                                jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)   // verify loop type
+                                jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                         else
                             if length(rA.arguments)==1
                                 sub(REG32(GEN,RV),REG32(GEN,RV))
-                                copyReg32(GpTempReg RAX, rA0, expr.at)
-                                test(eax,eax)
-                                jz(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)   // verify loop type
+                                if rA0 is gpReg
+                                    test(REG32(GEN,rA0 as gpReg),REG32(GEN,rA0 as gpReg))
+                                elif rA0 is gpRegT
+                                    test(REG32(GEN,rA0 as gpRegT),REG32(GEN,rA0 as gpRegT))
+                                else
+                                    copyReg32(GpTempReg RAX, rA0, expr.at)
+                                    test(eax,eax)
+                                jz(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(RV, rA0, expr.at)
-                                copyReg32(GpTempReg RAX, rA1, expr.at)
-                                cmp(eax,REG32(GEN,RV))
-                                jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)   // verify loop type
+                                if rA1 is gpReg
+                                    cmp(REG32(GEN,rA1 as gpReg),REG32(GEN,RV))
+                                elif rA1 is gpRegT
+                                    cmp(REG32(GEN,rA1 as gpRegT),REG32(GEN,RV))
+                                else
+                                    copyReg32(GpTempReg RAX, rA1, expr.at)
+                                    cmp(eax,REG32(GEN,RV))
+                                jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                     else
                         let iSP = expr.iteratorVariables[0].stackTop
                         if is_for_range1_with_unused_var(expr)
@@ -742,27 +752,27 @@ class GenerateCodeVisitor : JitVisitor
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],eax)
                                 test(eax,eax)
-                                jz(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)   // verify loop type
+                                jz(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 copyReg32(GpTempReg RCX, rA1, expr.at)
                                 sub(ecx,eax)
                                 mov(dword[rsp+iSP],ecx)
-                                jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)   // verify loop type
+                                jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                         else
                             if length(rA.arguments)==1
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],0ul)
                                 test(eax,eax)
-                                jz(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)   // verify loop type
+                                jz(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 copyReg32(GpTempReg RCX, rA1, expr.at)
                                 mov(dword[rsp+iSP],eax)
                                 cmp(ecx,eax)
-                                jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)   // verify loop type
+                                jle(".for_loop_done_{intptr(expr)}",LabelType T_NEAR)
                 else
                     failed("ExprFor is_for_range1 evS={evS}",expr.at)
         else
