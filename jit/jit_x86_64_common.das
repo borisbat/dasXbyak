@@ -149,12 +149,9 @@ def pick_rcx_candidate ( var context:EvContext )
                 can = k
                 tot = v
         return can
-    if length(context.temp_var) > 0
-        for v in values(context.temp_var)   // pick first temp var
-            return v
     if length(context.gpa.regs) > 0
         unsafe
-            let gpi = length(context.gpa.regs) - 1
+            let gpi = length(context.gpa.regs) - 1  // last one out
             return reinterpret<GpTempReg> gpi
     return GpTempReg BROKEN
 
@@ -171,8 +168,12 @@ def replace_register_allocation ( var context:EvContext; freg, treg : GpTempReg 
             v = treg
     let gpi = int(freg)
     let tgi = int(treg)
-    context.gpa.regs[gpi] = false
-    context.gpa.freq[gpi] = 0
+    if gpi==(length(context.gpa.regs)-1)
+        context.gpa.regs |> pop
+        context.gpa.freq |> pop
+    else
+        context.gpa.regs[gpi] = false
+        context.gpa.freq[gpi] = 0
     let fmask = ~(1u << uint(gpi))
     let tmask = 1u<<uint(tgi)
     for v in values(context.transients)
