@@ -25,6 +25,7 @@ let public JIT_MAX_POSSIBLE_OPT_LEVEL = 3
 var public JIT_VERBOSE = false
 var public JIT_DISASM = false
 var public JIT_REPORT_REG_PRESSURE = false
+var public JIT_DISASSEMBLE_SHOW_ADDRESS = false
 
 def private allocate_regs(var func : FunctionPtr; var context:EvContext; verbose:bool; _opt_level:int )
     let opt_level = min(JIT_MAX_OPT_LEVEL, _opt_level)
@@ -103,6 +104,8 @@ def public generate_x86_64(var func:FunctionPtr; show_disasm:bool; verbose:bool;
                 let labt = context.labels?[address] ?? ""
                 if !empty(labt)
                     print("{labt}:\n")
+                if JIT_DISASSEMBLE_SHOW_ADDRESS
+                    print(format("%016llx\t",address))
                 print("\t{text}\n")
             print("\n")
         let err = reinterpret<GenerationError> GetError()

@@ -9,6 +9,7 @@ require jit_x86_64_regs public
 require ast public
 require daslib/ast_boost
 require dasxbyak/xbyak_boost
+require daslib/strings_boost
 require math
 
 /*
@@ -121,12 +122,13 @@ struct Transients
     xmm_mask : uint
 
 struct EvContext
-    expr_res   : table<uint64; EvResult>
-    temp_var   : table<uint64; GpTempReg>
-    tf_offset  : table<uint64; uint>
-    transients : table<uint64; Transients>
-    specials   : table<uint64; Specials>
-    labels     : table<uint64; string>
+    expr_res        : table<uint64; EvResult>
+    temp_var        : table<uint64; GpTempReg>
+    tf_offset       : table<uint64; uint>
+    transients      : table<uint64; Transients>
+    specials        : table<uint64; Specials>
+    labels          : table<uint64; string>
+    rcx_candidates  : table<GpTempReg; int>                   // this are registers, who want to be rcx badly (i.e. divisors etc)
     gpa : RegAllocator
     xmma : RegAllocator
     temp_frame  : uint      // where temp buffers are allocated (like calls)
@@ -138,6 +140,44 @@ struct EvContext
     uses_rcx    : bool
     assume_no_exceptions : bool
 
+def pick_rcx_candidate ( var context:EvContext )
+    if length(context.rcx_candidates) > 0
+        var can = GpTempReg BROKEN
+        var tot = 0
+        for k,v in keys(context.rcx_candidates),values(context.rcx_candidates)
+            if v > tot  // we pick the most frequently used for the right reason one
+                can = k
+                tot = v
+        return can
+    if length(context.temp_var) > 0
+        for v in values(context.temp_var)   // pick first temp var
+            return v
+    if length(context.gpa.regs) > 0
+        unsafe
+            let gpi = length(context.gpa.regs) - 1
+            return reinterpret<GpTempReg> gpi
+    return GpTempReg BROKEN
+
+def replace_register_allocation ( var context:EvContext; freg, treg : GpTempReg )
+    for v in values(context.expr_res)
+        if v is gpReg
+            if (v as gpReg)==freg
+                v = [[EvResult gpReg=treg]]
+        elif v is gpRegT
+            if (v as gpRegT)==freg
+                v = [[EvResult gpRegT=treg]]
+    for v in values(context.temp_var)
+        if v==freg
+            v = treg
+    let gpi = int(freg)
+    let tgi = int(treg)
+    context.gpa.regs[gpi] = false
+    context.gpa.freq[gpi] = 0
+    let fmask = ~(1u << uint(gpi))
+    let tmask = 1u<<uint(tgi)
+    for v in values(context.transients)
+        v.gp_mask = (v.gp_mask & fmask) | tmask
+
 def dump ( ctx:EvContext )
     print("stack frame is {ctx.stack_frame}\n")
     print("temp frame is {ctx.temp_frame} bytes\n")
@@ -146,6 +186,9 @@ def dump ( ctx:EvContext )
     print("use args: {ctx.use_args}\n")
     print("use cmres: {ctx.use_cmres}\n")
     print("uses RCX: {ctx.uses_rcx}\n")
+    if !ctx.uses_rcx
+        let cand = join([{for k,v in keys(ctx.rcx_candidates),values(ctx.rcx_candidates); "{k}:{v}"}],", ")
+        print("RCX candidates are: {cand}\n")
     for k,v in keys(ctx.tf_offset),values(ctx.tf_offset)
         unsafe
             let pexpr = reinterpret<Expression?> k

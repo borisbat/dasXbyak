@@ -90,6 +90,13 @@ class AllocateRegistersCodeVisitor : JitVisitor
         this_function = get_ptr(fun)
         context.stack_frame = fun.totalStackSize
     def override visitFunction(fun:FunctionPtr) : FunctionPtr
+        if !context.uses_rcx
+            let candidate = context |> pick_rcx_candidate()
+            if candidate != GpTempReg BROKEN
+                log("context does not use rcx, promoting {candidate}\n")
+                context |> replace_register_allocation(candidate, GpTempReg RCX)
+            else
+                log("context does not use rcx, but there is nothing to promote\n")
         let total_xmm_save = length(context.xmma.regs) - FIRST_NON_TRANSIENT_XMM_TEMP_REG
         if total_xmm_save>0
             // save_frame has all extra non-transient xmm registers - 16 bytes each
@@ -244,13 +251,17 @@ class AllocateRegistersCodeVisitor : JitVisitor
                     if expr.op=="/" || expr.op=="%"
                         if starts_with(expr.right.__rtti,"ExprConst")
                             context.uses_rcx = true
-
     def override visitExprOp2(expr:smart_ptr<ExprOp2>) : ExpressionPtr
         var evL & = evResSet(expr.left)
         var evR & = evResSet(expr.right)
         var evOP2 & = evResSet(expr)
         if expr.left._type.isWorkhorseType
             if expr.left._type |> is_gpreg_type
+                if expr.op=="/" || expr.op=="%"
+                    if evR is gpReg
+                        context.rcx_candidates[evR as gpReg]++
+                    elif evR is gpRegT
+                        context.rcx_candidates[evR as gpRegT]++
                 if expr.left._type.isRef    // +=, -=, and such - were left side is ref
                     // we are done with both sides
                     evRelease(evL,expr.at)

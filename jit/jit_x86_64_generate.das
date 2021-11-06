@@ -285,6 +285,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                     else
                         if evOP2 is cmp
                             if expr.op=="<" || expr.op=="=="
+                                alignForIntelJccErratum()
                                 cmpAnyAny32(evL,evR,evOP2 as cmp,GpTempReg BROKEN,expr.at)  // do not spill!
                                 log(" [{evL}]")
                             else
@@ -333,6 +334,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                             sub(REG32(GEN,evL as gpReg),REG32(GEN,regR))
                                         elif expr.op=="%" || expr.op=="/"
                                             if !assume_no_exceptions
+                                                alignForIntelJccErratum()
                                                 test(REG32(GEN,regR),REG32(GEN,regR))
                                                 jne("div_{intptr(expr)}",LabelType T_AUTO)
                                                 JIT`exception("division by zero")
@@ -383,6 +385,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                                 failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evR={evR}", expr.at)
                                             copyReg32(div_reg, evR, expr.at)
                                             if !assume_no_exceptions
+                                                alignForIntelJccErratum()
                                                 test(REG32(GEN,div_reg),REG32(GEN,div_reg))
                                                 jnz("div_{intptr(expr)}",LabelType T_AUTO)
                                                 JIT`exception("division by zero")
@@ -435,6 +438,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         let evS & = evResGet(expr.cond)
         with_xbyak(gen) <| $ ( GEN )
             if evS is gpReg
+                alignForIntelJccErratum()
                 test(REG32(GEN,evS as gpReg),REG32(GEN,evS as gpReg))
                 if expr.if_false==null
                     jz("if_end_{intptr(expr)}",LabelType T_AUTO)
@@ -477,6 +481,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         let evS & = evResGet(expr.subexpr)
         with_xbyak(gen) <| $ ( GEN )
             if evS is gpReg
+                alignForIntelJccErratum()
                 test(REG32(GEN,evS as gpReg),REG32(GEN,evS as gpReg))
                 jz("cond_right_{intptr(expr)}",LabelType T_AUTO)
             elif evS is cmp
@@ -628,6 +633,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             movd(REG32(GEN,RV),reg)
                             shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
                             movd(eax,reg)
+                            alignForIntelJccErratum()
                             cmp(eax,REG32(GEN,RV))
                             jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                     else
@@ -644,6 +650,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             mov(dword[rsp+iSP],eax)
                             shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
                             movd(ecx,reg)   // for source - when on the stack - USES ECX
+                            alignForIntelJccErratum()
                             cmp(ecx,eax)
                             jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                 elif evS is skip
@@ -654,33 +661,41 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                         if is_for_range1_with_unused_var(expr)
                             if length(rA.arguments)==1
                                 copyReg32(RV, rA0, expr.at)
+                                alignForIntelJccErratum()
                                 test(REG32(GEN,RV),REG32(GEN,RV))
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(RV, rA1, expr.at)
                                 if rA0 is gpReg
+                                    alignForIntelJccErratum()
                                     sub(REG32(GEN,RV),REG32(GEN,rA0 as gpReg))
                                 elif rA0 is gpRegT
+                                    alignForIntelJccErratum()
                                     sub(REG32(GEN,RV),REG32(GEN,rA0 as gpRegT))
                                 else
                                     copyReg32(GpTempReg RAX, rA0, expr.at)
+                                    alignForIntelJccErratum()
                                     sub(REG32(GEN,RV),eax)
                                 jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                         else
                             if length(rA.arguments)==1
                                 sub(REG32(GEN,RV),REG32(GEN,RV))
                                 if rA0 is gpReg
+                                    alignForIntelJccErratum()
                                     test(REG32(GEN,rA0 as gpReg),REG32(GEN,rA0 as gpReg))
                                 elif rA0 is gpRegT
+                                    alignForIntelJccErratum()
                                     test(REG32(GEN,rA0 as gpRegT),REG32(GEN,rA0 as gpRegT))
                                 else
                                     copyReg32(GpTempReg RAX, rA0, expr.at)
+                                    alignForIntelJccErratum()
                                     test(eax,eax)
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(RV, rA0, expr.at)
+                                alignForIntelJccErratum()
                                 cmpAnyReg32(rA1,RV,CompareType less_equals,GpTempReg RAX,expr.at)
                                 jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                     else
@@ -689,6 +704,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             if length(rA.arguments)==1
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],eax)
+                                alignForIntelJccErratum()
                                 test(eax,eax)
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
@@ -702,12 +718,14 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             if length(rA.arguments)==1
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],0ul)
+                                alignForIntelJccErratum()
                                 test(eax,eax)
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],eax)
+                                alignForIntelJccErratum()
                                 cmpAnyReg32(rA1,GpTempReg RAX,CompareType less_equals,GpTempReg BROKEN,expr.at)
                                 jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                 else
@@ -731,27 +749,33 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                     if context.temp_var |> key_exists(intptr(expr.iteratorVariables[0]))
                         let RV = context.temp_var[intptr(expr.iteratorVariables[0])]
                         if is_for_range1_with_unused_var(expr)
+                            alignForIntelJccErratum()
                             dec(REG32(GEN,RV))
                         else
                             inc(REG32(GEN,RV))
                             if evS is xmmReg
                                 movd(eax,REGXMM(GEN,evS as xmmReg))
+                                alignForIntelJccErratum()
                                 cmp(REG32(GEN,RV),eax)
                             else
                                 let ra = expr.sources[0] as ExprCall
                                 let rA & = evResGet(ra.arguments[length(ra.arguments)==1 ? 0 : 1])
+                                alignForIntelJccErratum()
                                 cmpRegAny32(RV,rA,CompareType not_equals,expr.at)
                     else
                         if is_for_range1_with_unused_var(expr)
+                            alignForIntelJccErratum()
                             dec(dword[rsp+iSP])
                         else
                             inc(dword[rsp+iSP])
                             if evS is xmmReg
                                 movd(eax,REGXMM(GEN,evS as xmmReg))
+                                alignForIntelJccErratum()
                                 cmp(dword[rsp+iSP],eax)
                             else
                                 let ra = expr.sources[0] as ExprCall
                                 let rA & = evResGet(ra.arguments[length(ra.arguments)==1 ? 0 : 1])
+                                alignForIntelJccErratum()
                                 cmpStackAny32(int(iSP),rA,CompareType not_equals,GpTempReg RAX,expr.at)
                     jnz("for_loop_{intptr(expr)}",LabelType T_AUTO)
                 else

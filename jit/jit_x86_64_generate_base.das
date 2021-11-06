@@ -45,6 +45,15 @@ class GenerateCodeVisitorBase : JitVisitor
             mov(rax,JIT_exception())
             call(rax)
             add(rsp,32u)
+// CPU bugfixes and workaround
+    def alignForIntelJccErratum ( macro_size : uint64 = 5ul )   // cmp-jmp or inc-jmp are 5 bytes
+        var ofs = *gen |> get_current_address()
+        let a1 = ofs & ~31ul
+        let a2 = (ofs + macro_size) & ~31ul
+        if a1 != a2
+            if verbose
+                log("\njcc-erratum at {ofs}\n")
+            *gen |> align(32ul,true)
 // helpers
     def copyRegReg32 ( dest,src:GpTempReg; at:LineInfo ) : void                                                //  mov reg32, reg32
         if dest==src
