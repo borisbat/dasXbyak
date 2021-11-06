@@ -236,11 +236,14 @@ class AllocateRegistersCodeVisitor : JitVisitor
                     if evOP2 is cmp
                         if expr.op=="<" || expr.op=="=="
                             if starts_with(expr.right.__rtti,"ExprConst")
-                                // we can accept special on the left, is right is const
+                                // we can accept special on the left, if right is const
                                 evExpectSpecials(expr.left, Specials RAX | Specials RDX | Specials RCX, expr.at)
                             else
                                 // we can accept special on the right always
                                 evExpectSpecials(expr.right, Specials RAX | Specials RDX | Specials RCX, expr.at)
+                    if expr.op=="/" || expr.op=="%"
+                        if starts_with(expr.right.__rtti,"ExprConst")
+                            context.uses_rcx = true
 
     def override visitExprOp2(expr:smart_ptr<ExprOp2>) : ExpressionPtr
         var evL & = evResSet(expr.left)
@@ -358,6 +361,12 @@ class AllocateRegistersCodeVisitor : JitVisitor
         else
             for v in expr.iteratorVariables
                 log("loop variable {v.name} [rsp+{uint(v.stackTop)}]\n")
+    def override visitExprForSource(expr:smart_ptr<ExprFor>;source:ExpressionPtr;last:bool) : ExpressionPtr
+        if is_for_range1(expr)
+            if !(context.temp_var |> key_exists(intptr(expr.iteratorVariables[0])))
+                // blanet statement - if the range source is on the stack, ecx is very likely used
+                context.uses_rcx = true
+        return source
     def override preVisitExprForBody(expr:smart_ptr<ExprFor>) : void
         if is_for_range1_RANGE(expr)
             var crange = expr.sources[0] as ExprCall
@@ -392,6 +401,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
             // if not recursive, context is used
             if expr.func != this_function
                 context.use_context = true
+                context.uses_rcx = true
             // allocate temp frame for arguments, 16 bytes ech, aligned
             let bytes = uint(length(expr.arguments) * 16)
             let offset = allocateTempFrame(bytes)
@@ -425,6 +435,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
         // TODO: calls table
         let call_name = "{expr.func._module.name}::{expr.func.name}"
         if call_name=="$::range"
+
             JIT`range(expr)
         else
             failed("visitExprCall {call_name}", expr.at)

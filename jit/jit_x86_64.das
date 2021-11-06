@@ -90,6 +90,7 @@ def public generate_x86_64(var func:FunctionPtr; show_disasm:bool; verbose:bool;
     visit(func, generateCodeVisitorAdapter)
     let f2g = generateCodeVisitor.failed_to_generate
     generateCodeVisitorAdapter := null
+    context <- generateCodeVisitor.context
     *gen |> outLocalLabel()
     unsafe
         delete generateCodeVisitor
@@ -98,7 +99,11 @@ def public generate_x86_64(var func:FunctionPtr; show_disasm:bool; verbose:bool;
             let data = *gen |> get_code()
             let dataLength = *gen |> getSize()
             print("{describe_function(func)}data at {intptr(data)} of {int(dataLength)} bytes\n")
-            disassemble(data, dataLength)
+            disassemble(data, dataLength, context.labels) <| $ ( address, text )
+                let labt = context.labels?[address] ?? ""
+                if !empty(labt)
+                    print("{labt}:\n")
+                print("\t{text}\n")
             print("\n")
         let err = reinterpret<GenerationError> GetError()
         if err != GenerationError NONE

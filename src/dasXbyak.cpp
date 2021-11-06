@@ -114,6 +114,10 @@ namespace das {
         return (void *) code.getCode();
     }
 
+    uint64_t das_get_curr_ptr ( const Xbyak::CodeGenerator & code ) {
+        return (uint64_t) code.getCurr();
+    }
+
     vec4f JIT_call_or_fastcall ( SimFunction * fn, vec4f * args, Context * context ) {
         return context->callOrFastcall(fn, args, nullptr);
     }
@@ -230,6 +234,8 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
     // codogen and instruments
     addExtern<DAS_BIND_FUN(das_get_code_ptr)>(*this, lib, "get_code",
         SideEffects::worstDefault, "das_get_code_ptr");
+    addExtern<DAS_BIND_FUN(das_get_curr_ptr)>(*this, lib, "get_current_address",
+        SideEffects::worstDefault, "das_get_curr_ptr");
     addExtern<DAS_BIND_FUN(das_invoke_code)>(*this, lib, "invoke_code",
         SideEffects::worstDefault, "das_invoke_code")
 	        ->args({"code","arguments","cmres","context"})->unsafeOperation = true;

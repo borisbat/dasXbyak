@@ -24,6 +24,10 @@ class GenerateCodeVisitorBase : JitVisitor
     def GenerateCodeVisitorBase(var g:CodeGenerator?; var ctx:EvContext )
         JitVisitor`JitVisitor(self, ctx)
         gen = g
+// label
+    def Label(name:string)
+        *gen |> L(name)
+        context.labels[*gen |> get_current_address] = name
 // ABI
     def getContextOffset
         return context.stack_frame+context.temp_frame+context.save_frame+8u+ARG_CONTEXT
@@ -77,7 +81,7 @@ class GenerateCodeVisitorBase : JitVisitor
             elif right is stack
                 cmp(REG32(GEN,left),ptr[rsp+(right as stack)])
             else
-                failed("cmpReg32 cmp({left},{right})  // {cop}", at)
+                failed("cmpRegAny32 cmp({left},{right})  // {cop}", at)
     def cmpAnyReg32 ( left:EvResult; right:GpTempReg; cop:CompareType; spill:GpTempReg; at:LineInfo ) : void     //  cmp *, reg32
         with_xbyak(gen) <| $ ( GEN )
             if left is gpReg
@@ -90,12 +94,14 @@ class GenerateCodeVisitorBase : JitVisitor
                     // cmp 0, reg can be promoted to test reg,reg if all we do is testing for equals or not equals
                     test(REG32(GEN,right),REG32(GEN,right))
                 else
+                    if spill==GpTempReg BROKEN
+                        failed("cmpAnyReg32 - can't spill",at)
                     mov(REG32(GEN,spill),left as iconst)
                     cmp(REG32(GEN,spill),REG32(GEN,right))
             elif left is stack
                 cmp(ptr[rsp+(left as stack)],REG32(GEN,right))
             else
-                failed("cmpReg32 cmp({left},{right}) // {cop}", at)
+                failed("cmpAnyReg32 cmp({left},{right}) // {cop}", at)
     def cmpStackAny32 ( iSP:int; righ:EvResult; cop:CompareType; spill:GpTempReg; at:LineInfo ) : void     //  cmp [rsp+xxx], *
         with_xbyak(gen) <| $ ( GEN )
             if righ is gpReg
@@ -105,6 +111,8 @@ class GenerateCodeVisitorBase : JitVisitor
             elif righ is iconst
                 cmp(dword[rsp+iSP],uint(righ as iconst))
             elif righ is stack
+                if spill==GpTempReg BROKEN
+                    failed("cmpStackAny32 - can't spill",at)
                 mov(REG32(GEN,spill),dword[rsp+(righ as stack)])
                 cmp(dword[rsp+iSP],REG32(GEN,spill))
             else

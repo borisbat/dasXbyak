@@ -19,11 +19,6 @@ require zydis
 
 require ast public
 
-/*
-    all boolean compare operations spill in the ecx
-    that way we can compare imul, idiv results directly
-*/
-
 class GenerateCodeVisitor : GenerateCodeVisitorBase
     assume_no_exceptions : bool = false
     tab : int
@@ -290,7 +285,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                     else
                         if evOP2 is cmp
                             if expr.op=="<" || expr.op=="=="
-                                cmpAnyAny32(evL,evR,evOP2 as cmp,GpTempReg RCX,expr.at)
+                                cmpAnyAny32(evL,evR,evOP2 as cmp,GpTempReg BROKEN,expr.at)  // do not spill!
                                 log(" [{evL}]")
                             else
                                 failed("ExprOp2 {expr.op} expr.left._type.isInteger integer cmp", expr.at)
@@ -313,11 +308,11 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                             elif expr.op=="<" || expr.op=="=="
                                                 cmp(REG32(GEN,evL as gpReg),ic)
                                                 mov(REG32(GEN,evL as gpReg),0ul)
-                                                mov(ecx,1ul)
+                                                mov(eax,1ul)
                                                 if expr.op=="<"
-                                                    cmovl(REG32(GEN,evL as gpReg),ecx)
+                                                    cmovl(REG32(GEN,evL as gpReg),eax)
                                                 elif expr.op=="=="
-                                                    cmove(REG32(GEN,evL as gpReg),ecx)
+                                                    cmove(REG32(GEN,evL as gpReg),eax)
                                                 else
                                                     failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst bool", expr.at)
                                             elif expr.op=="%" || expr.op=="/"
@@ -339,9 +334,9 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                         elif expr.op=="%" || expr.op=="/"
                                             if !assume_no_exceptions
                                                 test(REG32(GEN,regR),REG32(GEN,regR))
-                                                jne(".div_{intptr(expr)}",LabelType T_AUTO)
+                                                jne("div_{intptr(expr)}",LabelType T_AUTO)
                                                 JIT`exception("division by zero")
-                                                L(".div_{intptr(expr)}")
+                                                Label("div_{intptr(expr)}")
                                             mov(eax,REG32(GEN,evL as gpReg))
                                             cdq()
                                             idiv(REG32(GEN,regR));  rdx_has_args = false
@@ -369,7 +364,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                         elif expr.op=="%" || expr.op=="/"
                                             if (evR as iconst)==0ul
                                                 failed("DIVISION BY ZERO", expr.at)
-                                            mov(ecx,evR as iconst)
+                                            mov(ecx,evR as iconst)              //  division by iconst - USES ECX
                                             mov(eax,REG32(GEN,evL as gpRegT))
                                             cdq()
                                             idiv(ecx);  rdx_has_args = false
@@ -379,7 +374,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                     else
                                         if expr.op=="%" || expr.op=="/"
                                             copyReg32(GpTempReg RAX, evL, expr.at)
-                                            var div_reg = GpTempReg RCX
+                                            var div_reg = GpTempReg BROKEN
                                             if evR is gpReg
                                                 div_reg = evR as gpReg
                                             elif evR is gpRegT
@@ -389,9 +384,9 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                             copyReg32(div_reg, evR, expr.at)
                                             if !assume_no_exceptions
                                                 test(REG32(GEN,div_reg),REG32(GEN,div_reg))
-                                                jnz(".div_{intptr(expr)}",LabelType T_AUTO)
+                                                jnz("div_{intptr(expr)}",LabelType T_AUTO)
                                                 JIT`exception("division by zero")
-                                                L(".div_{intptr(expr)}")
+                                                Label("div_{intptr(expr)}")
                                             cdq()
                                             idiv(REG32(GEN,div_reg));  rdx_has_args = false
                                             copyRegReg32(evOP2 as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
@@ -442,26 +437,26 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
             if evS is gpReg
                 test(REG32(GEN,evS as gpReg),REG32(GEN,evS as gpReg))
                 if expr.if_false==null
-                    jz(".if_end_{intptr(expr)}",LabelType T_AUTO)
+                    jz("if_end_{intptr(expr)}",LabelType T_AUTO)
                 else
-                    jz(".if_cond_failed_{intptr(expr)}",LabelType T_AUTO)
+                    jz("if_cond_failed_{intptr(expr)}",LabelType T_AUTO)
             elif evS is cmp
                 if expr.if_false==null
-                    GEN |> condJumpIfNot(".if_end_{intptr(expr)}",evS as cmp)
+                    GEN |> condJumpIfNot("if_end_{intptr(expr)}",evS as cmp)
                 else
-                    GEN |> condJumpIfNot(".if_cond_failed_{intptr(expr)}",evS as cmp)
+                    GEN |> condJumpIfNot("if_cond_failed_{intptr(expr)}",evS as cmp)
             else
                 failed("ExprIfThenElse evS={evS}", expr.at)
         log("\n{repeat("\t",tab)}THEN\n")
     def override preVisitExprIfThenElseElseBlock(expr:smart_ptr<ExprIfThenElse>;elseBlock:ExpressionPtr) : void
         // we are only here, if there is an else block
         with_xbyak(gen) <| $ ( GEN )
-            jmp(".if_end_{intptr(expr)}",LabelType T_AUTO)
-            L(".if_cond_failed_{intptr(expr)}");  rdx_has_args = false
+            jmp("if_end_{intptr(expr)}",LabelType T_AUTO)
+            Label("if_cond_failed_{intptr(expr)}");  rdx_has_args = false
         log("\n{repeat("\t",tab)}ELSE\n")
     def override visitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : ExpressionPtr
         with_xbyak(gen) <| $ ( GEN )
-            L(".if_end_{intptr(expr)}");  rdx_has_args = false
+            Label("if_end_{intptr(expr)}");  rdx_has_args = false
         if verbose
             tab --
             print(")\n{repeat("\t",tab)}")
@@ -483,9 +478,9 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         with_xbyak(gen) <| $ ( GEN )
             if evS is gpReg
                 test(REG32(GEN,evS as gpReg),REG32(GEN,evS as gpReg))
-                jz(".cond_right_{intptr(expr)}",LabelType T_AUTO)
+                jz("cond_right_{intptr(expr)}",LabelType T_AUTO)
             elif evS is cmp
-                GEN |> condJumpIfNot(".cond_right_{intptr(expr)}",evS as cmp)
+                GEN |> condJumpIfNot("cond_right_{intptr(expr)}",evS as cmp)
             else
                 failed("supprt cond subexpr in {evS}", expr.at)
         log(" ? ")
@@ -494,15 +489,15 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         let evL & = evResGet(expr.left)
         with_xbyak(gen) <| $ ( GEN )
             copyReg32(eV as gpReg,evL,expr.at)
-            jmp(".cond_end_{intptr(expr)}",LabelType T_AUTO)
-            L(".cond_right_{intptr(expr)}");  rdx_has_args = false
+            jmp("cond_end_{intptr(expr)}",LabelType T_AUTO)
+            Label("cond_right_{intptr(expr)}");  rdx_has_args = false
         log(" : ")
     def override visitExprOp3(expr:smart_ptr<ExprOp3>) : ExpressionPtr
         let eV & = evResGet(expr)
         let evR & = evResGet(expr.right)
         with_xbyak(gen) <| $ ( GEN )
             copyReg32(eV as gpReg,evR,expr.at)
-            L(".cond_end_{intptr(expr)}");  rdx_has_args = false
+            Label("cond_end_{intptr(expr)}");  rdx_has_args = false
         log(")")
         return expr
 // copy
@@ -628,29 +623,29 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
                             movd(REG32(GEN,RV),reg)
                             sub(REG32(GEN,RV),eax)
-                            jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
+                            jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                         else
                             movd(REG32(GEN,RV),reg)
                             shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
                             movd(eax,reg)
                             cmp(eax,REG32(GEN,RV))
-                            jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
+                            jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                     else
                         let iSP = expr.iteratorVariables[0].stackTop
                         if is_for_range1_with_unused_var(expr)
                             movd(eax,reg)
                             shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
-                            movd(ecx,reg)
+                            movd(ecx,reg)   // for source - when on the stack - USES ECX
                             sub(ecx,eax)
                             mov(dword[rsp+iSP],ecx)
-                            jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
+                            jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                         else
                             movd(eax,reg)
                             mov(dword[rsp+iSP],eax)
                             shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
-                            movd(ecx,reg)
+                            movd(ecx,reg)   // for source - when on the stack - USES ECX
                             cmp(ecx,eax)
-                            jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
+                            jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                 elif evS is skip
                     let rA = source as ExprCall
                     let rA0 & = evResGet(rA.arguments[0])
@@ -660,7 +655,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             if length(rA.arguments)==1
                                 copyReg32(RV, rA0, expr.at)
                                 test(REG32(GEN,RV),REG32(GEN,RV))
-                                jz(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
+                                jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(RV, rA1, expr.at)
@@ -671,7 +666,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 else
                                     copyReg32(GpTempReg RAX, rA0, expr.at)
                                     sub(REG32(GEN,RV),eax)
-                                jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
+                                jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                         else
                             if length(rA.arguments)==1
                                 sub(REG32(GEN,RV),REG32(GEN,RV))
@@ -682,12 +677,12 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 else
                                     copyReg32(GpTempReg RAX, rA0, expr.at)
                                     test(eax,eax)
-                                jz(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
+                                jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(RV, rA0, expr.at)
                                 cmpAnyReg32(rA1,RV,CompareType less_equals,GpTempReg RAX,expr.at)
-                                jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
+                                jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                     else
                         let iSP = expr.iteratorVariables[0].stackTop
                         if is_for_range1_with_unused_var(expr)
@@ -695,26 +690,26 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],eax)
                                 test(eax,eax)
-                                jz(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
+                                jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
-                                copyReg32(GpTempReg RCX, rA1, expr.at)
+                                copyReg32(GpTempReg RCX, rA1, expr.at)  //  range(a,b) when loop variables are on the stack - USES ECX
                                 sub(ecx,eax)
                                 mov(dword[rsp+iSP],ecx)
-                                jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
+                                jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                         else
                             if length(rA.arguments)==1
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],0ul)
                                 test(eax,eax)
-                                jz(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
+                                jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyReg32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],eax)
-                                cmpAnyReg32(rA1,GpTempReg RAX,CompareType less_equals,GpTempReg RCX,expr.at)
-                                jle(".for_loop_done_{intptr(expr)}",LabelType T_AUTO)
+                                cmpAnyReg32(rA1,GpTempReg RAX,CompareType less_equals,GpTempReg BROKEN,expr.at)
+                                jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                 else
                     failed("ExprFor is_for_range1 evS={evS}",expr.at)
         else
@@ -724,13 +719,13 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
     def override preVisitExprForBody(expr:smart_ptr<ExprFor>) : void
         with_xbyak(gen) <| $ ( GEN )
             align(16ul,true)
-            L(".for_loop_{intptr(expr)}");  rdx_has_args = false
+            Label("for_loop_{intptr(expr)}");  rdx_has_args = false
         log("\n")
     def override visitExprFor(expr:smart_ptr<ExprFor>) : ExpressionPtr
         if is_for_range1(expr)
             let evS & = evResGet(expr.sources[0])
             with_xbyak(gen) <| $ ( GEN )
-                L(".for_loop_continue_{intptr(expr)}");  rdx_has_args = false
+                Label("for_loop_continue_{intptr(expr)}");  rdx_has_args = false
                 let iSP = expr.iteratorVariables[0].stackTop
                 if (evS is xmmReg) || (evS is skip)
                     if context.temp_var |> key_exists(intptr(expr.iteratorVariables[0]))
@@ -758,13 +753,13 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 let ra = expr.sources[0] as ExprCall
                                 let rA & = evResGet(ra.arguments[length(ra.arguments)==1 ? 0 : 1])
                                 cmpStackAny32(int(iSP),rA,CompareType not_equals,GpTempReg RAX,expr.at)
-                    jnz(".for_loop_{intptr(expr)}",LabelType T_AUTO)
+                    jnz("for_loop_{intptr(expr)}",LabelType T_AUTO)
                 else
                     failed("ExprFor is_for_range1 evS={evS}",expr.at)
         else
             failed("ExprFor !is_for_range1",expr.at)
         with_xbyak(gen) <| $ ( GEN )
-            L(".for_loop_done_{intptr(expr)}");  rdx_has_args = false
+            Label("for_loop_done_{intptr(expr)}");  rdx_has_args = false
         loop_stack |> pop()
         log("{repeat("\t",tab)})")
         return expr
@@ -773,14 +768,14 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         log("(BREAK)")
         let loop_ptr = loop_stack |> back
         with_xbyak(gen) <| $ ( GEN )
-            jmp(".for_loop_done_{loop_ptr}",LabelType T_AUTO)
+            jmp("for_loop_done_{loop_ptr}",LabelType T_AUTO)
         return expr
 // continue
     def override visitExprContinue(expr:smart_ptr<ExprContinue>) : ExpressionPtr
         log("(CONTINUE)")
         let loop_ptr = loop_stack |> back
         with_xbyak(gen) <| $ ( GEN )
-            jmp(".for_loop_continue_{loop_ptr}",LabelType T_AUTO)
+            jmp("for_loop_continue_{loop_ptr}",LabelType T_AUTO)
         return expr
 // call
     def override preVisitExprCall(expr:smart_ptr<ExprCall>): void
@@ -858,10 +853,10 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                     // sub(r8,r8)                                   // r8 is CMRES
                 else
                     // setup arguments
-                    let ctx_offset = getContextOffset()
-                    mov(rcx,uint64(MNH_ADDR))                   // rcx is MNH
-                    lea(rdx,ptr[rsp+(offset+t_offset)])         // rdx is ARGS
-                    mov(r8,ptr[rsp+(ctx_offset+t_offset)])      // r8  is Context *
+                    let ctx_offset = getContextOffset()                     // any non-recursive call -USES ECX
+                    mov(rcx,uint64(MNH_ADDR))                               // rcx is MNH
+                    lea(rdx,ptr[rsp+(offset+t_offset)])                     // rdx is ARGS
+                    mov(r8,ptr[rsp+(ctx_offset+t_offset)])                  // r8  is Context *
                 // call must be aligned, so if even number of transient registers is saved - we add extra 8 bytes
                 sub(rsp,(t_total & 1) != 0 ? 40u : 32u)
                 if recursive_call

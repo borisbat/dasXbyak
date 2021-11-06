@@ -126,6 +126,7 @@ struct EvContext
     tf_offset  : table<uint64; uint>
     transients : table<uint64; Transients>
     specials   : table<uint64; Specials>
+    labels     : table<uint64; string>
     gpa : RegAllocator
     xmma : RegAllocator
     temp_frame  : uint      // where temp buffers are allocated (like calls)
@@ -134,6 +135,7 @@ struct EvContext
     use_cmres   : bool
     use_args    : bool
     use_context : bool
+    uses_rcx    : bool
     assume_no_exceptions : bool
 
 def dump ( ctx:EvContext )
@@ -143,6 +145,7 @@ def dump ( ctx:EvContext )
     print("use context: {ctx.use_context}\n")
     print("use args: {ctx.use_args}\n")
     print("use cmres: {ctx.use_cmres}\n")
+    print("uses RCX: {ctx.uses_rcx}\n")
     for k,v in keys(ctx.tf_offset),values(ctx.tf_offset)
         unsafe
             let pexpr = reinterpret<Expression?> k
