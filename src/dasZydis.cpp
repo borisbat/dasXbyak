@@ -91,7 +91,7 @@ Module_Zydis::Module_Zydis() : Module("zydis") {
 	        ->args({"data","label"});
     addExtern<DAS_BIND_FUN(das_decode_ex)>(*this, lib, "disassemble",
         SideEffects::worstDefault, "das_decode_ex")
-	        ->args({"data","label","block","context","line"});
+	        ->args({"data","label","address_book","block","context","line"});
 }
 
 ModuleAotType Module_Zydis::aotRequire ( TextWriter & tw ) const  {
