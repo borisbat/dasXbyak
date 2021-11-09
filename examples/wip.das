@@ -1,15 +1,15 @@
 options rtti
 require jit/jit_x86_64
+require jit/jit_x86_64_test
 
-[jit_x86_64(no_exceptions)]
-def fibR_jit(n:int)
-    if (n < 2)
-        return n
-    return fibR_jit(n - 1) + fibR_jit(n - 2)
+[jit_x86_64]
+def copy_local_to_arg ( var arg:int )
+    var res = arg + 1
+    arg = res
+    return res
 
 [export]
 def main
-    var f3_j = 0
-    profile(20,"fibbonacci recursive - jit") <|
-        f3_j = fibR_jit(31)
-    assert(f3_j==1346269)
+    test_jit_levels(false,true) <|
+        let q = copy_local_to_arg(11)
+        print("q = {q}\n")

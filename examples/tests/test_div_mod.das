@@ -47,10 +47,10 @@ def div_and_mod_equ(t: T?)
             for j in range(-100,100)
                 if j != 0
                     if !equal(t, div_equ_jit(i,j), i/j)
-                        t->log("when div {i} {j}")
+                        t->log("when div equ {i} {j}")
                         return
                     if !equal(t, mod_equ_jit(i,j), i%j)
-                        t->log("when mod {i} {j}")
+                        t->log("when mod equ {i} {j}")
                         return
 
 [test]

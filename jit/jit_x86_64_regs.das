@@ -31,7 +31,7 @@ enum GpTempReg
     RCX
     RDX
     // broken
-    BROKEN
+    BROKEN = 100500
 
 let MAX_XMM_TEMP_REG = 15
 let FIRST_NON_TRANSIENT_XMM_TEMP_REG = 6

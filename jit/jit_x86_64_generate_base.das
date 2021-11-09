@@ -60,8 +60,9 @@ class GenerateCodeVisitorBase : JitVisitor
         if dest==src
             return
         with_xbyak(gen) <| $ ( GEN )
-            mov(REG32(GEN,dest),REG32(GEN,src))
-    def copyReg32 ( dest:GpTempReg; srcV:EvResult; at:LineInfo ) : void                                         //  mov reg32, data
+            if dest != src
+                mov(REG32(GEN,dest),REG32(GEN,src))
+    def copyRegAny32 ( dest:GpTempReg; srcV:EvResult; at:LineInfo ) : void                                         //  mov reg32, data
         with_xbyak(gen) <| $ ( GEN )
             if srcV is gpReg
                 if dest != (srcV as gpReg)
@@ -74,7 +75,29 @@ class GenerateCodeVisitorBase : JitVisitor
             elif srcV is stack
                 mov(REG32(GEN,dest),ptr[rsp+(srcV as stack)])
             else
-                failed("copyReg32 mov({dest},{srcV})", at)
+                failed("copyRegAny32 mov({dest},{srcV})", at)
+    def copyRegAnyPtr32 ( dest:GpTempReg; srcV:EvResult; at:LineInfo ) : void                                         //  mov reg32, data
+        with_xbyak(gen) <| $ ( GEN )
+            if srcV is gpReg
+                mov(REG32(GEN,dest),dword[REG64(GEN,srcV as gpReg)])
+            elif srcV is gpRegT
+                if dest != (srcV as gpRegT)
+                    mov(REG32(GEN,dest),REG32(GEN,srcV as gpRegT))
+            elif srcV is stack
+                mov(REG64(GEN,dest),qword[rsp+(srcV as stack)])
+            else
+                failed("copyRegAnyPtr32 mov({dest},{srcV})", at)
+    def copyAnyPtrReg32 ( destV:EvResult; src:GpTempReg; at:LineInfo ) : void                                         //  mov reg32, data
+        with_xbyak(gen) <| $ ( GEN )
+            if destV is gpReg
+                mov(dword[REG64(GEN,destV as gpReg)],REG32(GEN,src))
+            elif destV is gpRegT
+                if src != (destV as gpRegT)
+                    mov(REG32(GEN,destV as gpRegT),REG32(GEN,src))
+            elif destV is stack
+                mov(qword[rsp+(destV as stack)],REG32(GEN,src))
+            else
+                failed("copyAnyPtrReg32 mov({destV},{src})", at)
 // cmp
     def cmpRegAny32 ( left:GpTempReg; right:EvResult; cop:CompareType; at:LineInfo ) : void                      //  cmp reg32, *
         with_xbyak(gen) <| $ ( GEN )
@@ -197,6 +220,29 @@ class GenerateCodeVisitorBase : JitVisitor
                 idiv(REG32(GEN,regR));  rdx_has_args = false
             else
                 failed("idivRegAny32 {reg},{evR}", at)
+    def idivStackAny32 ( iSP:uint; evR:EvResult; div_label:uint64; at:LineInfo ) : void
+        with_xbyak(gen) <| $ ( GEN )
+            if evR is iconst
+                let iconst = evR as iconst
+                if iconst==0ul
+                    failed("DIVISION BY ZERO", at)
+                mov(eax,dword[rsp+iSP])
+                mov(ecx,iconst)
+                cdq()
+                idiv(ecx);  rdx_has_args = false
+            elif (evR is gpReg) || (evR is gpRegT)
+                let regR = (evR is gpReg) ? (evR as gpReg) : (evR as gpRegT)
+                if !assume_no_exceptions
+                    alignForIntelJccErratum()
+                    test(REG32(GEN,regR),REG32(GEN,regR))
+                    jne("div_{div_label}",LabelType T_AUTO)
+                    JIT`exception("division by zero")
+                    Label("div_{div_label}")
+                mov(eax,dword[rsp+iSP])
+                cdq()
+                idiv(REG32(GEN,regR));  rdx_has_args = false
+            else
+                failed("idivRegAny32 [rsp+{iSP}],{evR}", at)
 // arg helper
     def setRdxToArgs()
         if !rdx_has_args

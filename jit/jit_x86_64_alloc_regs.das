@@ -144,9 +144,10 @@ class AllocateRegistersCodeVisitor : JitVisitor
         if !arg._type.isRef
             if arg._type |> is_gpreg_type
                 // if its a local variable of the right type, promote to gpReg and done
-                let reg = allocateGP(expr.at)
-                context.temp_var[intptr(arg)] = reg
-                log("promote {arg.name} to {reg}\n")
+                if put_local_variables_in_registers
+                    let reg = allocateGP(expr.at)
+                    context.temp_var[intptr(arg)] = reg
+                    log("promote {arg.name} to {reg}\n")
                 return
             else
                 failed("ExprLetVariable !arg._type.isRef, {describe(arg._type)}", expr.at)

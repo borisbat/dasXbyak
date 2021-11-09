@@ -119,32 +119,29 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
             if arg.init._type.isRef
                 if context.temp_var |> key_exists(intptr(arg))
                     let reg = context.temp_var[intptr(arg)]
-                    if initSize==4
-                        if evI is iconst
-                            mov(REG32(GEN,reg),evI as iconst)
-                        elif evI is gpReg
-                            mov(REG32(GEN,reg),dword[REG64(GEN,evI as gpReg)])
-                        elif evI is gpRegT
-                            mov(REG32(GEN,reg),REG32(GEN,evI as gpRegT))
-                        else
-                            failed("ExprLetVariableInit arg.init._type.ref temp_var {arg.name}:{arg._type} evI={evI}",arg.init.at)
+                    if initSize==4 || initSize==2 || initSize==1
+                        copyRegAnyPtr32(reg,evI,expr.at)
                     else
-                        failed("ExprLetVariableInit arg.init._type.ref temp_var {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
+                        failed("ExprLetVariableInit arg.init._type.ref temp_var {arg.name}:{describe(arg._type)} initSize={initSize}",arg.init.at)
                 else
                     if initSize==4 || initSize==2 || initSize==1
-                        copyReg32(GpTempReg RAX, evI, expr.at)
+                        copyRegAnyPtr32(GpTempReg RAX, evI, expr.at)   // here here here
                         mov(ptr[rsp+arg.stackTop],eax)
                     else
-                        failed("ExprLetVariableInit arg.init._type.ref {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
+                        failed("ExprLetVariableInit arg.init._type.ref {arg.name}:{describe(arg._type)} initSize={initSize}",arg.init.at)
             else
                 if context.temp_var |> key_exists(intptr(arg))
                     let reg = context.temp_var[intptr(arg)]
                     if initSize==4 || initSize==2 || initSize==1
-                        copyReg32(reg,evI,expr.at)
+                        copyRegAny32(reg,evI,expr.at)
                     else
-                        failed("ExprLetVariableInit temp_var {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
+                        failed("ExprLetVariableInit temp_var {arg.name}:{describe(arg._type)} initSize={initSize}",arg.init.at)
                 else
-                    failed("ExprLetVariableInit {arg.name}:{arg._type} initSize={initSize}",arg.init.at)
+                    if initSize==4 || initSize==2 || initSize==1
+                        copyRegAny32(GpTempReg RAX,evI,expr.at)
+                        mov(ptr[rsp+arg.stackTop],eax)
+                    else
+                        failed("ExprLetVariableInit arg.init._type {arg.name}:{describe(arg._type)} initSize={initSize}",arg.init.at)
         return  expr
 // variable
     def override preVisitExprVar(expr:smart_ptr<ExprVar>) : void
@@ -212,7 +209,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                 if expr.subexpr._type.baseType==Type tInt || expr.subexpr._type.baseType==Type tUInt
                     if expr.subexpr._type.isRef    // ++, --
                         if ev is gpReg
-                            if expr.op=="+++" || expr.op=="---"
+                            if expr.op=="+++" || expr.op=="---"             // a++
                                 mov(eax,dword[REG64(GEN,ev as gpReg)])
                                 if expr.op=="+++"
                                     inc(dword[REG64(GEN,ev as gpReg)])
@@ -222,19 +219,34 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             else
                                 failed("ExprOp1 {expr.op} expr.subexpr._type.isRef ev is gpReg", expr.at)
                         elif ev is gpRegT
-                            if expr.op=="+++" || expr.op=="---"
+                            if expr.op=="+++" || expr.op=="---"             // a++
                                 assert(evOP1 is gpReg)
                                 mov(REG32(GEN,evOP1 as gpReg),REG32(GEN,ev as gpRegT))
                                 if expr.op=="+++"
                                     inc(REG32(GEN,ev as gpRegT))
                                 else
                                     dec(REG32(GEN,ev as gpRegT))
-                            elif expr.op=="++" || expr.op=="--"
-                                assert(evOP1 is gpRegT)
+                            elif expr.op=="++" || expr.op=="--"             // ++a
                                 if expr.op=="++"
                                     inc(REG32(GEN,ev as gpRegT))
                                 else
                                     dec(REG32(GEN,ev as gpRegT))
+                            else
+                                failed("ExprOp1 {expr.op} integer expr.subexpr._type.isRef ev is gpRegT", expr.at)
+                        elif ev is stack
+                            assert(evOP1 is gpReg)
+                            if expr.op=="+++" || expr.op=="---"             // a++
+                                mov(REG32(GEN,evOP1 as gpReg),dword[rsp+(ev as stack)])
+                                if expr.op=="+++"
+                                    inc(dword[rsp+(ev as stack)])
+                                else
+                                    dec(dword[rsp+(ev as stack)])
+                            elif expr.op=="++" || expr.op=="--"             // ++a
+                                if expr.op=="++"
+                                    inc(dword[rsp+(ev as stack)])
+                                else
+                                    dec(dword[rsp+(ev as stack)])
+                                mov(REG32(GEN,evOP1 as gpReg),dword[rsp+(ev as stack)])
                             else
                                 failed("ExprOp1 {expr.op} integer expr.subexpr._type.isRef ev is gpRegT", expr.at)
                         else
@@ -278,6 +290,12 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 addStackAny32(iSP,evR,expr.at)
                             elif expr.op=="-="
                                 subStackAny32(iSP,evR,expr.at)
+                            elif expr.op=="/=" || expr.op=="%="
+                                idivStackAny32(iSP,evR,intptr(expr),expr.at)
+                                if expr.op=="/="
+                                    mov(dword[rsp+iSP],eax)
+                                else
+                                    mov(dword[rsp+iSP],edx)
                             else
                                 failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef [rsp+{iSP}]...", expr.at)
                         else
@@ -356,7 +374,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                         else
                                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL s gpRegT && evR is iconst", expr.at)
                                     else
-                                        copyReg32(evOP2 as gpReg,evL,expr.at)
+                                        copyRegAny32(evOP2 as gpReg,evL,expr.at)
                                         if evR is iconst
                                             if expr.op=="+"
                                                 add(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
@@ -455,7 +473,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         let eV & = evResGet(expr)
         let evL & = evResGet(expr.left)
         with_xbyak(gen) <| $ ( GEN )
-            copyReg32(eV as gpReg,evL,expr.at)
+            copyRegAny32(eV as gpReg,evL,expr.at)
             jmp("cond_end_{intptr(expr)}",LabelType T_AUTO)
             Label("cond_right_{intptr(expr)}");  rdx_has_args = false
         log(" : ")
@@ -463,7 +481,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         let eV & = evResGet(expr)
         let evR & = evResGet(expr.right)
         with_xbyak(gen) <| $ ( GEN )
-            copyReg32(eV as gpReg,evR,expr.at)
+            copyRegAny32(eV as gpReg,evR,expr.at)
             Label("cond_end_{intptr(expr)}");  rdx_has_args = false
         log(")")
         return expr
@@ -481,10 +499,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                 let reg = context.temp_var[intptr(pvar)]
                 if expr.right._type.isRef
                     if copySize==4
-                        if evR is gpRegT
-                            mov(REG32(GEN,reg),REG32(GEN,evR as gpRegT))
-                        else
-                            failed("ExprCopy temp expr.right._type.isRef {reg} evR={evR}", expr.at)
+                        copyRegAnyPtr32(reg,evR,expr.at)
                     else
                         failed("ExprCopy temp expr.right._type.isRef {reg} copySize={copySize}", expr.at)
                     log("(REF COPY {copySize})")
@@ -493,20 +508,8 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
             else
                 if expr.right._type.isRef
                     if copySize==4
-                        if evR is gpReg
-                            print("WARNING: FROM STACK AS GPREG, VERIFY?\n")    // i think its dword[REG64...]
-                            mov(eax,dword[rsp+REG64(GEN,evR as gpReg)])
-                        elif evR is stack
-                            mov(eax,dword[rsp+(evR as stack)])
-                        else
-                            failed("ExprCopy temp expr.right._type.isRef evR={evR}", expr.at)
-                        if evL is gpReg
-                            print("WARNING: TO STACK AS GPREG, VERIFY?\n")    // i think its dword[REG64...]
-                            mov(dword[rsp+REG64(GEN,evL as gpReg)],eax)
-                        elif evL is stack
-                            mov(dword[rsp+(evL as stack)],eax)
-                        else
-                            failed("ExprCopy temp expr.right._type.isRef evL={evL}", expr.at)
+                        copyRegAnyPtr32(GpTempReg RAX,evR,expr.at)
+                        copyAnyPtrReg32(evL,GpTempReg RAX,expr.at)
                     else
                         failed("ExprCopy expr.right._type.isRef copySize={copySize}", expr.at)
                     log("(REF COPY {copySize})")
@@ -622,13 +625,13 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                         let RV = context.temp_var[intptr(expr.iteratorVariables[0])]
                         if is_for_range1_with_unused_var(expr)
                             if length(rA.arguments)==1
-                                copyReg32(RV, rA0, expr.at)
+                                copyRegAny32(RV, rA0, expr.at)
                                 alignForIntelJccErratum()
                                 test(REG32(GEN,RV),REG32(GEN,RV))
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
-                                copyReg32(RV, rA1, expr.at)
+                                copyRegAny32(RV, rA1, expr.at)
                                 if rA0 is gpReg
                                     alignForIntelJccErratum()
                                     sub(REG32(GEN,RV),REG32(GEN,rA0 as gpReg))
@@ -636,7 +639,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                     alignForIntelJccErratum()
                                     sub(REG32(GEN,RV),REG32(GEN,rA0 as gpRegT))
                                 else
-                                    copyReg32(GpTempReg RAX, rA0, expr.at)
+                                    copyRegAny32(GpTempReg RAX, rA0, expr.at)
                                     alignForIntelJccErratum()
                                     sub(REG32(GEN,RV),eax)
                                 jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
@@ -650,13 +653,13 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                     alignForIntelJccErratum()
                                     test(REG32(GEN,rA0 as gpRegT),REG32(GEN,rA0 as gpRegT))
                                 else
-                                    copyReg32(GpTempReg RAX, rA0, expr.at)
+                                    copyRegAny32(GpTempReg RAX, rA0, expr.at)
                                     alignForIntelJccErratum()
                                     test(eax,eax)
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
-                                copyReg32(RV, rA0, expr.at)
+                                copyRegAny32(RV, rA0, expr.at)
                                 alignForIntelJccErratum()
                                 cmpAnyReg32(rA1,RV,CompareType less_equals,GpTempReg RAX,expr.at)
                                 jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
@@ -664,28 +667,28 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                         let iSP = expr.iteratorVariables[0].stackTop
                         if is_for_range1_with_unused_var(expr)
                             if length(rA.arguments)==1
-                                copyReg32(GpTempReg RAX, rA0, expr.at)
+                                copyRegAny32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],eax)
                                 alignForIntelJccErratum()
                                 test(eax,eax)
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
-                                copyReg32(GpTempReg RAX, rA0, expr.at)
-                                copyReg32(GpTempReg RCX, rA1, expr.at)  //  range(a,b) when loop variables are on the stack - USES ECX
+                                copyRegAny32(GpTempReg RAX, rA0, expr.at)
+                                copyRegAny32(GpTempReg RCX, rA1, expr.at)  //  range(a,b) when loop variables are on the stack - USES ECX
                                 sub(ecx,eax)
                                 mov(dword[rsp+iSP],ecx)
                                 jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                         else
                             if length(rA.arguments)==1
-                                copyReg32(GpTempReg RAX, rA0, expr.at)
+                                copyRegAny32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],0ul)
                                 alignForIntelJccErratum()
                                 test(eax,eax)
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
-                                copyReg32(GpTempReg RAX, rA0, expr.at)
+                                copyRegAny32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rsp+iSP],eax)
                                 alignForIntelJccErratum()
                                 cmpAnyReg32(rA1,GpTempReg RAX,CompareType less_equals,GpTempReg BROKEN,expr.at)
@@ -912,7 +915,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                     shl(REG64(GEN,evA0 as gpRegT),32)
                     movd(REGXMM(GEN,xreg),REG64(GEN,evA0 as gpRegT))
                 else
-                    copyReg32(GpTempReg RAX,evA0,expr.at)
+                    copyRegAny32(GpTempReg RAX,evA0,expr.at)
                     shl(rax,32)
                     movd(REGXMM(GEN,xreg),rax)
             // range(int,int)
@@ -920,8 +923,8 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                 rdx_has_args = false
                 let evA0 & = evResGet(expr.arguments[0])
                 let evA1 & = evResGet(expr.arguments[1])
-                copyReg32(GpTempReg RDX,evA1,expr.at)
-                copyReg32(GpTempReg RAX,evA0,expr.at)
+                copyRegAny32(GpTempReg RDX,evA1,expr.at)
+                copyRegAny32(GpTempReg RAX,evA0,expr.at)
                 shl(rax,32)
                 shrd(rax,rdx,uint8(32))
                 movd(REGXMM(GEN,xreg),rax)

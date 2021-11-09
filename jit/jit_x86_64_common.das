@@ -149,7 +149,7 @@ def pick_rcx_candidate ( var context:EvContext )
                 can = k
                 tot = v
         return can
-    if length(context.gpa.regs) > 0
+    if length(context.gpa.regs) >= FIRST_NON_TRANSIENT_GP_TEMP_REG
         unsafe
             let gpi = length(context.gpa.regs) - 1  // last one out
             return reinterpret<GpTempReg> gpi
