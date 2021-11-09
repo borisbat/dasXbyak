@@ -282,7 +282,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             elif expr.op=="*="
                                 imulRegAny32(reg,evR,expr.at)
                             elif expr.op=="/=" || expr.op=="%="
-                                idivRegAny32(reg,evR,intptr(expr),expr.at)
+                                idivRegAny32(reg,evR,intptr(expr), expr.op=="%=" ? DivResults need_rdx : DivResults need_rax,expr.at)
                                 copyRegReg32(reg,expr.op=="%=" ? GpTempReg RDX : GpTempReg RAX, expr.at)
                             else
                                 failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef", expr.at)
@@ -295,7 +295,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             elif expr.op=="*="
                                 imulStackAny32(iSP,evR,expr.at)
                             elif expr.op=="/=" || expr.op=="%="
-                                idivStackAny32(iSP,evR,intptr(expr),expr.at)
+                                idivStackAny32(iSP,evR,intptr(expr),expr.op=="%=" ? DivResults need_rdx : DivResults need_rax,expr.at)
                                 mov(dword[rsp+iSP], expr.op=="/=" ? eax : edx)
                             else
                                 failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef [rsp+{iSP}]...", expr.at)
@@ -315,7 +315,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 if evL is gpReg
                                     // result is in the left register, which we reused during allocation
                                     if expr.op=="/" || expr.op=="%"
-                                        idivRegAny32(evL as gpReg, evR, intptr(expr), expr.at)
+                                        idivRegAny32(evL as gpReg, evR, intptr(expr), expr.op=="%" ? DivResults need_rdx : DivResults need_rax, expr.at)
                                         copyRegReg32(evL as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
                                     elif expr.op=="+"
                                         addRegAny32(evL as gpReg, evR, expr.at)
@@ -350,7 +350,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                     if expr.op=="/" || expr.op=="%"
                                         if (evL is gpReg) || (evL is gpRegT)
                                             let regL = (evL is gpReg) ? (evL as gpReg) : (evL as gpRegT)
-                                            idivRegAny32(regL, evR, intptr(expr), expr.at)
+                                            idivRegAny32(regL, evR, intptr(expr), expr.op=="%" ? DivResults need_rdx : DivResults need_rax, expr.at)
                                         else
                                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL={evL} evR={evR}", expr.at)
                                         copyRegReg32(evOP2 as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)

@@ -18,6 +18,11 @@ require zydis
 
 require ast public
 
+enum DivResults
+    need_rax
+    need_rdx
+    need_rax_rdx
+
 class GenerateCodeVisitorBase : JitVisitor
     assume_no_exceptions : bool = false
     [[do_not_delete]] gen : CodeGenerator?
@@ -267,7 +272,7 @@ class GenerateCodeVisitorBase : JitVisitor
             else
                 failed("imulRegAny32 [rsp+{iSP}],{evR}", at)
 // idiv
-    def idivRegAny32 ( reg:GpTempReg; evR:EvResult; div_label:uint64; at:LineInfo ) : void
+    def idivRegAny32 ( reg:GpTempReg; evR:EvResult; div_label:uint64; outp:DivResults; at:LineInfo ) : void
         with_xbyak(gen) <| $ ( GEN )
             if evR is iconst
                 let iconst = evR as iconst
@@ -291,7 +296,7 @@ class GenerateCodeVisitorBase : JitVisitor
                 idiv(REG32(GEN,regR));  rdx_has_args = false
             else
                 failed("idivRegAny32 {reg},{evR}", at)
-    def idivStackAny32 ( iSP:uint; evR:EvResult; div_label:uint64; at:LineInfo ) : void
+    def idivStackAny32 ( iSP:uint; evR:EvResult; div_label:uint64; outp:DivResults; at:LineInfo ) : void
         with_xbyak(gen) <| $ ( GEN )
             if evR is iconst
                 let iconst = evR as iconst
