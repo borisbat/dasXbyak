@@ -38,24 +38,12 @@ def test_cmp(t: T?)
         verify_jit(t, @@cmp_greater_equ)
         for i in range(-10,10)
             for j in range(-10,10)
-                if !equal(t,cmp_less(i,j),i<j)
-                    t->log("when testing {i} < {j}\n")
-                    return
-                if !equal(t,cmp_less_equ(i,j),i<=j)
-                    t->log("when testing {i} <= {j}\n")
-                    return
-                if !equal(t,cmp_equ(i,j),i==j)
-                    t->log("when testing {i} == {j}\n")
-                    return
-                if !equal(t,cmp_not_equ(i,j),i!=j)
-                    t->log("when testing {i} != {j}\n")
-                    return
-                if !equal(t,cmp_greater(i,j),i>j)
-                    t->log("when testing {i} > {j}\n")
-                    return
-                if !equal(t,cmp_greater_equ(i,j),i>=j)
-                    t->log("when testing {i} >= {j}\n")
-                    return
+                strictEqual(t,cmp_less(i,j),i<j)
+                strictEqual(t,cmp_less_equ(i,j),i<=j)
+                strictEqual(t,cmp_equ(i,j),i==j)
+                strictEqual(t,cmp_not_equ(i,j),i!=j)
+                strictEqual(t,cmp_greater(i,j),i>j)
+                strictEqual(t,cmp_greater_equ(i,j),i>=j)
 
 [jit_x86_64]
 def cond_less ( a, b, c, d: int ) : int
@@ -92,24 +80,12 @@ def test_cond(t: T?)
         verify_jit(t, @@cond_greater_equ)
         for i in range(-10,10)
             for j in range(-10,10)
-                if !equal(t,cond_less(i,j,12,13),i<j ? 12 : 13)
-                    t->log("when testing {i} < {j}\n")
-                    return
-                if !equal(t,cond_less_equ(i,j,12,13),i<=j ? 12 : 13)
-                    t->log("when testing {i} <= {j}\n")
-                    return
-                if !equal(t,cond_equ(i,j,12,13),i==j ? 12 : 13)
-                    t->log("when testing {i} == {j}\n")
-                    return
-                if !equal(t,cond_not_equ(i,j,12,13),i!=j ? 12 : 13)
-                    t->log("when testing {i} != {j}\n")
-                    return
-                if !equal(t,cond_greater(i,j,12,13),i>j ? 12 : 13)
-                    t->log("when testing {i} > {j}\n")
-                    return
-                if !equal(t,cond_greater_equ(i,j,12,13),i>=j ? 12 : 13)
-                    t->log("when testing {i} >= {j}\n")
-                    return
+                strictEqual(t,cond_less(i,j,12,13),i<j ? 12 : 13)
+                strictEqual(t,cond_less_equ(i,j,12,13),i<=j ? 12 : 13)
+                strictEqual(t,cond_equ(i,j,12,13),i==j ? 12 : 13)
+                strictEqual(t,cond_not_equ(i,j,12,13),i!=j ? 12 : 13)
+                strictEqual(t,cond_greater(i,j,12,13),i>j ? 12 : 13)
+                strictEqual(t,cond_greater_equ(i,j,12,13),i>=j ? 12 : 13)
 
 var g_GOO = 0
 
@@ -157,30 +133,12 @@ def test_if(t: T?)
         verify_jit(t, @@if_greater_equ)
         for i in range(-10,10)
             for j in range(-10,10)
-                g_GOO = 0;  if_less(i,j)
-                if !equal(t,g_GOO,i<j ? 13 : 0)
-                    t->log("when testing {i} < {j}\n")
-                    return
-                g_GOO = 0;  if_less_equ(i,j)
-                if !equal(t,g_GOO,i<=j ? 13 : 0)
-                    t->log("when testing {i} <= {j}\n")
-                    return
-                g_GOO = 0;  if_equ(i,j)
-                if !equal(t,g_GOO,i==j ? 13 : 0)
-                    t->log("when testing {i} == {j}\n")
-                    return
-                g_GOO = 0;  if_not_equ(i,j)
-                if !equal(t,g_GOO,i!=j ? 13 : 0)
-                    t->log("when testing {i} != {j}\n")
-                    return
-                g_GOO = 0;  if_greater(i,j)
-                if !equal(t,g_GOO,i>j ? 13 : 0)
-                    t->log("when testing {i} >= {j}\n")
-                    return
-                g_GOO = 0;  if_greater_equ(i,j)
-                if !equal(t,g_GOO,i>=j ? 13 : 0)
-                    t->log("when testing {i} > {j}\n")
-                    return
+                g_GOO=0; if_less(i,j);        strictEqual(t,g_GOO,i<j ? 13 : 0)
+                g_GOO=0; if_less_equ(i,j);    strictEqual(t,g_GOO,i<=j ? 13 : 0)
+                g_GOO=0; if_equ(i,j);         strictEqual(t,g_GOO,i==j ? 13 : 0)
+                g_GOO=0; if_not_equ(i,j);     strictEqual(t,g_GOO,i!=j ? 13 : 0)
+                g_GOO=0; if_greater(i,j);     strictEqual(t,g_GOO,i>j ? 13 : 0)
+                g_GOO=0; if_greater_equ(i,j); strictEqual(t,g_GOO,i>=j ? 13 : 0)
 
 [jit_x86_64]
 def if_else_less ( a, b: int )
@@ -235,30 +193,12 @@ def test_if_else(t: T?)
         verify_jit(t, @@if_else_greater_equ)
         for i in range(-10,10)
             for j in range(-10,10)
-                g_GOO = 0;  if_else_less(i,j)
-                if !equal(t,g_GOO,i<j ? 13 : 14)
-                    t->log("when testing {i} < {j}\n")
-                    return
-                g_GOO = 0;  if_else_less_equ(i,j)
-                if !equal(t,g_GOO,i<=j ? 13 : 14)
-                    t->log("when testing {i} <= {j}\n")
-                    return
-                g_GOO = 0;  if_else_equ(i,j)
-                if !equal(t,g_GOO,i==j ? 13 : 14)
-                    t->log("when testing {i} == {j}\n")
-                    return
-                g_GOO = 0;  if_else_not_equ(i,j)
-                if !equal(t,g_GOO,i!=j ? 13 : 14)
-                    t->log("when testing {i} != {j}\n")
-                    return
-                g_GOO = 0;  if_else_greater(i,j)
-                if !equal(t,g_GOO,i>j ? 13 : 14)
-                    t->log("when testing {i} >= {j}\n")
-                    return
-                g_GOO = 0;  if_else_greater_equ(i,j)
-                if !equal(t,g_GOO,i>=j ? 13 : 14)
-                    t->log("when testing {i} > {j}\n")
-                    return
+                g_GOO=0; if_else_less(i,j);        strictEqual(t,g_GOO,i<j ? 13 : 14)
+                g_GOO=0; if_else_less_equ(i,j);    strictEqual(t,g_GOO,i<=j ? 13 : 14)
+                g_GOO=0; if_else_equ(i,j);         strictEqual(t,g_GOO,i==j ? 13 : 14)
+                g_GOO=0; if_else_not_equ(i,j);     strictEqual(t,g_GOO,i!=j ? 13 : 14)
+                g_GOO=0; if_else_greater(i,j);     strictEqual(t,g_GOO,i>j ? 13 : 14)
+                g_GOO=0; if_else_greater_equ(i,j); strictEqual(t,g_GOO,i>=j ? 13 : 14)
 
 [export]
 def main

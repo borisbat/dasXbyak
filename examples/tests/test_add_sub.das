@@ -30,12 +30,8 @@ def test_add_sub(t: T?)
         verify_jit(t, @@sub_jit)
         for i in range(-100,100)
             for j in range(-100,100)
-                if !equal(t, add_jit(i,j), i+j)
-                    t->log("when add {i} {j}")
-                    break
-                if !equal(t, sub_jit(i,j), i-j)
-                    t->log("when sub {i} {j}")
-                    break
+                strictEqual(t, add_jit(i,j), i+j)
+                strictEqual(t, sub_jit(i,j), i-j)
 
 [test]
 def test_add_sub_equ(t: T?)
@@ -44,12 +40,8 @@ def test_add_sub_equ(t: T?)
         verify_jit(t, @@sub_equ_jit)
         for i in range(-100,100)
             for j in range(-100,100)
-                if !equal(t, add_equ_jit(i,j), i+j)
-                    t->log("when add equ {i} {j}")
-                    break
-                if !equal(t, sub_equ_jit(i,j), i-j)
-                    t->log("when sub equ {i} {j}")
-                    break
+                strictEqual(t, add_equ_jit(i,j), i+j)
+                strictEqual(t, sub_equ_jit(i,j), i-j)
 
 [jit_x86_64]
 def add3_jit ( a, b, c: int )
@@ -71,12 +63,8 @@ def test_add3_sub(t: T?)
         for i in range(-10,10)
             for j in range(-10,10)
                 for k in range(-10,10)
-                    if !equal(t, add3_jit(i,j,k), i+j+k)
-                        t->log("when add {i} {j}")
-                        break
-                    if !equal(t, add3_local_jit(i,j,k), i+j+k)
-                        t->log("when add {i} {j}")
-                        break
+                    strictEqual(t, add3_jit(i,j,k), i+j+k)
+                    strictEqual(t, add3_local_jit(i,j,k), i+j+k)
 
 [export]
 def main

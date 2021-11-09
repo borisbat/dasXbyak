@@ -11,6 +11,18 @@ def mod_jit ( a, b: int )
 def div_jit ( a, b: int )
     return a / b
 
+[test]
+def div_and_mod(t: T?)
+    test_jit_levels(t.verbose) <|
+        verify_jit(t, @@div_jit)
+        verify_jit(t, @@mod_jit)
+        for i in range(-100,100)
+            for j in range(-100,100)
+                if j != 0
+                    strictEqual(t, div_jit(i,j), i/j)
+                    strictEqual(t, mod_jit(i,j), i%j)
+
+
 [jit_x86_64]
 def mod_equ_jit ( a, b: int )
     var c = a
@@ -24,21 +36,6 @@ def div_equ_jit ( a, b: int )
     return c
 
 [test]
-def div_and_mod(t: T?)
-    test_jit_levels(t.verbose) <|
-        verify_jit(t, @@div_jit)
-        verify_jit(t, @@mod_jit)
-        for i in range(-100,100)
-            for j in range(-100,100)
-                if j != 0
-                    if !equal(t, div_jit(i,j), i/j)
-                        t->log("when div {i} {j}")
-                        return
-                    if !equal(t, mod_jit(i,j), i%j)
-                        t->log("when mod {i} {j}")
-                        return
-
-[test]
 def div_and_mod_equ(t: T?)
     test_jit_levels(t.verbose) <|
         verify_jit(t, @@div_equ_jit)
@@ -46,12 +43,8 @@ def div_and_mod_equ(t: T?)
         for i in range(-100,100)
             for j in range(-100,100)
                 if j != 0
-                    if !equal(t, div_equ_jit(i,j), i/j)
-                        t->log("when div equ {i} {j}")
-                        return
-                    if !equal(t, mod_equ_jit(i,j), i%j)
-                        t->log("when mod equ {i} {j}")
-                        return
+                    strictEqual(t, div_equ_jit(i,j), i/j)
+                    strictEqual(t, mod_equ_jit(i,j), i%j)
 
 [test]
 def div_by_zero(t: T?)

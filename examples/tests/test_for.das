@@ -15,13 +15,9 @@ def verify_seq(var arr:array<int>)
     delete arr
 
 def verify_seq(t : T?; var arr:array<int>)
-    if !equal(t,length(seq),length(arr))
-        t->log("sequence length mismatch")
-        return
+    strictEqual(t,length(seq),length(arr))
     for T,S in arr,seq
-        if !equal(t,T,S)
-            t->log("sequence mismatch {T} vs {S}\n")
-            break
+        strictEqual(t,T,S)
     delete seq
     delete arr
 
