@@ -73,40 +73,50 @@ namespace das {
         return reg - value;
     }
 
-    typedef vec4f ( * JitFunction ) ( Context * , vec4f *, void * );
-
     float4 das_invoke_code ( const Xbyak::CodeGenerator & code, vec4f anything, void * cmres, Context * context ) {
         vec4f * arguments = cast<vec4f *>::to(anything);
         auto fun = code.getCode<JitFunction>();
         return fun ( context, arguments, cmres );
     }
 
-    struct SimNode_Jit : SimNode {
-        SimNode_Jit ( const LineInfo & at, JitFunction eval )
-            : SimNode(at), func(eval) {}
-        virtual SimNode * visit ( SimVisitor & vis ) override {
-            uint64_t fptr = (uint64_t) func;
-            V_BEGIN();
-            V_OP(Jit);
-            V_ARG(fptr);
-            V_END();
+    bool das_is_jit_function ( const Func func ) {
+        auto simfn = func.PTR;
+        if ( !simfn ) return false;
+        return simfn->code && simfn->code->rtti_node_isJit();
+    }
+
+    bool das_remove_jit ( const Func func ) {
+        auto simfn = func.PTR;
+        if ( !simfn ) return false;
+        if ( simfn->code && simfn->code->rtti_node_isJit() ) {
+            auto jitNode = static_cast<SimNode_Jit *>(simfn->code);
+            simfn->code = jitNode->saved_code;
+            simfn->aot = jitNode->saved_aot;
+            simfn->aotFunction = jitNode->saved_aot_function;
+            simfn->jit = false;
+            return true;
+        } else {
+            return false;
         }
-        virtual vec4f eval ( Context & context ) override {
-            auto result = func(&context, context.abiArg, context.abiCMRES);
-            context.result = result;
-            return result;
-        }
-        JitFunction func = nullptr;
-    };
+    }
 
     bool das_instrument_jit ( const Xbyak::CodeGenerator & code, const Func func, Context * context ) {
         auto simfn = func.PTR;
         if ( !simfn ) return false;
-        auto gen = code.getCode<JitFunction>();
-        auto node = context->code->makeNode<SimNode_Jit>(LineInfo(), gen);
-        simfn->code = node;
-        simfn->aot = false;
-        simfn->aotFunction = nullptr;
+        if ( simfn->code && simfn->code->rtti_node_isJit() ) {
+            auto jitNode = static_cast<SimNode_Jit *>(simfn->code);
+            jitNode->func = code.getCode<JitFunction>();
+        } else {
+            auto gen = code.getCode<JitFunction>();
+            auto node = context->code->makeNode<SimNode_Jit>(LineInfo(), gen);
+            node->saved_code = simfn->code;
+            node->saved_aot = simfn->aot;
+            node->saved_aot_function = simfn->aotFunction;
+            simfn->code = node;
+            simfn->aot = false;
+            simfn->aotFunction = nullptr;
+            simfn->jit = true;
+        }
         return true;
     }
 
@@ -242,6 +252,12 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
     addExtern<DAS_BIND_FUN(das_instrument_jit)>(*this, lib, "instrument_jit",
         SideEffects::worstDefault, "das_instrument_jit")
 	        ->args({"code","function","context"})->unsafeOperation = true;
+    addExtern<DAS_BIND_FUN(das_remove_jit)>(*this, lib, "remove_jit",
+        SideEffects::worstDefault, "das_remove_jit")
+	        ->args({"function"})->unsafeOperation = true;
+    addExtern<DAS_BIND_FUN(das_is_jit_function)>(*this, lib, "is_jit_function",
+        SideEffects::worstDefault, "das_is_jit_function")
+	        ->args({"function"});
     // JIT helpers
     addExtern<DAS_BIND_FUN(das_get_SimFunction_by_MNH)>(*this, lib, "get_function_address",
         SideEffects::none, "das_get_SimFunction_by_MNH")
@@ -276,7 +292,7 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
 }
 
 ModuleAotType Module_Xbyak::aotRequire ( TextWriter & tw ) const  {
-    tw << "#include \"../modules/dasXbyak/src/dasXbyak.h\"\n";
+    tw << "#include \"../modules/dasXbyak/src/aot_xbyak.h\"\n";
     return ModuleAotType::cpp;
 }
 

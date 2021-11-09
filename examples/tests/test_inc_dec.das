@@ -1,5 +1,6 @@
 options rtti
 require jit/jit_x86_64
+require jit/jit_x86_64_test
 
 [jit_x86_64]
 def inc_jit ( a : int )
@@ -45,16 +46,50 @@ def r_post_dec_jit ( a : int )
     var b = a
     return b--
 
-include test_common.inc
+[test]
+def test_inc_jit(t: T?)
+    test_jit_levels(t.verbose) <|
+        verify_jit(t, @@inc_jit)
+        equal(t,inc_jit(10),11)
 
-[export]
-def main()
-    test_jit_levels <|
-        print("inc(10) = {inc_jit(10)}\n"); verify(inc_jit(10)==11)
-        print("dec(10) = {dec_jit(10)}\n"); verify(dec_jit(10)==9)
-        print("post_inc(10) = {post_inc_jit(10)}\n"); verify(post_inc_jit(10)==11)
-        print("post_dec(10) = {post_dec_jit(10)}\n"); verify(post_dec_jit(10)==9)
-        print("r_inc(10) = {r_inc_jit(10)}\n"); verify(r_inc_jit(10)==11)
-        print("r_dec(10) = {r_dec_jit(10)}\n"); verify(r_dec_jit(10)==9)
-        print("r_post_inc(10) = {r_post_inc_jit(10)}\n"); verify(r_post_inc_jit(10)==10)
-        print("r_post_dec(10) = {r_post_dec_jit(10)}\n"); verify(r_post_dec_jit(10)==10)
+[test]
+def test_dec_jit(t: T?)
+    test_jit_levels(t.verbose) <|
+        verify_jit(t, @@dec_jit)
+        equal(t,dec_jit(10),9)
+
+[test]
+def test_post_inc_jit(t: T?)
+    test_jit_levels(t.verbose) <|
+        verify_jit(t, @@post_inc_jit)
+        equal(t,post_inc_jit(10),11)
+
+[test]
+def test_post_dec_jit(t: T?)
+    test_jit_levels(t.verbose) <|
+        verify_jit(t, @@post_dec_jit)
+        equal(t,post_dec_jit(10),9)
+
+[test]
+def test_r_inc_jit(t: T?)
+    test_jit_levels(t.verbose) <|
+        verify_jit(t, @@r_inc_jit)
+        equal(t,r_inc_jit(10),11)
+
+[test]
+def test_r_dec_jit(t: T?)
+    test_jit_levels(t.verbose) <|
+        verify_jit(t, @@r_dec_jit)
+        equal(t,r_dec_jit(10),9)
+
+[test]
+def test_r_post_inc_jit(t: T?)
+    test_jit_levels(t.verbose) <|
+        verify_jit(t, @@r_post_inc_jit)
+        equal(t,r_post_inc_jit(10),10)
+
+[test]
+def test_r_post_dec_jit(t: T?)
+    test_jit_levels(t.verbose) <|
+        verify_jit(t, @@r_post_dec_jit)
+        equal(t,r_post_dec_jit(10),10)

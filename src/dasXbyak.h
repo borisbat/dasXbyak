@@ -3,9 +3,7 @@
 #define USE_GENERATED           1
 #define USE_GENERATED_SPLIT     1
 
-#define XBYAK_NO_EXCEPTION
-
-#include "xbyak.h"
+#include "aot_xbyak.h"
 
 namespace das {
 

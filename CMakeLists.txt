@@ -13,6 +13,7 @@ IF (NOT DAS_XBYAK_INCLUDED)
 	SET(DAS_XBYAK_MODULE_SRC
 		${DAS_XBYAK_DIR}/src/dasXbyak.h
 		${DAS_XBYAK_DIR}/src/dasXbyak.cpp
+		${DAS_XBYAK_DIR}/src/aot_xbyak.h
 		${DAS_XBYAK_DIR}/src/module_xbyak_split_0.cpp
 		${DAS_XBYAK_DIR}/src/module_xbyak_split_1.cpp
 		${DAS_XBYAK_DIR}/src/module_xbyak_split_2.cpp
@@ -44,6 +45,7 @@ IF (NOT DAS_XBYAK_INCLUDED)
 	ADD_MODULE_DAS(jit jit jit_x86_64_generate_base)
 	ADD_MODULE_DAS(jit jit jit_x86_64_generate)
 	ADD_MODULE_DAS(jit jit jit_x86_64_common)
+	ADD_MODULE_DAS(jit jit jit_x86_64_test)
 	ADD_MODULE_DAS(jit jit jit_x86_64)
 
     #DAS_OUTPUT_AST(XBYAK_GENERATE_AST "${XBYAK_DIR}/xbyak.h" ${DAS_XBYAK_DIR} ${XBYAK_DIR})

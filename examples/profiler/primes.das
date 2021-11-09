@@ -4,6 +4,7 @@ require testProfile
 
 options rtti
 require jit/jit_x86_64
+require jit/jit_x86_64_test
 
 [jit_x86_64(no_exceptions)]
 def isprime_jit(n:int)
@@ -56,30 +57,26 @@ def primesI_jit(n:int)
 				break
     return count
 
-include profile_common.inc
+[test]
+def test_primes(t: T?)
+    test_jit_levels(t.verbose) <|
+        verify_jit(t,@@primes_jit)
+        verify_jit(t,@@primesI_jit)
+        for vv in range(1,14)
+            let v = vv * 1000
+            let R = testProfile::testPrimes(v)
+            let pj = primes_jit(v)
+            equal(t, R, pj)
+            let pji  = primesI_jit(v)
+            equal(t, R, pji)
 
 [export]
 def main()
-    if false
-        let v = 5
-        JIT_MAX_OPT_LEVEL = 0
-        all`things`jit()
-        print("primes_jit({v})  = {primes_jit(v)}\n")
-        print("primesI_jit({v}) = {primesI_jit(v)}\n")
-        print("primes({v})      = {primes(v)}\n")
-    var f1 = 0
-    profile(20,"primes loop") <|
-        f1 = primes(14000)
-	assert(f1==1652)
-	var f2 = 0
-    profile(20,"primes loop, inline") <|
-        f2 = primesI(14000)
-	assert(f2==1652)
 	var f3 = 0
     profile(20,"primes loop C++") <|
         f3 = testProfile::testPrimes(14000)
 	assert(f3==1652)
-    test_jit_levels <|
+    test_jit_levels(false, true) <|
         var f1j = 0
         profile(20,"primes loop - jit") <|
             f1j = primes_jit(14000)

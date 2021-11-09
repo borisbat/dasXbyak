@@ -74,6 +74,8 @@ def private allocate_regs(var func : FunctionPtr; var context:EvContext; verbose
     return true
 
 def public generate_x86_64(var func:FunctionPtr; show_disasm:bool; verbose:bool; opt_level:int; no_exceptions:bool ) : CodeGenerator?
+    if JIT_MAX_OPT_LEVEL==-1
+        return null
     var context : EvContext
     var ok = false
     ok = allocate_regs(func, context, verbose, opt_level)
@@ -128,6 +130,8 @@ class Jit_x86_64_Macro : AstFunctionAnnotation
                     var gen = generate_x86_64(fnptr,SHOW_DISASM,VERBOSE || JIT_VERBOSE, OPTLEVEL, NO_EXCEPTIONS)
                     if gen != null
                         *gen |> instrument_jit(reinterpret<function> PFUN)
+                    else
+                        remove_jit(reinterpret<function> PFUN)
                     fnptr := null
                 else
                     panic("missing 'options rtti'")

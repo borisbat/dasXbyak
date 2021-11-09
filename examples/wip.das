@@ -1,7 +1,7 @@
 options rtti
 require jit/jit_x86_64
 
-[jit_x86_64(no_exceptions,asm)]
+[jit_x86_64(no_exceptions)]
 def fibR_jit(n:int)
     if (n < 2)
         return n
