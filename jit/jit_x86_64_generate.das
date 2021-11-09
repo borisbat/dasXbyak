@@ -279,6 +279,8 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 addRegAny32(reg,evR,expr.at)
                             elif expr.op=="-="
                                 subRegAny32(reg,evR,expr.at)
+                            elif expr.op=="*="
+                                imulRegAny32(reg,evR,expr.at)
                             elif expr.op=="/=" || expr.op=="%="
                                 idivRegAny32(reg,evR,intptr(expr),expr.at)
                                 copyRegReg32(reg,expr.op=="%=" ? GpTempReg RDX : GpTempReg RAX, expr.at)
@@ -290,6 +292,8 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 addStackAny32(iSP,evR,expr.at)
                             elif expr.op=="-="
                                 subStackAny32(iSP,evR,expr.at)
+                            elif expr.op=="*="
+                                imulStackAny32(iSP,evR,expr.at)
                             elif expr.op=="/=" || expr.op=="%="
                                 idivStackAny32(iSP,evR,intptr(expr),expr.at)
                                 mov(dword[rsp+iSP], expr.op=="/=" ? eax : edx)
@@ -317,6 +321,8 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                         addRegAny32(evL as gpReg, evR, expr.at)
                                     elif expr.op=="-"
                                         subRegAny32(evL as gpReg, evR, expr.at)
+                                    elif expr.op=="*"
+                                        imulRegAny32(evL as gpReg, evR, expr.at)
                                     elif expr.op=="<" || expr.op=="<=" || expr.op=="==" || expr.op=="!=" || expr.op==">=" || expr.op==">"
                                         let cop = getCompareOp(expr.op)
                                         cmpRegAny32(evL as gpReg, evR, cop, expr.at)
@@ -366,9 +372,11 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                     else
                                         copyRegAny32(evOP2 as gpReg,evL,expr.at)
                                         if expr.op=="+"
-                                            addRegAny32(evOP2 as gpReg,evL,expr.at)
+                                            addRegAny32(evOP2 as gpReg,evR,expr.at)
                                         elif expr.op=="-"
-                                            subRegAny32(evOP2 as gpReg,evL,expr.at)
+                                            subRegAny32(evOP2 as gpReg,evR,expr.at)
+                                        elif expr.op=="*"
+                                            imulRegAny32(evOP2 as gpReg,evR,expr.at)
                                         else
                                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evR={evR}", expr.at)
                             else

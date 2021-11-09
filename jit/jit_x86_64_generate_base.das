@@ -228,6 +228,34 @@ class GenerateCodeVisitorBase : JitVisitor
                     sub(dword[rsp+iSP],ic)
             else
                 failed("subRegAny32 [rsp+{iSP}],{evR}", at)
+// imul
+    def imulRegAny32 ( reg:GpTempReg; evR:EvResult; at:LineInfo ) : void
+        with_xbyak(gen) <| $ ( GEN )
+            if evR is gpRegT
+                imul(REG32(GEN,reg),REG32(GEN,evR as gpRegT))
+            elif evR is gpReg
+                imul(REG32(GEN,reg),REG32(GEN,evR as gpReg))
+            elif evR is iconst
+                mov(eax,evR as iconst)
+                imul(REG32(GEN,reg),eax)
+            else
+                failed("imulRegAny32 {reg},{evR}", at)
+    def imulStackAny32 ( iSP:uint; evR:EvResult; at:LineInfo ) : void
+        with_xbyak(gen) <| $ ( GEN )
+            if evR is gpReg
+                mov(eax,dword[rsp+iSP])
+                imul(eax,REG32(GEN,evR as gpReg))
+                mov(dword[rsp+iSP],eax)
+            elif evR is gpRegT
+                mov(eax,dword[rsp+iSP])
+                imul(eax,REG32(GEN,evR as gpRegT))
+                mov(dword[rsp+iSP],eax)
+            elif evR is iconst
+                mov(eax, evR as iconst)
+                imul(eax, dword[rsp+iSP])   // note a*b = b*a
+                mov(dword[rsp+iSP], eax)
+            else
+                failed("imulRegAny32 [rsp+{iSP}],{evR}", at)
 // idiv
     def idivRegAny32 ( reg:GpTempReg; evR:EvResult; div_label:uint64; at:LineInfo ) : void
         with_xbyak(gen) <| $ ( GEN )
