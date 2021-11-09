@@ -238,7 +238,10 @@ class AllocateRegistersCodeVisitor : JitVisitor
         if expr.left._type.isWorkhorseType
             if expr.left._type |> is_gpreg_type
                 if expr.left._type.isRef
-                    pass
+                    if expr.op=="/=" || expr.op=="%="
+                        if starts_with(expr.right.__rtti,"ExprConst")
+                            // division by iconst uses rcx
+                            context.uses_rcx = true
                 else
                     if evOP2 is cmp
                         if expr.op=="<" || expr.op=="=="
@@ -250,6 +253,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
                                 evExpectSpecials(expr.right, Specials RAX | Specials RDX | Specials RCX, expr.at)
                     if expr.op=="/" || expr.op=="%"
                         if starts_with(expr.right.__rtti,"ExprConst")
+                            // division by iconst uses rcx
                             context.uses_rcx = true
     def override visitExprOp2(expr:smart_ptr<ExprOp2>) : ExpressionPtr
         var evL & = evResSet(expr.left)

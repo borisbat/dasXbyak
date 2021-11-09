@@ -4,8 +4,17 @@ require jit/jit_x86_64_test
 
 var seq : array<int>
 
+def verify_seq(var arr:array<int>)
+    print("{seq} vs reference {arr}\n\n")
+    if length(seq)!=length(arr)
+        panic("sequence length mismatch")
+    for T,S in arr,seq
+        if T != S
+            panic("sequence mismatch {T} vs {S}\n")
+    delete seq
+    delete arr
+
 def verify_seq(t : T?; var arr:array<int>)
-    // t->log("{seq} vs reference {arr}\n\n")
     if !equal(t,length(seq),length(arr))
         t->log("sequence length mismatch")
         return
@@ -113,3 +122,8 @@ def test_for_continue(t: T?)
     test_jit_levels(t.verbose) <|
         verify_jit(t, @@test_continue)
         test_continue(0,10);    verify_seq(t,[{for t in range(0,10); t; where t % 2 != 0}])
+
+[export]
+def main
+    test_jit_levels(false, true) <|
+        test_continue(0,10);    verify_seq([{for t in range(0,10); t; where t % 2 != 0}])

@@ -20,7 +20,6 @@ require zydis
 require ast public
 
 class GenerateCodeVisitor : GenerateCodeVisitorBase
-    assume_no_exceptions : bool = false
     tab : int
     [[do_not_delete]] this_function : Function?
     func_begin : void?
@@ -251,6 +250,8 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
 // op2
     def override preVisitExprOp2(expr:smart_ptr<ExprOp2>): void
         log("(OP2 {expr.op} ")
+
+
     def override visitExprOp2(expr:smart_ptr<ExprOp2>) : ExpressionPtr
         let evOP2 &  = evResGet(expr)
         let evL & = evResGet(expr.left)
@@ -263,25 +264,24 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                         if context.temp_var |> key_exists(intptr(pvar))
                             let reg = context.temp_var[intptr(pvar)]
                             if expr.op=="+="
-                                if evR is gpRegT
-                                    add(REG32(GEN,reg),REG32(GEN,evR as gpRegT))
-                                else
-                                    failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef temp evR={evR}", expr.at)
+                                addRegAny32(reg,evR,expr.at)
+                            elif expr.op=="-="
+                                subRegAny32(reg,evR,expr.at)
+                            elif expr.op=="/=" || expr.op=="%="
+                                idivRegAny32(reg,evR,intptr(expr),expr.at)
+                                copyRegReg32(reg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
                             else
                                 failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef", expr.at)
-                        else
+                        elif evL is stack
+                            let iSP = evL as stack
                             if expr.op=="+="
-                                if evL is stack
-                                    if evR is gpReg
-                                        add(dword[rsp+(evL as stack)],REG32(GEN,evR as gpReg))
-                                    elif evR is gpRegT
-                                        add(dword[rsp+(evL as stack)],REG32(GEN,evR as gpRegT))
-                                    else
-                                        failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef evR={evR}", expr.at)
-                                else
-                                    failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef evL={evL}", expr.at)
+                                addStackAny32(iSP,evR,expr.at)
+                            elif expr.op=="-="
+                                subStackAny32(iSP,evR,expr.at)
                             else
-                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef", expr.at)
+                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef [rsp+{iSP}]...", expr.at)
+                        else
+                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef evL={evL}", expr.at)
                     else
                         if evOP2 is cmp
                             if expr.op=="<" || expr.op=="=="
@@ -293,56 +293,39 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                         else
                             if expr.op=="+" || expr.op=="-" || expr.op=="%" || expr.op=="/" || expr.op=="<" || expr.op=="=="
                                 if evL is gpReg
+                                    if expr.op=="/" || expr.op=="%"
+                                        idivRegAny32(evL as gpReg, evR, intptr(expr), expr.at)
+                                        copyRegReg32(evL as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
                                     // result is in the left register, which we reused during allocation
-                                    if evR is iconst
+                                    elif evR is iconst
                                         let ic = uint(evR as iconst)
                                         if ic==1u && (expr.op=="+" || expr.op=="-")
                                             if expr.op=="+"
                                                 inc(REG32(GEN,evL as gpReg))
                                             else
                                                 dec(REG32(GEN,evL as gpReg))
-                                        else
-                                            if expr.op=="+"
-                                                add(REG32(GEN,evL as gpReg),ic)
-                                            elif expr.op=="-"
-                                                sub(REG32(GEN,evL as gpReg),ic)
-                                            elif expr.op=="<" || expr.op=="=="
-                                                cmp(REG32(GEN,evL as gpReg),ic)
-                                                mov(REG32(GEN,evL as gpReg),0ul)
-                                                mov(eax,1ul)
-                                                if expr.op=="<"
-                                                    cmovl(REG32(GEN,evL as gpReg),eax)
-                                                elif expr.op=="=="
-                                                    cmove(REG32(GEN,evL as gpReg),eax)
-                                                else
-                                                    failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst bool", expr.at)
-                                            elif expr.op=="%" || expr.op=="/"
-                                                if (evR as iconst)==0ul
-                                                    failed("DIVISION BY ZERO", expr.at)
-                                                mov(eax,REG32(GEN,evL as gpReg))
-                                                mov(REG32(GEN,evL as gpReg),evR as iconst)
-                                                cdq()
-                                                idiv(REG32(GEN,evL as gpReg));  rdx_has_args = false
-                                                copyRegReg32(evL as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
+                                        elif expr.op=="+"
+                                            add(REG32(GEN,evL as gpReg),ic)
+                                        elif expr.op=="-"
+                                            sub(REG32(GEN,evL as gpReg),ic)
+                                        elif expr.op=="<" || expr.op=="=="
+                                            cmp(REG32(GEN,evL as gpReg),ic)
+                                            mov(REG32(GEN,evL as gpReg),0ul)
+                                            mov(eax,1ul)
+                                            if expr.op=="<"
+                                                cmovl(REG32(GEN,evL as gpReg),eax)
+                                            elif expr.op=="=="
+                                                cmove(REG32(GEN,evL as gpReg),eax)
                                             else
-                                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst", expr.at)
+                                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst bool", expr.at)
+                                        else
+                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst", expr.at)
                                     elif (evR is gpReg) || (evR is gpRegT)
                                         let regR = (evR is gpReg) ? (evR as gpReg) : (evR as gpRegT)
                                         if expr.op=="+"
                                             add(REG32(GEN,evL as gpReg),REG32(GEN,regR))
                                         elif expr.op=="-"
                                             sub(REG32(GEN,evL as gpReg),REG32(GEN,regR))
-                                        elif expr.op=="%" || expr.op=="/"
-                                            if !assume_no_exceptions
-                                                alignForIntelJccErratum()
-                                                test(REG32(GEN,regR),REG32(GEN,regR))
-                                                jne("div_{intptr(expr)}",LabelType T_AUTO)
-                                                JIT`exception("division by zero")
-                                                Label("div_{intptr(expr)}")
-                                            mov(eax,REG32(GEN,evL as gpReg))
-                                            cdq()
-                                            idiv(REG32(GEN,regR));  rdx_has_args = false
-                                            copyRegReg32(evL as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
                                         else
                                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, (evR is gpReg || evR is gpRegT)", expr.at)
                                     else
@@ -351,59 +334,38 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 else
                                     // result is in the result register, which we allocated separately
                                     assert(evOP2 is gpReg)
-                                    if (evL is gpReg) && (evR is iconst)
+                                    if expr.op=="/" || expr.op=="%"
+                                        if (evL is gpReg) || (evL is gpRegT)
+                                            let regL = (evL is gpReg) ? (evL as gpReg) : (evL as gpRegT)
+                                            idivRegAny32(regL, evR, intptr(expr), expr.at)
+                                        else
+                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL={evL} evR={evR}", expr.at)
+                                        copyRegReg32(evOP2 as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
+                                    elif (evL is gpReg) && (evR is iconst)
                                         if expr.op=="+"
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpReg))+uint(evR as iconst)])
                                         elif expr.op=="-"
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpReg))-uint(evR as iconst)])
                                         else
                                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL is gpReg && evR is iconst", expr.at)
-                                    if (evL is gpRegT) && (evR is iconst)
+                                    elif (evL is gpRegT) && (evR is iconst)
                                         if expr.op=="+"
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpRegT))+uint(evR as iconst)])
                                         elif expr.op=="-"
                                             lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpRegT))-uint(evR as iconst)])
-                                        elif expr.op=="%" || expr.op=="/"
-                                            if (evR as iconst)==0ul
-                                                failed("DIVISION BY ZERO", expr.at)
-                                            mov(ecx,evR as iconst)              //  division by iconst - USES ECX
-                                            mov(eax,REG32(GEN,evL as gpRegT))
-                                            cdq()
-                                            idiv(ecx);  rdx_has_args = false
-                                            copyRegReg32(evOP2 as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
                                         else
                                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL s gpRegT && evR is iconst", expr.at)
                                     else
-                                        if expr.op=="%" || expr.op=="/"
-                                            copyReg32(GpTempReg RAX, evL, expr.at)
-                                            var div_reg = GpTempReg BROKEN
-                                            if evR is gpReg
-                                                div_reg = evR as gpReg
-                                            elif evR is gpRegT
-                                                div_reg = evR as gpRegT
+                                        copyReg32(evOP2 as gpReg,evL,expr.at)
+                                        if evR is iconst
+                                            if expr.op=="+"
+                                                add(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
+                                            elif expr.op=="-"
+                                                sub(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
                                             else
-                                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evR={evR}", expr.at)
-                                            copyReg32(div_reg, evR, expr.at)
-                                            if !assume_no_exceptions
-                                                alignForIntelJccErratum()
-                                                test(REG32(GEN,div_reg),REG32(GEN,div_reg))
-                                                jnz("div_{intptr(expr)}",LabelType T_AUTO)
-                                                JIT`exception("division by zero")
-                                                Label("div_{intptr(expr)}")
-                                            cdq()
-                                            idiv(REG32(GEN,div_reg));  rdx_has_args = false
-                                            copyRegReg32(evOP2 as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
+                                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evR is iconst", expr.at)
                                         else
-                                            copyReg32(evOP2 as gpReg,evL,expr.at)
-                                            if evR is iconst
-                                                if expr.op=="+"
-                                                    add(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
-                                                elif expr.op=="-"
-                                                    sub(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
-                                                else
-                                                    failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evR is iconst", expr.at)
-                                            else
-                                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evR={evR}", expr.at)
+                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evR={evR}", expr.at)
                             else
                                 failed("ExprOp2 {expr.op} expr.left._type.isInteger integer", expr.at)
                 else

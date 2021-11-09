@@ -19,6 +19,7 @@ require zydis
 require ast public
 
 class GenerateCodeVisitorBase : JitVisitor
+    assume_no_exceptions : bool = false
     [[do_not_delete]] gen : CodeGenerator?
     rdx_has_args : bool                             // rdx contains arg *, as part of the parameters passed
     def GenerateCodeVisitorBase(var g:CodeGenerator?; var ctx:EvContext )
@@ -54,7 +55,7 @@ class GenerateCodeVisitorBase : JitVisitor
             if verbose
                 log("\njcc-erratum at {ofs}\n")
             *gen |> align(32ul,true)
-// helpers
+// copy
     def copyRegReg32 ( dest,src:GpTempReg; at:LineInfo ) : void                                                //  mov reg32, reg32
         if dest==src
             return
@@ -74,6 +75,7 @@ class GenerateCodeVisitorBase : JitVisitor
                 mov(REG32(GEN,dest),ptr[rsp+(srcV as stack)])
             else
                 failed("copyReg32 mov({dest},{srcV})", at)
+// cmp
     def cmpRegAny32 ( left:GpTempReg; right:EvResult; cop:CompareType; at:LineInfo ) : void                      //  cmp reg32, *
         with_xbyak(gen) <| $ ( GEN )
             if right is gpReg
@@ -137,6 +139,65 @@ class GenerateCodeVisitorBase : JitVisitor
             cmpAnyReg32(left,right as gpRegT,cop,spill,at)
         else
             failed("cmpAnyAny32 cmp({left},{right}) // {cop}", at)
+// add
+    def addRegAny32 ( reg:GpTempReg; evR:EvResult; at:LineInfo ) : void
+        with_xbyak(gen) <| $ ( GEN )
+            if evR is gpRegT
+                add(REG32(GEN,reg),REG32(GEN,evR as gpRegT))
+            elif evR is gpReg
+                add(REG32(GEN,reg),REG32(GEN,evR as gpReg))
+            else
+                failed("addRegAny32 {reg},{evR}", at)
+    def addStackAny32 ( iSP:uint; evR:EvResult; at:LineInfo ) : void
+        with_xbyak(gen) <| $ ( GEN )
+            if evR is gpReg
+                add(dword[rsp+iSP],REG32(GEN,evR as gpReg))
+            elif evR is gpRegT
+                add(dword[rsp+iSP],REG32(GEN,evR as gpRegT))
+            else
+                failed("addRegAny32 [rsp+{iSP}],{evR}", at)
+// sub
+    def subRegAny32 ( reg:GpTempReg; evR:EvResult; at:LineInfo ) : void
+        with_xbyak(gen) <| $ ( GEN )
+            if evR is gpRegT
+                sub(REG32(GEN,reg),REG32(GEN,evR as gpRegT))
+            elif evR is gpReg
+                sub(REG32(GEN,reg),REG32(GEN,evR as gpReg))
+            else
+                failed("subRegAny32 {reg},{evR}", at)
+    def subStackAny32 ( iSP:uint; evR:EvResult; at:LineInfo ) : void
+        with_xbyak(gen) <| $ ( GEN )
+            if evR is gpReg
+                sub(dword[rsp+iSP],REG32(GEN,evR as gpReg))
+            elif evR is gpRegT
+                sub(dword[rsp+iSP],REG32(GEN,evR as gpRegT))
+            else
+                failed("subRegAny32 [rsp+{iSP}],{evR}", at)
+// idiv
+    def idivRegAny32 ( reg:GpTempReg; evR:EvResult; div_label:uint64; at:LineInfo ) : void
+        with_xbyak(gen) <| $ ( GEN )
+            if evR is iconst
+                let iconst = evR as iconst
+                if iconst==0ul
+                    failed("DIVISION BY ZERO", at)
+                mov(eax,REG32(GEN,reg))
+                mov(ecx,iconst)
+                cdq()
+                idiv(ecx);  rdx_has_args = false
+            elif (evR is gpReg) || (evR is gpRegT)
+                let regR = (evR is gpReg) ? (evR as gpReg) : (evR as gpRegT)
+                if !assume_no_exceptions
+                    alignForIntelJccErratum()
+                    test(REG32(GEN,regR),REG32(GEN,regR))
+                    jne("div_{div_label}",LabelType T_AUTO)
+                    JIT`exception("division by zero")
+                    Label("div_{div_label}")
+                mov(eax,REG32(GEN,reg))
+                cdq()
+                idiv(REG32(GEN,regR));  rdx_has_args = false
+            else
+                failed("idivRegAny32 {reg},{evR}", at)
+// arg helper
     def setRdxToArgs()
         if !rdx_has_args
             with_xbyak(gen) <| $ ( GEN )
