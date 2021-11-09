@@ -175,6 +175,8 @@ class GenerateCodeVisitorBase : JitVisitor
                     inc(REG32(GEN,reg))
                 elif ic==-1u
                     dec(REG32(GEN,reg))
+                elif ic==0u
+                    pass
                 else
                     add(REG32(GEN,reg),ic)
             else
@@ -191,6 +193,8 @@ class GenerateCodeVisitorBase : JitVisitor
                     inc(dword[rsp+iSP])
                 elif ic==-1u
                     dec(dword[rsp+iSP])
+                elif ic==0u
+                    pass
                 else
                     add(dword[rsp+iSP],ic)
             else
@@ -208,6 +212,8 @@ class GenerateCodeVisitorBase : JitVisitor
                     dec(REG32(GEN,reg))
                 elif ic==-1u
                     inc(REG32(GEN,reg))
+                elif ic==0u
+                    pass
                 else
                     sub(REG32(GEN,reg),ic)
             else
@@ -224,6 +230,8 @@ class GenerateCodeVisitorBase : JitVisitor
                     dec(dword[rsp+iSP])
                 elif ic==-1u
                     inc(dword[rsp+iSP])
+                elif ic==0u
+                    pass
                 else
                     sub(dword[rsp+iSP],ic)
             else
@@ -236,6 +244,7 @@ class GenerateCodeVisitorBase : JitVisitor
             elif evR is gpReg
                 imul(REG32(GEN,reg),REG32(GEN,evR as gpReg))
             elif evR is iconst
+                // TODO: there are many ways to optimize multiplication by const. implement something
                 mov(eax,evR as iconst)
                 imul(REG32(GEN,reg),eax)
             else
@@ -251,6 +260,7 @@ class GenerateCodeVisitorBase : JitVisitor
                 imul(eax,REG32(GEN,evR as gpRegT))
                 mov(dword[rsp+iSP],eax)
             elif evR is iconst
+                // TODO: there are many ways to optimize multiplication by const. implement something
                 mov(eax, evR as iconst)
                 imul(eax, dword[rsp+iSP])   // note a*b = b*a
                 mov(dword[rsp+iSP], eax)
