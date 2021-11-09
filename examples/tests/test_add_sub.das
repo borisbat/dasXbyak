@@ -4,23 +4,23 @@ require jit/jit_x86_64
 require jit/jit_x86_64_test
 
 [jit_x86_64]
-def sub_jit ( a, b: int )
-    return a - b
-
-[jit_x86_64]
 def add_jit ( a, b: int )
     return a + b
 
 [jit_x86_64]
-def sub_equ_jit ( a, b: int )
-    var c = a
-    c -= b
-    return c
+def sub_jit ( a, b: int )
+    return a - b
 
 [jit_x86_64]
 def add_equ_jit ( a, b: int )
     var c = a
     c += b
+    return c
+
+[jit_x86_64]
+def sub_equ_jit ( a, b: int )
+    var c = a
+    c -= b
     return c
 
 [test]
@@ -30,11 +30,12 @@ def test_add_sub(t: T?)
         verify_jit(t, @@sub_jit)
         for i in range(-100,100)
             for j in range(-100,100)
-                if j != 0
-                    if !equal(t, add_jit(i,j), i+j)
-                        t->log("when add {i} {j}")
-                    if !equal(t, sub_jit(i,j), i-j)
-                        t->log("when sub {i} {j}")
+                if !equal(t, add_jit(i,j), i+j)
+                    t->log("when add {i} {j}")
+                    break
+                if !equal(t, sub_jit(i,j), i-j)
+                    t->log("when sub {i} {j}")
+                    break
 
 [test]
 def test_add_sub_equ(t: T?)
@@ -43,11 +44,39 @@ def test_add_sub_equ(t: T?)
         verify_jit(t, @@sub_equ_jit)
         for i in range(-100,100)
             for j in range(-100,100)
-                if j != 0
-                    if !equal(t, add_equ_jit(i,j), i+j)
-                        t->log("when add equ {i} {j}")
-                    if !equal(t, sub_equ_jit(i,j), i-j)
-                        t->log("when sub equ {i} {j}")
+                if !equal(t, add_equ_jit(i,j), i+j)
+                    t->log("when add equ {i} {j}")
+                    break
+                if !equal(t, sub_equ_jit(i,j), i-j)
+                    t->log("when sub equ {i} {j}")
+                    break
+
+[jit_x86_64]
+def add3_jit ( a, b, c: int )
+    return a + b + c
+
+[jit_x86_64]
+def add3_local_jit ( a, b, c: int )
+    // this one generates lea for a 3-way add
+    let A = a
+    let B = b
+    let C = c
+    return A + B + C
+
+[test]
+def test_add3_sub(t: T?)
+    test_jit_levels(t.verbose) <|
+        verify_jit(t, @@add3_jit)
+        verify_jit(t, @@add3_local_jit)
+        for i in range(-10,10)
+            for j in range(-10,10)
+                for k in range(-10,10)
+                    if !equal(t, add3_jit(i,j,k), i+j+k)
+                        t->log("when add {i} {j}")
+                        break
+                    if !equal(t, add3_local_jit(i,j,k), i+j+k)
+                        t->log("when add {i} {j}")
+                        break
 
 [export]
 def main

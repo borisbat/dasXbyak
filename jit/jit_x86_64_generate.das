@@ -292,10 +292,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 subStackAny32(iSP,evR,expr.at)
                             elif expr.op=="/=" || expr.op=="%="
                                 idivStackAny32(iSP,evR,intptr(expr),expr.at)
-                                if expr.op=="/="
-                                    mov(dword[rsp+iSP],eax)
-                                else
-                                    mov(dword[rsp+iSP],edx)
+                                mov(dword[rsp+iSP], expr.op=="/=" ? eax : edx)
                             else
                                 failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef [rsp+{iSP}]...", expr.at)
                         else
@@ -311,22 +308,17 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                         else
                             if expr.op=="+" || expr.op=="-" || expr.op=="%" || expr.op=="/" || expr.op=="<" || expr.op=="=="
                                 if evL is gpReg
+                                    // result is in the left register, which we reused during allocation
                                     if expr.op=="/" || expr.op=="%"
                                         idivRegAny32(evL as gpReg, evR, intptr(expr), expr.at)
                                         copyRegReg32(evL as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
-                                    // result is in the left register, which we reused during allocation
+                                    elif expr.op=="+"
+                                        addRegAny32(evL as gpReg, evR, expr.at)
+                                    elif expr.op=="-"
+                                        subRegAny32(evL as gpReg, evR, expr.at)
                                     elif evR is iconst
                                         let ic = uint(evR as iconst)
-                                        if ic==1u && (expr.op=="+" || expr.op=="-")
-                                            if expr.op=="+"
-                                                inc(REG32(GEN,evL as gpReg))
-                                            else
-                                                dec(REG32(GEN,evL as gpReg))
-                                        elif expr.op=="+"
-                                            add(REG32(GEN,evL as gpReg),ic)
-                                        elif expr.op=="-"
-                                            sub(REG32(GEN,evL as gpReg),ic)
-                                        elif expr.op=="<" || expr.op=="=="
+                                        if expr.op=="<" || expr.op=="=="
                                             cmp(REG32(GEN,evL as gpReg),ic)
                                             mov(REG32(GEN,evL as gpReg),0ul)
                                             mov(eax,1ul)
@@ -338,14 +330,10 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                                 failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst bool", expr.at)
                                         else
                                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is iconst", expr.at)
-                                    elif (evR is gpReg) || (evR is gpRegT)
-                                        let regR = (evR is gpReg) ? (evR as gpReg) : (evR as gpRegT)
-                                        if expr.op=="+"
-                                            add(REG32(GEN,evL as gpReg),REG32(GEN,regR))
-                                        elif expr.op=="-"
-                                            sub(REG32(GEN,evL as gpReg),REG32(GEN,regR))
-                                        else
-                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, (evR is gpReg || evR is gpRegT)", expr.at)
+                                    elif evR is gpReg
+                                        failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is gpReg", expr.at)
+                                    elif evR is gpRegT
+                                        failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR is gpRegT)", expr.at)
                                     else
                                         failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evL is gpReg, evR={evR}", expr.at)
                                     log(" [{evL}]")
@@ -359,29 +347,24 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                         else
                                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL={evL} evR={evR}", expr.at)
                                         copyRegReg32(evOP2 as gpReg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
-                                    elif (evL is gpReg) && (evR is iconst)
+                                    elif (expr.op=="+" || expr.op=="-") && ((evL is gpRegT) || (evL is gpReg)) && (evR is iconst)
+                                        let regL = (evL is gpReg) ? (evL as gpReg) : (evL as gpRegT)
                                         if expr.op=="+"
-                                            lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpReg))+uint(evR as iconst)])
+                                            lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,regL)+uint(evR as iconst)])
                                         elif expr.op=="-"
-                                            lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpReg))-uint(evR as iconst)])
-                                        else
-                                            failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL is gpReg && evR is iconst", expr.at)
-                                    elif (evL is gpRegT) && (evR is iconst)
-                                        if expr.op=="+"
-                                            lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpRegT))+uint(evR as iconst)])
-                                        elif expr.op=="-"
-                                            lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,(evL as gpRegT))-uint(evR as iconst)])
+                                            lea(REG32(GEN,evOP2 as gpReg),ptr[REG32(GEN,regL)-uint(evR as iconst)])
                                         else
                                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evL s gpRegT && evR is iconst", expr.at)
+                                    elif (expr.op=="+") && ((evL is gpRegT) || (evL is gpReg)) && ((evR is gpRegT) || (evR is gpReg))
+                                        let regL = (evL is gpReg) ? (evL as gpReg) : (evL as gpRegT)
+                                        let regR = (evR is gpReg) ? (evR as gpReg) : (evR as gpRegT)
+                                        lea(REG32(GEN,evOP2 as gpReg),dword[REG32(GEN,regL)+REG32(GEN,regR)])
                                     else
                                         copyRegAny32(evOP2 as gpReg,evL,expr.at)
-                                        if evR is iconst
-                                            if expr.op=="+"
-                                                add(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
-                                            elif expr.op=="-"
-                                                sub(REG32(GEN,evOP2 as gpReg),uint(evR as iconst))
-                                            else
-                                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evR is iconst", expr.at)
+                                        if expr.op=="+"
+                                            addRegAny32(evOP2 as gpReg,evL,expr.at)
+                                        elif expr.op=="-"
+                                            subRegAny32(evOP2 as gpReg,evL,expr.at)
                                         else
                                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer evOP2 is gpReg, evR={evR}", expr.at)
                             else

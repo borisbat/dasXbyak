@@ -169,6 +169,14 @@ class GenerateCodeVisitorBase : JitVisitor
                 add(REG32(GEN,reg),REG32(GEN,evR as gpRegT))
             elif evR is gpReg
                 add(REG32(GEN,reg),REG32(GEN,evR as gpReg))
+            elif evR is iconst
+                let ic = uint(evR as iconst)
+                if ic==1u
+                    inc(REG32(GEN,reg))
+                elif ic==-1u
+                    dec(REG32(GEN,reg))
+                else
+                    add(REG32(GEN,reg),ic)
             else
                 failed("addRegAny32 {reg},{evR}", at)
     def addStackAny32 ( iSP:uint; evR:EvResult; at:LineInfo ) : void
@@ -177,6 +185,14 @@ class GenerateCodeVisitorBase : JitVisitor
                 add(dword[rsp+iSP],REG32(GEN,evR as gpReg))
             elif evR is gpRegT
                 add(dword[rsp+iSP],REG32(GEN,evR as gpRegT))
+            elif evR is iconst
+                let ic = uint(evR as iconst)
+                if ic==1u
+                    inc(dword[rsp+iSP])
+                elif ic==-1u
+                    dec(dword[rsp+iSP])
+                else
+                    add(dword[rsp+iSP],ic)
             else
                 failed("addRegAny32 [rsp+{iSP}],{evR}", at)
 // sub
@@ -186,6 +202,14 @@ class GenerateCodeVisitorBase : JitVisitor
                 sub(REG32(GEN,reg),REG32(GEN,evR as gpRegT))
             elif evR is gpReg
                 sub(REG32(GEN,reg),REG32(GEN,evR as gpReg))
+            elif evR is iconst
+                let ic = uint(evR as iconst)
+                if ic==1u
+                    dec(REG32(GEN,reg))
+                elif ic==-1u
+                    inc(REG32(GEN,reg))
+                else
+                    sub(REG32(GEN,reg),ic)
             else
                 failed("subRegAny32 {reg},{evR}", at)
     def subStackAny32 ( iSP:uint; evR:EvResult; at:LineInfo ) : void
@@ -194,6 +218,14 @@ class GenerateCodeVisitorBase : JitVisitor
                 sub(dword[rsp+iSP],REG32(GEN,evR as gpReg))
             elif evR is gpRegT
                 sub(dword[rsp+iSP],REG32(GEN,evR as gpRegT))
+            elif evR is iconst
+                let ic = uint(evR as iconst)
+                if ic==1u
+                    dec(dword[rsp+iSP])
+                elif ic==-1u
+                    inc(dword[rsp+iSP])
+                else
+                    sub(dword[rsp+iSP],ic)
             else
                 failed("subRegAny32 [rsp+{iSP}],{evR}", at)
 // idiv
@@ -203,6 +235,7 @@ class GenerateCodeVisitorBase : JitVisitor
                 let iconst = evR as iconst
                 if iconst==0ul
                     failed("DIVISION BY ZERO", at)
+                // TODO: there are many ways to optimize division by const. implement something
                 mov(eax,REG32(GEN,reg))
                 mov(ecx,iconst)
                 cdq()
@@ -226,6 +259,7 @@ class GenerateCodeVisitorBase : JitVisitor
                 let iconst = evR as iconst
                 if iconst==0ul
                     failed("DIVISION BY ZERO", at)
+                // TODO: there are many ways to optimize division by const. implement something
                 mov(eax,dword[rsp+iSP])
                 mov(ecx,iconst)
                 cdq()
