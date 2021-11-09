@@ -40,7 +40,6 @@ def div_and_mod(t: T?)
 
 [test]
 def div_and_mod_equ(t: T?)
-    t->skip("div_mod_equ not ready")
     test_jit_levels(t.verbose) <|
         verify_jit(t, @@div_equ_jit)
         verify_jit(t, @@mod_equ_jit)
@@ -78,5 +77,6 @@ def div_by_zero(t: T?)
 
 [export]
 def main
-    let t = div_jit(30,7)
-    print("t = {t}\n")
+    test_jit_levels(false,true) <|
+        let t = div_equ_jit(30,7)
+        print("t = {div_equ_jit(30,7)} t = {mod_equ_jit(30,7)}\n")

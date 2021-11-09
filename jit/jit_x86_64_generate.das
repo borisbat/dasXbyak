@@ -269,7 +269,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 subRegAny32(reg,evR,expr.at)
                             elif expr.op=="/=" || expr.op=="%="
                                 idivRegAny32(reg,evR,intptr(expr),expr.at)
-                                copyRegReg32(reg,expr.op=="%" ? GpTempReg RDX : GpTempReg RAX, expr.at)
+                                copyRegReg32(reg,expr.op=="%=" ? GpTempReg RDX : GpTempReg RAX, expr.at)
                             else
                                 failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef", expr.at)
                         elif evL is stack
