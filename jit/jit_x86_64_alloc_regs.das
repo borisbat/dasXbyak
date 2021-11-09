@@ -278,7 +278,8 @@ class AllocateRegistersCodeVisitor : JitVisitor
                         evRelease(evR,expr.at)
                     else
                         // imm operators
-                        if expr.op=="-" || expr.op=="+" || expr.op=="*" || expr.op=="/" || expr.op=="%" || expr.op=="<" || expr.op=="=="
+                        if (expr.op=="-" || expr.op=="+" || expr.op=="*" || expr.op=="/" || expr.op=="%" ||
+                            expr.op=="<" || expr.op=="<=" || expr.op=="==" || expr.op=="!=" || expr.op==">=" || expr.op==">")
                             // this operators require context for the exceptions
                             if expr.op=="%" || expr.op=="/"
                                 context.use_context = true

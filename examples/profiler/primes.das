@@ -63,7 +63,7 @@ def test_primes(t: T?)
         verify_jit(t,@@primes_jit)
         verify_jit(t,@@primesI_jit)
         for vv in range(1,14)
-            let v = vv * 1000
+            let v = vv * 100
             let R = testProfile::testPrimes(v)
             let pj = primes_jit(v)
             equal(t, R, pj)

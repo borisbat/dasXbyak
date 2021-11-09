@@ -65,6 +65,8 @@ enum CompareType
     less_equals
     equals
     not_equals
+    greater
+    greater_equals
 
 def condJump ( var gen:CodeGenerator; lab:string; cond:CompareType )
     if cond==CompareType less
@@ -75,6 +77,10 @@ def condJump ( var gen:CodeGenerator; lab:string; cond:CompareType )
         je(gen,lab,LabelType T_AUTO)
     elif cond==CompareType not_equals
         jne(gen,lab,LabelType T_AUTO)
+    elif cond==CompareType greater
+        jg(gen,lab,LabelType T_AUTO)
+    elif cond==CompareType greater_equals
+        jge(gen,lab,LabelType T_AUTO)
     else
         panic("unsupported jump {cond}")
 
@@ -87,6 +93,10 @@ def condJumpIfNot ( var gen:CodeGenerator; lab:string; cond:CompareType )
         jne(gen,lab,LabelType T_AUTO)
     elif cond==CompareType not_equals
         je(gen,lab,LabelType T_AUTO)
+    elif cond==CompareType greater
+        jle(gen,lab,LabelType T_AUTO)
+    elif cond==CompareType greater_equals
+        jl(gen,lab,LabelType T_AUTO)
     else
         panic("unsupported jump {cond}")
 
@@ -96,8 +106,16 @@ def getCompareOp ( op:das_string )
 def getCompareOp ( op:string )
     if op=="<"
         return CompareType less
+    elif op=="<="
+        return CompareType less_equals
     elif op=="=="
         return CompareType equals
+    elif op=="!="
+        return CompareType not_equals
+    elif op==">"
+        return CompareType greater
+    elif op==">="
+        return CompareType greater_equals
     else
         panic("unsupported compare operation {op}")
         return CompareType always
