@@ -23,12 +23,12 @@ def test_it(a:int)
 def test_if(t: T?)
     test_jit_levels(t.verbose) <|
         verify_jit(t, @@test_it)
-        last_value=0;   test_it(13);    equal(t,last_value,13)
-        last_value=0;   test_it(1);     equal(t,last_value,0)
+        last_value=0;   test_it(13);    t |> equal(last_value,13)
+        last_value=0;   test_it(1);     t |> equal(last_value,0)
 [test]
 def test_if_else(t: T?)
     test_jit_levels <|
         verify_jit(t, @@test_ite)
-        last_value=0;   test_ite(13);   equal(t,last_value,13)
-        last_value=0;   test_ite(1);    equal(t,last_value,100001)
+        last_value=0;   test_ite(13);   t |> equal(last_value,13)
+        last_value=0;   test_ite(1);    t |> equal(last_value,100001)
 

@@ -43,14 +43,14 @@ def test_fibI_jit(t: T?)
     test_jit_levels(t.verbose) <|
         verify_jit(t,@@fibI_jit)
         let f1_j = fibI_jit(6511134)
-        equal(t, f1_j, 1781508648)
+        t |> equal( f1_j, 1781508648)
 
 [test]
 def test_fibR_jit(t: T?)
     test_jit_levels(t.verbose) <|
         verify_jit(t,@@fibR_jit)
         var f3_j = fibR_jit(31)
-        equal(t, f3_j, 1346269)
+        t |> equal( f3_j, 1346269)
 
 [export]
 def main()

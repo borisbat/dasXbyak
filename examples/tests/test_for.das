@@ -15,9 +15,9 @@ def verify_seq(var arr:array<int>)
     delete arr
 
 def verify_seq(t : T?; var arr:array<int>)
-    strictEqual(t,length(seq),length(arr))
+    t |> strictEqual(length(seq),length(arr))
     for T,S in arr,seq
-        strictEqual(t,T,S)
+        t |> strictt |> equal(S)
     delete seq
     delete arr
 

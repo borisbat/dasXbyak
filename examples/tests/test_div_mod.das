@@ -19,8 +19,8 @@ def div_and_mod(t: T?)
         for i in range(-100,100)
             for j in range(-100,100)
                 if j != 0
-                    strictEqual(t, div_jit(i,j), i/j)
-                    strictEqual(t, mod_jit(i,j), i%j)
+                    t |> strictEqual( div_jit(i,j), i/j)
+                    t |> strictEqual( mod_jit(i,j), i%j)
 
 
 [jit_x86_64]
@@ -43,8 +43,8 @@ def div_and_mod_equ(t: T?)
         for i in range(-100,100)
             for j in range(-100,100)
                 if j != 0
-                    strictEqual(t, div_equ_jit(i,j), i/j)
-                    strictEqual(t, mod_equ_jit(i,j), i%j)
+                    t |> strictEqual( div_equ_jit(i,j), i/j)
+                    t |> strictEqual( mod_equ_jit(i,j), i%j)
 
 [test]
 def div_by_zero(t: T?)

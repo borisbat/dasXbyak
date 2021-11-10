@@ -21,8 +21,8 @@ def test_inc_jit(t: T?)
         A = -1
         B = -1
         let res = test_call(13)
-        equal(t,res,124)
-        equal(t,A,13)
-        equal(t,B,14)
+        t |> equal(res,124)
+        t |> equal(A,13)
+        t |> equal(B,14)
 
 

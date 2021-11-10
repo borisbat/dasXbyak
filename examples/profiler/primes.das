@@ -66,9 +66,9 @@ def test_primes(t: T?)
             let v = vv * 100
             let R = testProfile::testPrimes(v)
             let pj = primes_jit(v)
-            equal(t, R, pj)
+            t |> equal( R, pj)
             let pji  = primesI_jit(v)
-            equal(t, R, pji)
+            t |> equal( R, pji)
 
 [export]
 def main()

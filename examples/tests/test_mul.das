@@ -19,7 +19,7 @@ def test_imul(t: T?)
         verify_jit(t, @@imul_jit)
         for i in range(-100,100)
             for j in range(-100,100)
-                strictEqual(t, imul_jit(i,j), i*j)
+                t |> strictEqual( imul_jit(i,j), i*j)
 
 [test]
 def test_imul_equ(t: T?)
@@ -27,7 +27,7 @@ def test_imul_equ(t: T?)
         verify_jit(t, @@imul_equ_jit)
         for i in range(-100,100)
             for j in range(-100,100)
-                strictEqual(t, imul_equ_jit(i,j), i*j)
+                t |> strictEqual( imul_equ_jit(i,j), i*j)
 
 [jit_x86_64]
 def imul3_jit ( a, b, c: int )
@@ -49,8 +49,8 @@ def test_imul3(t: T?)
         for i in range(-10,10)
             for j in range(-10,10)
                 for k in range(-10,10)
-                    strictEqual(t, imul3_jit(i,j,k), i*j*k)
-                    strictEqual(t, imul3_local_jit(i,j,k), i*j*k)
+                    t |> strictEqual( imul3_jit(i,j,k), i*j*k)
+                    t |> strictEqual( imul3_local_jit(i,j,k), i*j*k)
 
 [export]
 def main
