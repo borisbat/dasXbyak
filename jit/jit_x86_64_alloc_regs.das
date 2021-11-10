@@ -35,6 +35,11 @@ class AllocateRegistersCodeVisitor : JitVisitor
         var eV & = evResSet(expr)
         if eV is nothing
             eV = [[EvResult stack=stack]]
+    def evExpectCalli ( expr:ExpressionPtr; calli:uint; at:LineInfo )
+        logAt("expect call arguments {calli} {expr.__rtti}.{intptr(expr)}", at)
+        var eV & = evResSet(expr)
+        if eV is nothing
+            eV = [[EvResult calli=calli]]
     def evExpectCmp ( expr:ExpressionPtr; at:LineInfo )
         logAt("expect results in flags {expr.__rtti}.{intptr(expr)}", at)
         var eV & = evResSet(expr)
@@ -70,11 +75,6 @@ class AllocateRegistersCodeVisitor : JitVisitor
             let reg = reinterpret<XmmTempReg> idx
             logAt("allocate XMM reg {reg}", at)
             return reg
-    def allocateTempFrame(bytes:uint)       // TODO: allow 'free' of temp frame?
-        let res = context.temp_frame
-        context.temp_frame += bytes
-        log("allocated temp_frame {bytes} at {res} offset\n")
-        return context.stack_frame + res
     def setTransients(expr:smart_ptr<ExprCall>)
         context.transients[intptr(expr)] = [[Transients
             gp_mask = context.gpa |> mask(FIRST_NON_TRANSIENT_GP_TEMP_REG),
@@ -421,14 +421,12 @@ class AllocateRegistersCodeVisitor : JitVisitor
                 context.uses_rcx = true
             // allocate temp frame for arguments, 16 bytes ech, aligned
             let bytes = uint(length(expr.arguments) * 16)
-            let offset = allocateTempFrame(bytes)
-            context.tf_offset[intptr(expr)] = offset
             if expr.func.flags.copyOnReturn || expr.func.flags.moveOnReturn
                 failed("visitExprCall expr.func.flags.copyOnReturn || expr.func.flags.moveOnReturn", expr.at)
             if expr.stackTop != 0u
                 failed("visitExprCall stackTop={expr.stackTop}", expr.at)
             for argi in range(length(expr.arguments))
-                evExpectStack(expr.arguments[argi],offset+uint(argi)*16u,expr.at)
+                evExpectCalli(expr.arguments[argi],uint(argi)*16u,expr.at)
             for arg in expr.arguments
                 var eaV & = evResSet(arg)
                 evRelease(eaV,expr.at)
@@ -446,7 +444,6 @@ class AllocateRegistersCodeVisitor : JitVisitor
                         fnR = [[EvResult gpReg=reg]]
                         log("function call {expr.name} result is in {reg} for now\n")
                     log("call {expr.func._module.name}::{expr.func.name} returns {fnR}\n")
-            log("call {expr.func._module.name}::{expr.func.name} temp frame {offset}\n")
             return expr
         ////////////////////
         // TODO: calls table

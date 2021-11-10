@@ -2,15 +2,25 @@ options rtti
 require jit/jit_x86_64
 require jit/jit_x86_64_test
 
-[jit_x86_64]
-def imul3_local_jit ( a, b, c: int )
-    // this one generates lea for a 3-way imul
-    let A = a
-    let B = b
-    let C = c
-    return A * B * C
+/*
+def recv3(n1,n2,n3:int)
+    print("recv3 {n1} {n2} {n3}\n")
+
+[jit_x86_64(asm)]
+def test_call(i:int)
+    recv3(i,2,3)
+
+[test]
+def main
+    test_call(13)
+*/
+
+[jit_x86_64(asm)]
+def fibR_jit(n:int)
+    if (n < 2)
+        return n
+    return fibR_jit(n - 1) + fibR_jit(n - 2)
 
 [export]
 def main
-    let t = imul3_local_jit(-10,-9,-10)
-    print("t = {t}\n")
+    fibR_jit(31)

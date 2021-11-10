@@ -127,7 +127,8 @@ bitfield Specials           // this is how operations like /, which require idiv
 
 variant EvResult
     nothing : bool
-    stack   : uint          // [rsp+stack]
+    stack   : uint          // [rbp+stack] for local variables
+    calli   : uint          // [rsp+calli] for the current call
     gpReg   : GpTempReg     // any GP register
     gpRegT  : GpTempReg     // variable replaced via register
     xmmReg  : XmmTempReg    // any XMM register
@@ -142,14 +143,12 @@ struct Transients
 struct EvContext
     expr_res        : table<uint64; EvResult>
     temp_var        : table<uint64; GpTempReg>
-    tf_offset       : table<uint64; uint>
     transients      : table<uint64; Transients>
     specials        : table<uint64; Specials>
     labels          : table<uint64; string>
     rcx_candidates  : table<GpTempReg; int>                   // this are registers, who want to be rcx badly (i.e. divisors etc)
     gpa : RegAllocator
     xmma : RegAllocator
-    temp_frame  : uint      // where temp buffers are allocated (like calls)
     stack_frame : uint      // regular stack
     save_frame  : uint      // where transient registers are saved
     use_cmres   : bool
@@ -199,7 +198,6 @@ def replace_register_allocation ( var context:EvContext; freg, treg : GpTempReg 
 
 def dump ( ctx:EvContext )
     print("stack frame is {ctx.stack_frame}\n")
-    print("temp frame is {ctx.temp_frame} bytes\n")
     print("save frame is {ctx.save_frame} bytes\n")
     print("use context: {ctx.use_context}\n")
     print("use args: {ctx.use_args}\n")
@@ -208,12 +206,6 @@ def dump ( ctx:EvContext )
     if !ctx.uses_rcx
         let cand = join([{for k,v in keys(ctx.rcx_candidates),values(ctx.rcx_candidates); "{k}:{v}"}],", ")
         print("RCX candidates are: {cand}\n")
-    for k,v in keys(ctx.tf_offset),values(ctx.tf_offset)
-        unsafe
-            let pexpr = reinterpret<Expression?> k
-            let at & = pexpr.at
-            let fname = at.fileInfo!=null ? "{at.fileInfo.name}" : ""
-            print("\ttemp frame {k}.{pexpr.__rtti} ->  {v} at {fname}:{int(at.line)}:{int(at.column)}\n")
     print("gp temp: {length(ctx.gpa.regs)}\n")
     for t in range(length(ctx.gpa.regs))
         unsafe

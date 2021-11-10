@@ -29,7 +29,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         gen = g
 // function
     def override preVisitFunction(fun:FunctionPtr) : void
-        log("(DEF {fun.name} [STACK={context.stack_frame}, TEMP={context.temp_frame}]\n")
+        log("(DEF {fun.name} [STACK={context.stack_frame}]\n")
         rdx_has_args = true
         this_function = get_ptr(fun)
         unsafe
@@ -58,11 +58,13 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                     unsafe
                         let xmm_reg = reinterpret<XmmTempReg> (t + FIRST_NON_TRANSIENT_XMM_TEMP_REG)
                         push(REGXMM(GEN,xmm_reg))
-            sub(rsp,(context.stack_frame+context.temp_frame+8u))                // note: 8u is here to keep the stack aligned
+            sub(rsp,(context.stack_frame))
+            push(rbp)
+            mov(rbp,rsp)
     def gen_epilogue
         with_xbyak(gen) <| $ ( GEN )
-            // note: 8u is here to keep the stack aligned
-            add(rsp,(context.stack_frame+context.temp_frame+8u))
+            pop(rbp)
+            add(rsp,(context.stack_frame))
             // restore non-transient xmm regs
             let total_xmm_save = length(context.xmma.regs) - FIRST_NON_TRANSIENT_XMM_TEMP_REG
             if total_xmm_save>0
@@ -92,7 +94,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         with_xbyak(gen) <| $ ( GEN )
             let ev & = evResGet(expr)
             if ev is stack
-                mov(dword[rsp+(ev as stack)],uint64(expr.value))
+                mov(dword[rbp+(ev as stack)],uint64(expr.value))
         log(")")
         return expr
 // let
@@ -102,10 +104,14 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         if arg.init==null
             with_xbyak(gen) <| $ ( GEN )
                 let initSize = arg._type.isRef ? 8 : arg._type.sizeOf
-                if initSize==4 || initSize==2 || initSize==1
-                    mov(dword[rsp+arg.stackTop],0ul)
+                if initSize==1
+                    mov(byte[rbp+arg.stackTop],0ul)
+                elif initSize==2
+                    mov(word[rbp+arg.stackTop],0ul)
+                elif initSize==4
+                    mov(dword[rbp+arg.stackTop],0ul)
                 elif initSize==8
-                    mov(qword[rsp+arg.stackTop],0ul)
+                    mov(qword[rbp+arg.stackTop],0ul)
                 else
                     failed("visitExprLetVariable arg.init==null initSize={initSize}",expr.at)
         log(")")
@@ -124,9 +130,9 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                     else
                         failed("ExprLetVariableInit arg.init._type.ref temp_var {arg.name}:{describe(arg._type)} initSize={initSize}",arg.init.at)
                 else
-                    if initSize==4 || initSize==2 || initSize==1
+                    if initSize==4
                         copyRegAnyPtr32(GpTempReg RAX, evI, expr.at)   // here here here
-                        mov(ptr[rsp+arg.stackTop],eax)
+                        mov(ptr[rbp+arg.stackTop],eax)
                     else
                         failed("ExprLetVariableInit arg.init._type.ref {arg.name}:{describe(arg._type)} initSize={initSize}",arg.init.at)
             else
@@ -137,9 +143,9 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                     else
                         failed("ExprLetVariableInit temp_var {arg.name}:{describe(arg._type)} initSize={initSize}",arg.init.at)
                 else
-                    if initSize==4 || initSize==2 || initSize==1
+                    if initSize==4
                         copyRegAny32(GpTempReg RAX,evI,expr.at)
-                        mov(ptr[rsp+arg.stackTop],eax)
+                        mov(ptr[rbp+arg.stackTop],eax)
                     else
                         failed("ExprLetVariableInit arg.init._type {arg.name}:{describe(arg._type)} initSize={initSize}",arg.init.at)
         return  expr
@@ -163,9 +169,9 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                         let reg = ev as gpReg
                         log("[{reg}]")
                         if varSize==8
-                            mov(REG64(GEN,reg),qword[rsp+expr.variable.stackTop])
+                            mov(REG64(GEN,reg),qword[rbp+expr.variable.stackTop])
                         elif varSize==4
-                            mov(REG32(GEN,reg),dword[rsp+expr.variable.stackTop])
+                            mov(REG32(GEN,reg),dword[rbp+expr.variable.stackTop])
                         else
                             failed("ExprVar expr.varFlags.local expr.varFlags.r2v {expr.variable.name}:{describe(expr.variable._type)} varSize={varSize}", expr.at)
                     else
@@ -236,17 +242,17 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                         elif ev is stack
                             assert(evOP1 is gpReg)
                             if expr.op=="+++" || expr.op=="---"             // a++
-                                mov(REG32(GEN,evOP1 as gpReg),dword[rsp+(ev as stack)])
+                                mov(REG32(GEN,evOP1 as gpReg),dword[rbp+(ev as stack)])
                                 if expr.op=="+++"
-                                    inc(dword[rsp+(ev as stack)])
+                                    inc(dword[rbp+(ev as stack)])
                                 else
-                                    dec(dword[rsp+(ev as stack)])
+                                    dec(dword[rbp+(ev as stack)])
                             elif expr.op=="++" || expr.op=="--"             // ++a
                                 if expr.op=="++"
-                                    inc(dword[rsp+(ev as stack)])
+                                    inc(dword[rbp+(ev as stack)])
                                 else
-                                    dec(dword[rsp+(ev as stack)])
-                                mov(REG32(GEN,evOP1 as gpReg),dword[rsp+(ev as stack)])
+                                    dec(dword[rbp+(ev as stack)])
+                                mov(REG32(GEN,evOP1 as gpReg),dword[rbp+(ev as stack)])
                             else
                                 failed("ExprOp1 {expr.op} integer expr.subexpr._type.isRef ev is gpRegT", expr.at)
                         else
@@ -296,9 +302,9 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 imulStackAny32(iSP,evR,expr.at)
                             elif expr.op=="/=" || expr.op=="%="
                                 idivStackAny32(iSP,evR,intptr(expr),expr.op=="%=" ? DivResults need_rdx : DivResults need_rax,expr.at)
-                                mov(dword[rsp+iSP], expr.op=="/=" ? eax : edx)
+                                mov(dword[rbp+iSP], expr.op=="/=" ? eax : edx)
                             else
-                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef [rsp+{iSP}]...", expr.at)
+                                failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef [rbp+{iSP}]...", expr.at)
                         else
                             failed("ExprOp2 {expr.op} expr.left._type.isInteger integer expr.left._type.isRef evL={evL}", expr.at)
                     else
@@ -603,11 +609,11 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
                             movd(ecx,reg)   // for source - when on the stack - USES ECX
                             sub(ecx,eax)
-                            mov(dword[rsp+iSP],ecx)
+                            mov(dword[rbp+iSP],ecx)
                             jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                         else
                             movd(eax,reg)
-                            mov(dword[rsp+iSP],eax)
+                            mov(dword[rbp+iSP],eax)
                             shufps(reg,reg,_MM_SHUFFLE(1,1,1,1))
                             movd(ecx,reg)   // for source - when on the stack - USES ECX
                             alignForIntelJccErratum()
@@ -663,7 +669,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                         if is_for_range1_with_unused_var(expr)
                             if length(rA.arguments)==1
                                 copyRegAny32(GpTempReg RAX, rA0, expr.at)
-                                mov(dword[rsp+iSP],eax)
+                                mov(dword[rbp+iSP],eax)
                                 alignForIntelJccErratum()
                                 test(eax,eax)
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
@@ -672,19 +678,19 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 copyRegAny32(GpTempReg RAX, rA0, expr.at)
                                 copyRegAny32(GpTempReg RCX, rA1, expr.at)  //  range(a,b) when loop variables are on the stack - USES ECX
                                 sub(ecx,eax)
-                                mov(dword[rsp+iSP],ecx)
+                                mov(dword[rbp+iSP],ecx)
                                 jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                         else
                             if length(rA.arguments)==1
                                 copyRegAny32(GpTempReg RAX, rA0, expr.at)
-                                mov(dword[rsp+iSP],0ul)
+                                mov(dword[rbp+iSP],0ul)
                                 alignForIntelJccErratum()
                                 test(eax,eax)
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
                                 let rA1 & = evResGet(rA.arguments[1])
                                 copyRegAny32(GpTempReg RAX, rA0, expr.at)
-                                mov(dword[rsp+iSP],eax)
+                                mov(dword[rbp+iSP],eax)
                                 alignForIntelJccErratum()
                                 cmpAnyReg32(rA1,GpTempReg RAX,CompareType less_equals,GpTempReg BROKEN,expr.at)
                                 jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
@@ -725,13 +731,13 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                     else
                         if is_for_range1_with_unused_var(expr)
                             alignForIntelJccErratum()
-                            dec(dword[rsp+iSP])
+                            dec(dword[rbp+iSP])
                         else
-                            inc(dword[rsp+iSP])
+                            inc(dword[rbp+iSP])
                             if evS is xmmReg
                                 movd(eax,REGXMM(GEN,evS as xmmReg))
                                 alignForIntelJccErratum()
-                                cmp(dword[rsp+iSP],eax)
+                                cmp(dword[rbp+iSP],eax)
                             else
                                 let ra = expr.sources[0] as ExprCall
                                 let rA & = evResGet(ra.arguments[length(ra.arguments)==1 ? 0 : 1])
@@ -764,37 +770,43 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
 // call
     def override preVisitExprCall(expr:smart_ptr<ExprCall>): void
         log("(CALL `{expr.name}` ")
+        if !expr.func.flags.builtIn
+            with_xbyak(gen) <| $ ( GEN )
+                let frame = uint(expr.arguments |> length) * 16u
+                if frame != 0u
+                    sub(rsp,frame)
     def override visitExprCall(var expr:smart_ptr<ExprCall>) : ExpressionPtr
         if !expr.func.flags.builtIn
             rdx_has_args = false            // rdx no longer has args, since we call another function
             with_xbyak(gen) <| $ ( GEN )
-                let offset = context.tf_offset[intptr(expr)]
                 for ai in range(length(expr.arguments))
                     let asize = expr.arguments[ai]._type.isRef ? 8 : expr.arguments[ai]._type.sizeOf
                     let eA & = evResGet(expr.arguments[ai])
                     if eA is gpReg
                         if asize==4
-                            mov(dword[rsp+(offset+uint(ai)*16u)],REG32(GEN,eA as gpReg))
+                            mov(dword[rsp+uint(ai)*16u],REG32(GEN,eA as gpReg))
                         elif asize==8
-                            mov(qword[rsp+(offset+uint(ai)*16u)],REG64(GEN,eA as gpReg))
+                            mov(qword[rbp+uint(ai)*16u],REG64(GEN,eA as gpReg))
                         else
                             error("ExprCall eA is gpReg, asize={asize}",expr.at)
                     elif eA is gpRegT
                         if asize==4
-                            mov(dword[rsp+(offset+uint(ai)*16u)],REG32(GEN,eA as gpRegT))
+                            mov(dword[rsp+uint(ai)*16u],REG32(GEN,eA as gpRegT))
                         elif asize==8
-                            mov(qword[rsp+(offset+uint(ai)*16u)],REG64(GEN,eA as gpRegT))
+                            mov(qword[rsp+uint(ai)*16u],REG64(GEN,eA as gpRegT))
                         else
                             error("ExprCall eA is gpRegT, asize={asize}",expr.at)
                     elif eA is iconst
                         if asize==4
-                            mov(dword[rsp+(offset+uint(ai)*16u)],eA as iconst)
+                            mov(dword[rsp+uint(ai)*16u],eA as iconst)
                         elif asize==8
-                            mov(qword[rsp+(offset+uint(ai)*16u)],eA as iconst)
+                            mov(qword[rsp+uint(ai)*16u],eA as iconst)
                         else
                             error("ExprCall eA is iconst, asize={asize}",expr.at)
                     else
                         error("ExprCall eA={eA}",expr.at)
+                // rdx is ARGS
+                lea(rdx,ptr[rsp])
                 var MNH_ADDR : uint64
                 unsafe
                     let mangled_name = get_mangled_name(reinterpret<FunctionPtr> expr.func)
@@ -811,14 +823,14 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                 for t in urange(FIRST_NON_TRANSIENT_XMM_TEMP_REG)
                     if (transients.xmm_mask & (1u<<t)) != 0u
                         xmm_total ++
-                if xmm_total != 0u                                  // TODO: if no gp transients and xmm transients, we generate double sub(rsp,const)
+                if xmm_total != 0u                                  // TODO: if no gp transients and xmm transients, we generate double sub(rbp,const)
                     sub(rsp,xmm_total * 16u)
                 for t in urange(FIRST_NON_TRANSIENT_XMM_TEMP_REG)
                     if (transients.xmm_mask & (1u<<t)) != 0u
                         var txmm : XmmTempReg
                         unsafe
                             txmm = reinterpret<XmmTempReg> t
-                        movdqa(ptr[rsp+t_offset],REGXMM(GEN,txmm))
+                        movdqa(ptr[rbp+t_offset],REGXMM(GEN,txmm))
                         t_offset += 16u
                 for t in urange(FIRST_NON_TRANSIENT_GP_TEMP_REG)
                     if (transients.gp_mask & (1u<<t)) != 0u
@@ -831,16 +843,14 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                 if recursive_call
                     // setup arguments
                     let ctx_offset = getContextOffset()
-                    if context.use_context                          // in recursive call, if context is not used - don't pass
-                        mov(rcx,qword[rsp+(ctx_offset+t_offset)])   // rcx is Context *
-                    lea(rdx,ptr[rsp+(offset+t_offset)])             // rdx is ARGS
-                    // sub(r8,r8)                                   // r8 is CMRES
+                    if context.use_context                      // in recursive call, if context is not used - don't pass
+                        mov(rcx,qword[rbp+ctx_offset])          // rcx is Context *
+                    // sub(r8,r8)                               // r8 is CMRES
                 else
                     // setup arguments
-                    let ctx_offset = getContextOffset()                     // any non-recursive call -USES ECX
-                    mov(rcx,uint64(MNH_ADDR))                               // rcx is MNH
-                    lea(rdx,ptr[rsp+(offset+t_offset)])                     // rdx is ARGS
-                    mov(r8,ptr[rsp+(ctx_offset+t_offset)])                  // r8  is Context *
+                    let ctx_offset = getContextOffset()          // any non-recursive call -USES ECX
+                    mov(rcx,uint64(MNH_ADDR))                    // rcx is MNH
+                    mov(r8,ptr[rbp+ctx_offset])                  // r8  is Context *
                 // call must be aligned, so if even number of transient registers is saved - we add extra 8 bytes
                 sub(rsp,(t_total & 1) != 0 ? 40u : 32u)
                 if recursive_call
@@ -862,10 +872,14 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                         var txmm : XmmTempReg
                         unsafe
                             txmm = reinterpret<XmmTempReg> t
-                        movdqa(REGXMM(GEN,txmm),ptr[rsp+rt_offset])
+                        movdqa(REGXMM(GEN,txmm),ptr[rbp+rt_offset])
                         rt_offset += 16u
-                if xmm_total != 0u                                          // TODO: if no gp transients and xmm transients, we generate double add(rsp,const)
+                if xmm_total != 0u                                          // TODO: if no gp transients and xmm transients, we generate double add(rbp,const)
                     add(rsp,xmm_total * 16u)
+                // restore call frame
+                let frame = uint(expr.arguments |> length) * 16u
+                if frame != 0u
+                    add(rsp,frame)
                 // move result to xmm0
                 if expr.func.result != null
                     if expr.func.result.isRef
