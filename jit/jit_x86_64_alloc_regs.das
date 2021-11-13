@@ -32,22 +32,22 @@ class AllocateRegistersCodeVisitor : JitVisitor
             context.specials[key] = spc
     def evExpectStack ( expr:ExpressionPtr; stack:uint; at:LineInfo )
         logAt("expect stack {stack} {expr.__rtti}.{intptr(expr)}", at)
-        var eV & = evResSet(expr)
+        var eV & = unsafe(evResSet(expr))
         if eV is nothing
             eV = [[EvResult stack=stack]]
     def evExpectCalli ( expr:ExpressionPtr; calli:uint; at:LineInfo )
         logAt("expect call arguments {calli} {expr.__rtti}.{intptr(expr)}", at)
-        var eV & = evResSet(expr)
+        var eV & = unsafe(evResSet(expr))
         if eV is nothing
             eV = [[EvResult calli=calli]]
     def evExpectCmp ( expr:ExpressionPtr; at:LineInfo )
         logAt("expect results in flags {expr.__rtti}.{intptr(expr)}", at)
-        var eV & = evResSet(expr)
+        var eV & = unsafe(evResSet(expr))
         if eV is nothing
             eV = [[EvResult cmp=CompareType always]]
     def evExpectNothing ( expr:ExpressionPtr; at:LineInfo )
         logAt("expect nothing {expr.__rtti}.{intptr(expr)}", at)
-        var eV & = evResSet(expr)
+        var eV & = unsafe(evResSet(expr))
         if eV is nothing
             eV = [[EvResult skip=true]]
     def evRelease ( var res:EvResult; at:LineInfo )
@@ -81,7 +81,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
             xmm_mask = context.xmma |> mask(FIRST_NON_TRANSIENT_XMM_TEMP_REG)
         ]]
     def acceptConstR64 ( expr:smart_ptr<Expression>; value:uint64 )
-        var ev & = evResSet(expr)
+        var ev & = unsafe(evResSet(expr))
         if !(ev is stack)
             ev = [[EvResult iconst=value]]
         return expr
@@ -113,7 +113,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
         // keep local variables on local_stack
         local_stack_depth |> push(length(local_stack))
     def override visitExprBlockExpression(blk:smart_ptr<ExprBlock>;expr:ExpressionPtr) : ExpressionPtr
-        var topE & = evResSet(expr)
+        var topE & = unsafe(evResSet(expr))
         evRelease(topE,expr.at)
         return expr
     def override visitExprBlock(blk:smart_ptr<ExprBlock>) : ExpressionPtr
@@ -161,7 +161,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
                 evExpectStack(arg.init,arg.stackTop,expr.at)
     def override visitExprLetVariableInit(blk:smart_ptr<ExprLet>;arg:VariablePtr;expr:ExpressionPtr) : ExpressionPtr
         // if result alrady comes on our stack, we are good
-        var evI & = evResSet(arg.init)
+        var evI & = unsafe(evResSet(arg.init))
         if (evI ?as stack ?? -1u)==arg.stackTop
             return expr
         // after init, we are done with arg.init
@@ -169,7 +169,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
         return  expr
 // variable
     def override visitExprVar(expr:smart_ptr<ExprVar>) : ExpressionPtr
-        var ev & = evResSet(expr)
+        var ev & = unsafe(evResSet(expr))
         let varSize = expr._type.isRef ? 8 : expr._type.sizeOf
         if expr.varFlags._block
             failed("{expr.variable.name} support block variable", expr.at)
@@ -208,8 +208,8 @@ class AllocateRegistersCodeVisitor : JitVisitor
         return expr
 // op1
     def override visitExprOp1(expr:smart_ptr<ExprOp1>) : ExpressionPtr
-        var ev & = evResSet(expr.subexpr)
-        var evOP1 & = evResSet(expr)
+        var ev & = unsafe(evResSet(expr.subexpr))
+        var evOP1 & = unsafe(evResSet(expr))
         if expr.subexpr._type.isWorkhorseType
             if expr.subexpr._type |> is_gpreg_type
                 if expr.op=="++" || expr.op=="+++" || expr.op=="--" || expr.op=="---"
@@ -233,9 +233,9 @@ class AllocateRegistersCodeVisitor : JitVisitor
         return expr
 // op2
     def override preVisitExprOp2(expr:smart_ptr<ExprOp2>): void
-        var evL & = evResSet(expr.left)
-        var evR & = evResSet(expr.right)
-        var evOP2 & = evResSet(expr)
+        var evL & = unsafe(evResSet(expr.left))
+        var evR & = unsafe(evResSet(expr.right))
+        var evOP2 & = unsafe(evResSet(expr))
         if expr.left._type.isWorkhorseType
             if expr.left._type |> is_gpreg_type
                 if expr.left._type.isRef
@@ -257,9 +257,9 @@ class AllocateRegistersCodeVisitor : JitVisitor
                             // division by iconst uses rcx
                             context.uses_rcx = true
     def override visitExprOp2(expr:smart_ptr<ExprOp2>) : ExpressionPtr
-        var evL & = evResSet(expr.left)
-        var evR & = evResSet(expr.right)
-        var evOP2 & = evResSet(expr)
+        var evL & = unsafe(evResSet(expr.left))
+        var evR & = unsafe(evResSet(expr.right))
+        var evOP2 & = unsafe(evResSet(expr))
         if expr.left._type.isWorkhorseType
             if expr.left._type |> is_gpreg_type
                 if expr.op=="/" || expr.op=="%"
@@ -319,7 +319,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
     def override preVisitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : void
         evExpectCmp(expr.cond,expr.cond.at)
     def override visitExprIfThenElse(expr:smart_ptr<ExprIfThenElse>) : ExpressionPtr
-        var evCond & = evResSet(expr.cond)
+        var evCond & = unsafe(evResSet(expr.cond))
         evRelease(evCond,expr.at)
         return expr
 // op3
@@ -327,10 +327,10 @@ class AllocateRegistersCodeVisitor : JitVisitor
         evExpectCmp(expr.subexpr,expr.at)
     def override visitExprOp3(expr:smart_ptr<ExprOp3>) : ExpressionPtr
         // TODO: support result type
-        var evS & = evResSet(expr.subexpr)
-        var evL & = evResSet(expr.left)
-        var evR & = evResSet(expr.right)
-        var evOP3 & = evResSet(expr)
+        var evS & = unsafe(evResSet(expr.subexpr))
+        var evL & = unsafe(evResSet(expr.left))
+        var evR & = unsafe(evResSet(expr.right))
+        var evOP3 & = unsafe(evResSet(expr))
         if evL is gpReg
             // if left one is there - we use that as result
             evOP3 = evL
@@ -351,8 +351,8 @@ class AllocateRegistersCodeVisitor : JitVisitor
         return expr
 // copy
     def override visitExprCopy(expr:smart_ptr<ExprCopy>) : ExpressionPtr
-        var evL & = evResSet(expr.left)
-        var evR & = evResSet(expr.right)
+        var evL & = unsafe(evResSet(expr.left))
+        var evR & = unsafe(evResSet(expr.right))
         // after copy we are done with both sides
         evRelease(evL,expr.at)
         evRelease(evR,expr.at)
@@ -361,7 +361,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
     def override visitExprReturn(expr:smart_ptr<ExprReturn>) : ExpressionPtr
         if expr.subexpr!=null
             // if there is return (subexpr), we are done with it
-            var evR & = evResSet(expr.subexpr)
+            var evR & = unsafe(evResSet(expr.subexpr))
             evRelease(evR,expr.at)
         return expr
 // for
@@ -389,7 +389,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
             var crange = expr.sources[0] as ExprCall
             if length(crange.arguments)==2
                 // if its range(from,to) than we only need the 'to' part
-                var evA0 & = evResSet(crange.arguments[0])
+                var evA0 & = unsafe(evResSet(crange.arguments[0]))
                 evRelease(evA0, expr.body.at)
     def override visitExprFor(expr:smart_ptr<ExprFor>) : ExpressionPtr
         if put_loop_variables_in_registers
@@ -400,16 +400,16 @@ class AllocateRegistersCodeVisitor : JitVisitor
         // we are done with all sources by the time we are done with loop
         // body would be too early, cause sources used at the loop end to check
         for src in expr.sources
-            var evS & = evResSet(src)
+            var evS & = unsafe(evResSet(src))
             evRelease(evS,expr.body.at)
         if is_for_range1_RANGE(expr)
             // now its time to release the remainder of the range goo
             var crange = expr.sources[0] as ExprCall
             if length(crange.arguments)==2
-                var evA1 & = evResSet(crange.arguments[1])
+                var evA1 & = unsafe(evResSet(crange.arguments[1]))
                 evRelease(evA1, expr.body.at)
             else
-                var evA0 & = evResSet(crange.arguments[0])
+                var evA0 & = unsafe(evResSet(crange.arguments[0]))
                 evRelease(evA0, expr.body.at)
         return expr
 // call
@@ -428,14 +428,14 @@ class AllocateRegistersCodeVisitor : JitVisitor
             for argi in range(length(expr.arguments))
                 evExpectCalli(expr.arguments[argi],uint(argi)*16u,expr.at)
             for arg in expr.arguments
-                var eaV & = evResSet(arg)
+                var eaV & = unsafe(evResSet(arg))
                 evRelease(eaV,expr.at)
             setTransients(expr)
             if expr.func.result != null
                 if expr.func.result.isRef
                     failed("visitExprCall expr.func.result!=null expr.func.result.isRef", expr.at)
                 else
-                    var fnR & = evResSet(expr)
+                    var fnR & = unsafe(evResSet(expr))
                     if expr.func.result.isVectorType
                         let reg = allocateXMM(expr.at)
                         fnR = [[EvResult xmmReg=reg]]
@@ -457,12 +457,12 @@ class AllocateRegistersCodeVisitor : JitVisitor
     /////////////////////
     // function templates
     def JIT`range(var expr:smart_ptr<ExprCall>)
-        let evJ & = evResGet(expr)
+        let evJ & = unsafe(evResGet(expr))
         if evJ is skip
             return
         // release arugments
         for ai in range(length(expr.arguments))
-            var evA & = evResSet(expr.arguments[ai])
+            var evA & = unsafe(evResSet(expr.arguments[ai]))
             evRelease(evA,expr.at)
         // range retursn result in an xmm register
         let xreg = allocateXMM(expr.at)

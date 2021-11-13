@@ -92,7 +92,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         log("(INT32 {expr.value})")
     def override visitExprConstInt(expr:smart_ptr<ExprConstInt>) : ExpressionPtr
         with_xbyak(gen) <| $ ( GEN )
-            let ev & = evResGet(expr)
+            let ev & = unsafe(evResGet(expr))
             if ev is stack
                 mov(dword[rbp+(ev as stack)],uint64(expr.value))
         log(")")
@@ -117,7 +117,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         log(")")
         return arg
     def override visitExprLetVariableInit(blk:smart_ptr<ExprLet>;arg:VariablePtr;expr:ExpressionPtr) : ExpressionPtr
-        let evI & = evResGet(arg.init)
+        let evI & = unsafe(evResGet(arg.init))
         if (evI ?as stack ?? -1u)==arg.stackTop
             return expr
         with_xbyak(gen) <| $ ( GEN )
@@ -155,7 +155,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         if expr.varFlags.r2v
             log("R2V ")
     def override visitExprVar(expr:smart_ptr<ExprVar>) : ExpressionPtr
-        let ev & = evResGet(expr)
+        let ev & = unsafe(evResGet(expr))
         with_xbyak(gen) <| $ ( GEN )
             if expr.varFlags._block
                 failed("ExprVar expr.varFlags._block {expr.variable.name}:{describe(expr.variable._type)}", expr.at)
@@ -208,8 +208,8 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
     def override preVisitExprOp1(expr:smart_ptr<ExprOp1>) : void
         log("(OP1 {expr.op} ")
     def override visitExprOp1(expr:smart_ptr<ExprOp1>) : ExpressionPtr
-        let ev & = evResGet(expr.subexpr)
-        let evOP1 & = evResGet(expr)
+        let ev & = unsafe(evResGet(expr.subexpr))
+        let evOP1 & = unsafe(evResGet(expr))
         with_xbyak(gen) <| $ ( GEN )
             if expr.subexpr._type.isInteger
                 if expr.subexpr._type.baseType==Type tInt || expr.subexpr._type.baseType==Type tUInt
@@ -271,9 +271,9 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
 
 
     def override visitExprOp2(expr:smart_ptr<ExprOp2>) : ExpressionPtr
-        let evOP2 &  = evResGet(expr)
-        let evL & = evResGet(expr.left)
-        let evR & = evResGet(expr.right)
+        let evOP2 &  = unsafe(evResGet(expr))
+        let evL & = unsafe(evResGet(expr.left))
+        let evR & = unsafe(evResGet(expr.right))
         with_xbyak(gen) <| $ ( GEN )
             if expr.left._type.isInteger
                 if expr.left._type.baseType==Type tInt
@@ -416,7 +416,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
             tab ++
             print("(IF\n{repeat("\t",tab)}")
     def override preVisitExprIfThenElseIfBlock(expr:smart_ptr<ExprIfThenElse>;ifBlock:ExpressionPtr) : void
-        let evS & = evResGet(expr.cond)
+        let evS & = unsafe(evResGet(expr.cond))
         with_xbyak(gen) <| $ ( GEN )
             if evS is gpReg
                 alignForIntelJccErratum()
@@ -459,7 +459,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
     def override preVisitExprOp3(expr:smart_ptr<ExprOp3>): void
         log("(? ")
     def override preVisitExprOp3Left(expr:smart_ptr<ExprOp3>;left:ExpressionPtr): void
-        let evS & = evResGet(expr.subexpr)
+        let evS & = unsafe(evResGet(expr.subexpr))
         with_xbyak(gen) <| $ ( GEN )
             if evS is gpReg
                 alignForIntelJccErratum()
@@ -471,16 +471,16 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                 failed("supprt cond subexpr in {evS}", expr.at)
         log(" ? ")
     def override preVisitExprOp3Right(expr:smart_ptr<ExprOp3>;right:ExpressionPtr): void
-        let eV & = evResGet(expr)
-        let evL & = evResGet(expr.left)
+        let eV & = unsafe(evResGet(expr))
+        let evL & = unsafe(evResGet(expr.left))
         with_xbyak(gen) <| $ ( GEN )
             copyRegAny32(eV as gpReg,evL,expr.at)
             jmp("cond_end_{intptr(expr)}",LabelType T_AUTO)
             Label("cond_right_{intptr(expr)}");  rdx_has_args = false
         log(" : ")
     def override visitExprOp3(expr:smart_ptr<ExprOp3>) : ExpressionPtr
-        let eV & = evResGet(expr)
-        let evR & = evResGet(expr.right)
+        let eV & = unsafe(evResGet(expr))
+        let evR & = unsafe(evResGet(expr.right))
         with_xbyak(gen) <| $ ( GEN )
             copyRegAny32(eV as gpReg,evR,expr.at)
             Label("cond_end_{intptr(expr)}");  rdx_has_args = false
@@ -490,8 +490,8 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
     def override preVisitExprCopy(expr:smart_ptr<ExprCopy>): void
         log("(COPY ")
     def override visitExprCopy(expr:smart_ptr<ExprCopy>) : ExpressionPtr
-        let evL & = evResGet(expr.left)
-        let evR & = evResGet(expr.right)
+        let evL & = unsafe(evResGet(expr.left))
+        let evR & = unsafe(evResGet(expr.right))
         log("EVL={evL},EVR={evR} ")
         with_xbyak(gen) <| $ ( GEN )
             let copySize = expr.left._type.sizeOf
@@ -537,7 +537,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
             elif expr.returnFlags.takeOverRightStack
                 failed("ExprReturn expr.returnFlags.takeOverRightStack", expr.at)
             else
-                let evR & = evResGet(expr.subexpr)
+                let evR & = unsafe(evResGet(expr.subexpr))
                 if length(expr.subexpr._type.dim)!=0
                     failed("ExprReturn expr.subexpr._type.dim", expr.at)
                 if expr.subexpr._type |> is_gpreg_type
@@ -583,10 +583,10 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         log("(SOURCE ")
     def override visitExprForSource(expr:smart_ptr<ExprFor>;source:ExpressionPtr;last:bool) : ExpressionPtr
         if is_for_range1(expr)
-            let evS & = evResGet(source)
+            let evS & = unsafe(evResGet(source))
             with_xbyak(gen) <| $ ( GEN )
                 if evS is xmmReg
-                    let reg & = REGXMM(GEN,evS as xmmReg)
+                    let reg & = unsafe(REGXMM(GEN,evS as xmmReg))
                     if context.temp_var |> key_exists(intptr(expr.iteratorVariables[0]))
                         let RV = context.temp_var[intptr(expr.iteratorVariables[0])]
                         if is_for_range1_with_unused_var(expr)
@@ -621,7 +621,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                             jle("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                 elif evS is skip
                     let rA = source as ExprCall
-                    let rA0 & = evResGet(rA.arguments[0])
+                    let rA0 & = unsafe(evResGet(rA.arguments[0]))
                     if context.temp_var |> key_exists(intptr(expr.iteratorVariables[0]))
                         let RV = context.temp_var[intptr(expr.iteratorVariables[0])]
                         if is_for_range1_with_unused_var(expr)
@@ -631,7 +631,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 test(REG32(GEN,RV),REG32(GEN,RV))
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
-                                let rA1 & = evResGet(rA.arguments[1])
+                                let rA1 & = unsafe(evResGet(rA.arguments[1]))
                                 copyRegAny32(RV, rA1, expr.at)
                                 if rA0 is gpReg
                                     alignForIntelJccErratum()
@@ -659,7 +659,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                     test(eax,eax)
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
-                                let rA1 & = evResGet(rA.arguments[1])
+                                let rA1 & = unsafe(evResGet(rA.arguments[1]))
                                 copyRegAny32(RV, rA0, expr.at)
                                 alignForIntelJccErratum()
                                 cmpAnyReg32(rA1,RV,CompareType less_equals,GpTempReg RAX,expr.at)
@@ -674,7 +674,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 test(eax,eax)
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
-                                let rA1 & = evResGet(rA.arguments[1])
+                                let rA1 & = unsafe(evResGet(rA.arguments[1]))
                                 copyRegAny32(GpTempReg RAX, rA0, expr.at)
                                 copyRegAny32(GpTempReg RCX, rA1, expr.at)  //  range(a,b) when loop variables are on the stack - USES ECX
                                 sub(ecx,eax)
@@ -688,7 +688,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 test(eax,eax)
                                 jz("for_loop_done_{intptr(expr)}",LabelType T_AUTO)
                             else
-                                let rA1 & = evResGet(rA.arguments[1])
+                                let rA1 & = unsafe(evResGet(rA.arguments[1]))
                                 copyRegAny32(GpTempReg RAX, rA0, expr.at)
                                 mov(dword[rbp+iSP],eax)
                                 alignForIntelJccErratum()
@@ -707,7 +707,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
         log("\n")
     def override visitExprFor(expr:smart_ptr<ExprFor>) : ExpressionPtr
         if is_for_range1(expr)
-            let evS & = evResGet(expr.sources[0])
+            let evS & = unsafe(evResGet(expr.sources[0]))
             with_xbyak(gen) <| $ ( GEN )
                 Label("for_loop_continue_{intptr(expr)}");  rdx_has_args = false
                 let iSP = expr.iteratorVariables[0].stackTop
@@ -725,7 +725,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 cmp(REG32(GEN,RV),eax)
                             else
                                 let ra = expr.sources[0] as ExprCall
-                                let rA & = evResGet(ra.arguments[length(ra.arguments)==1 ? 0 : 1])
+                                let rA & = unsafe(evResGet(ra.arguments[length(ra.arguments)==1 ? 0 : 1]))
                                 alignForIntelJccErratum()
                                 cmpRegAny32(RV,rA,CompareType not_equals,expr.at)
                     else
@@ -740,7 +740,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                                 cmp(dword[rbp+iSP],eax)
                             else
                                 let ra = expr.sources[0] as ExprCall
-                                let rA & = evResGet(ra.arguments[length(ra.arguments)==1 ? 0 : 1])
+                                let rA & = unsafe(evResGet(ra.arguments[length(ra.arguments)==1 ? 0 : 1]))
                                 alignForIntelJccErratum()
                                 cmpStackAny32(int(iSP),rA,CompareType not_equals,GpTempReg RAX,expr.at)
                     jnz("for_loop_{intptr(expr)}",LabelType T_AUTO)
@@ -781,7 +781,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
             with_xbyak(gen) <| $ ( GEN )
                 for ai in range(length(expr.arguments))
                     let asize = expr.arguments[ai]._type.isRef ? 8 : expr.arguments[ai]._type.sizeOf
-                    let eA & = evResGet(expr.arguments[ai])
+                    let eA & = unsafe(evResGet(expr.arguments[ai]))
                     if eA is gpReg
                         if asize==4
                             mov(dword[rsp+uint(ai)*16u],REG32(GEN,eA as gpReg))
@@ -887,7 +887,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                     elif expr.func.result.isVoid
                         pass    // if void - no output
                     else
-                        let fnR & = evResGet(expr)
+                        let fnR & = unsafe(evResGet(expr))
                         let asize = expr.func.result.sizeOf
                         if fnR is gpReg
                             if asize==4 || asize==2 || asize==1
@@ -910,13 +910,13 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
     // function templates
     def JIT`range(var expr:smart_ptr<ExprCall>)
         with_xbyak(gen) <| $ ( GEN )
-            let evR & = evResGet(expr)
+            let evR & = unsafe(evResGet(expr))
             if evR is skip  // if skip is set, someone else is taking over the result and wants inputs
                 return
             let xreg = evR as xmmReg
             // range(int)
             if length(expr.arguments)==1 && expr.arguments[0]._type.baseType==Type tInt
-                let evA0 & = evResGet(expr.arguments[0])
+                let evA0 & = unsafe(evResGet(expr.arguments[0]))
                 if evA0 is gpReg
                     shl(REG64(GEN,evA0 as gpReg),32)
                     movd(REGXMM(GEN,xreg),REG64(GEN,evA0 as gpReg))
@@ -930,8 +930,8 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
             // range(int,int)
             elif length(expr.arguments)==2 && expr.arguments[0]._type.baseType==Type tInt && expr.arguments[1]._type.baseType==Type tInt
                 rdx_has_args = false
-                let evA0 & = evResGet(expr.arguments[0])
-                let evA1 & = evResGet(expr.arguments[1])
+                let evA0 & = unsafe(evResGet(expr.arguments[0]))
+                let evA1 & = unsafe(evResGet(expr.arguments[1]))
                 copyRegAny32(GpTempReg RDX,evA1,expr.at)
                 copyRegAny32(GpTempReg RAX,evA0,expr.at)
                 shl(rax,32)
