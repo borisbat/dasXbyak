@@ -1326,7 +1326,7 @@ class LabelManager {
 		SlabelVal(size_t offset) : offset(offset) {}
 	};
 	typedef XBYAK_STD_UNORDERED_MAP<std::string, SlabelVal> SlabelDefList;
-	typedef XBYAK_STD_UNORDERED_MULTIMAP<std::string, const JmpLabel> SlabelUndefList;
+	typedef XBYAK_STD_UNORDERED_MULTIMAP<std::string, JmpLabel> SlabelUndefList;
 	struct SlabelState {
 		SlabelDefList defList;
 		SlabelUndefList undefList;
@@ -1339,7 +1339,7 @@ class LabelManager {
 		int refCount;
 	};
 	typedef XBYAK_STD_UNORDERED_MAP<int, ClabelVal> ClabelDefList;
-	typedef XBYAK_STD_UNORDERED_MULTIMAP<int, const JmpLabel> ClabelUndefList;
+	typedef XBYAK_STD_UNORDERED_MULTIMAP<int,JmpLabel> ClabelUndefList;
 	typedef XBYAK_STD_UNORDERED_SET<Label*> LabelPtrList;
 
 	CodeArray *base_;
