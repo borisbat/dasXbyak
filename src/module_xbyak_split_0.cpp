@@ -53,13 +53,6 @@ addExtern<DAS_BIND_FUN(Xbyak::AlignedFree)>(*this, lib, "AlignedFree",SideEffect
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-#ifdef _MSC_VER
-addExtern<DAS_BIND_FUN(__report_gsfailure)>(*this, lib, "__report_gsfailure",SideEffects::worstDefault, "__report_gsfailure")
-	->args({"_StackCookie"})
-;
-#endif
-#endif
-#ifdef GLOBAL_NAMESPACE
 addExtern<DAS_BIND_FUN(Xbyak::GetError)>(*this, lib, "GetError",SideEffects::worstDefault, "Xbyak::GetError")
 	->args({})
 ;
