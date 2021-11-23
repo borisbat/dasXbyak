@@ -101,7 +101,7 @@
 	#undef XBYAK_USE_MEMFD
 #endif
 
-#if defined(_WIN64) || defined(__MINGW64__) || (defined(__CYGWIN__) && defined(__x86_64__))
+#if defined(_WIN64) || defined(__MINGW64__) || (defined(__CYGWIN__) && defined(__x86_64__)) || (defined(__clang__) && defined(_MSC_VER))
 	#define XBYAK64_WIN
 #elif defined(__x86_64__)
 	#define XBYAK64_GCC
