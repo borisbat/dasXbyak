@@ -29,6 +29,6 @@ namespace das {
     uint64_t das_get_JIT_call_or_fastcall ( );
     void JIT_exception ( const char * text, Context * context );
     uint64_t das_get_JIT_exception ( );
-    uint64_t das_get_SimFunction_by_MNH ( uint32_t MNH, Context * context );
+    uint64_t das_get_SimFunction_by_MNH ( uint64_t MNH, Context * context );
     uint64_t das_get_const_string_offset ( const char * text, Context * context, LineInfoArg * at );
 }

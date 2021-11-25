@@ -144,7 +144,7 @@ namespace das {
         return (uint64_t) &JIT_exception;
     }
 
-    uint64_t das_get_SimFunction_by_MNH ( uint32_t MNH, Context * context ) {
+    uint64_t das_get_SimFunction_by_MNH ( uint64_t MNH, Context * context ) {
         return (uint64_t) context->fnByMangledName(MNH);
     }
 
