@@ -4,6 +4,20 @@
 
 #ifdef GLOBAL_NAMESPACE
 
+class EnumerationPreferredEncoding : public das::Enumeration {
+public:
+    EnumerationPreferredEncoding() : das::Enumeration("PreferredEncoding") {
+        external = true;
+        cppName = "Xbyak::PreferredEncoding";
+        baseType = (das::Type) das::ToBasicType< das::underlying_type< Xbyak::PreferredEncoding >::type >::type;
+		addIEx("DefaultEncoding", "DefaultEncoding", int64_t(Xbyak::PreferredEncoding::DefaultEncoding), das::LineInfo());
+		addIEx("VexEncoding", "VexEncoding", int64_t(Xbyak::PreferredEncoding::VexEncoding), das::LineInfo());
+		addIEx("EvexEncoding", "EvexEncoding", int64_t(Xbyak::PreferredEncoding::EvexEncoding), das::LineInfo());
+	}
+};
+#endif
+#ifdef GLOBAL_NAMESPACE
+
 class EnumerationCode : public das::Enumeration {
 public:
     EnumerationCode() : das::Enumeration("Code") {
@@ -83,6 +97,20 @@ public:
 #endif
 #ifdef GLOBAL_NAMESPACE
 
+class EnumerationLabelMode : public das::Enumeration {
+public:
+    EnumerationLabelMode() : das::Enumeration("LabelMode") {
+        external = true;
+        cppName = "Xbyak::inner::LabelMode";
+        baseType = (das::Type) das::ToBasicType< das::underlying_type< Xbyak::inner::LabelMode >::type >::type;
+		addIEx("LasIs", "LasIs", int64_t(Xbyak::inner::LabelMode::LasIs), das::LineInfo());
+		addIEx("Labs", "Labs", int64_t(Xbyak::inner::LabelMode::Labs), das::LineInfo());
+		addIEx("LaddTop", "LaddTop", int64_t(Xbyak::inner::LabelMode::LaddTop), das::LineInfo());
+	}
+};
+#endif
+#ifdef GLOBAL_NAMESPACE
+
 class EnumerationProtectMode : public das::Enumeration {
 public:
     EnumerationProtectMode() : das::Enumeration("ProtectMode") {
@@ -92,6 +120,35 @@ public:
 		addIEx("PROTECT_RW", "PROTECT_RW", int64_t(Xbyak::CodeArray::ProtectMode::PROTECT_RW), das::LineInfo());
 		addIEx("PROTECT_RWE", "PROTECT_RWE", int64_t(Xbyak::CodeArray::ProtectMode::PROTECT_RWE), das::LineInfo());
 		addIEx("PROTECT_RE", "PROTECT_RE", int64_t(Xbyak::CodeArray::ProtectMode::PROTECT_RE), das::LineInfo());
+	}
+};
+#endif
+#ifdef GLOBAL_NAMESPACE
+
+class EnumerationMode : public das::Enumeration {
+public:
+    EnumerationMode() : das::Enumeration("Mode") {
+        external = true;
+        cppName = "Xbyak::Address::Mode";
+        baseType = (das::Type) das::ToBasicType< das::underlying_type< Xbyak::Address::Mode >::type >::type;
+		addIEx("M_ModRM", "M_ModRM", int64_t(Xbyak::Address::Mode::M_ModRM), das::LineInfo());
+		addIEx("M_64bitDisp", "M_64bitDisp", int64_t(Xbyak::Address::Mode::M_64bitDisp), das::LineInfo());
+		addIEx("M_rip", "M_rip", int64_t(Xbyak::Address::Mode::M_rip), das::LineInfo());
+		addIEx("M_ripAddr", "M_ripAddr", int64_t(Xbyak::Address::Mode::M_ripAddr), das::LineInfo());
+	}
+};
+#endif
+#ifdef GLOBAL_NAMESPACE
+
+class EnumerationLabelType : public das::Enumeration {
+public:
+    EnumerationLabelType() : das::Enumeration("LabelType") {
+        external = true;
+        cppName = "Xbyak::CodeGenerator::LabelType";
+        baseType = (das::Type) das::ToBasicType< das::underlying_type< Xbyak::CodeGenerator::LabelType >::type >::type;
+		addIEx("T_SHORT", "T_SHORT", int64_t(Xbyak::CodeGenerator::LabelType::T_SHORT), das::LineInfo());
+		addIEx("T_NEAR", "T_NEAR", int64_t(Xbyak::CodeGenerator::LabelType::T_NEAR), das::LineInfo());
+		addIEx("T_AUTO", "T_AUTO", int64_t(Xbyak::CodeGenerator::LabelType::T_AUTO), das::LineInfo());
 	}
 };
 #endif
@@ -114,63 +171,6 @@ public:
 		addIEx("OPMASK", "OPMASK", int64_t(Xbyak::Operand::Kind::OPMASK), das::LineInfo());
 		addIEx("BNDREG", "BNDREG", int64_t(Xbyak::Operand::Kind::BNDREG), das::LineInfo());
 		addIEx("TMM", "TMM", int64_t(Xbyak::Operand::Kind::TMM), das::LineInfo());
-	}
-};
-#endif
-#ifdef GLOBAL_NAMESPACE
-
-class EnumerationMode : public das::Enumeration {
-public:
-    EnumerationMode() : das::Enumeration("Mode") {
-        external = true;
-        cppName = "Xbyak::Address::Mode";
-        baseType = (das::Type) das::ToBasicType< das::underlying_type< Xbyak::Address::Mode >::type >::type;
-		addIEx("M_ModRM", "M_ModRM", int64_t(Xbyak::Address::Mode::M_ModRM), das::LineInfo());
-		addIEx("M_64bitDisp", "M_64bitDisp", int64_t(Xbyak::Address::Mode::M_64bitDisp), das::LineInfo());
-		addIEx("M_rip", "M_rip", int64_t(Xbyak::Address::Mode::M_rip), das::LineInfo());
-		addIEx("M_ripAddr", "M_ripAddr", int64_t(Xbyak::Address::Mode::M_ripAddr), das::LineInfo());
-	}
-};
-#endif
-#ifdef GLOBAL_NAMESPACE
-
-class EnumerationLabelMode : public das::Enumeration {
-public:
-    EnumerationLabelMode() : das::Enumeration("LabelMode") {
-        external = true;
-        cppName = "Xbyak::inner::LabelMode";
-        baseType = (das::Type) das::ToBasicType< das::underlying_type< Xbyak::inner::LabelMode >::type >::type;
-		addIEx("LasIs", "LasIs", int64_t(Xbyak::inner::LabelMode::LasIs), das::LineInfo());
-		addIEx("Labs", "Labs", int64_t(Xbyak::inner::LabelMode::Labs), das::LineInfo());
-		addIEx("LaddTop", "LaddTop", int64_t(Xbyak::inner::LabelMode::LaddTop), das::LineInfo());
-	}
-};
-#endif
-#ifdef GLOBAL_NAMESPACE
-
-class EnumerationLabelType : public das::Enumeration {
-public:
-    EnumerationLabelType() : das::Enumeration("LabelType") {
-        external = true;
-        cppName = "Xbyak::CodeGenerator::LabelType";
-        baseType = (das::Type) das::ToBasicType< das::underlying_type< Xbyak::CodeGenerator::LabelType >::type >::type;
-		addIEx("T_SHORT", "T_SHORT", int64_t(Xbyak::CodeGenerator::LabelType::T_SHORT), das::LineInfo());
-		addIEx("T_NEAR", "T_NEAR", int64_t(Xbyak::CodeGenerator::LabelType::T_NEAR), das::LineInfo());
-		addIEx("T_AUTO", "T_AUTO", int64_t(Xbyak::CodeGenerator::LabelType::T_AUTO), das::LineInfo());
-	}
-};
-#endif
-#ifdef GLOBAL_NAMESPACE
-
-class EnumerationPreferredEncoding : public das::Enumeration {
-public:
-    EnumerationPreferredEncoding() : das::Enumeration("PreferredEncoding") {
-        external = true;
-        cppName = "Xbyak::PreferredEncoding";
-        baseType = (das::Type) das::ToBasicType< das::underlying_type< Xbyak::PreferredEncoding >::type >::type;
-		addIEx("DefaultEncoding", "DefaultEncoding", int64_t(Xbyak::PreferredEncoding::DefaultEncoding), das::LineInfo());
-		addIEx("VexEncoding", "VexEncoding", int64_t(Xbyak::PreferredEncoding::VexEncoding), das::LineInfo());
-		addIEx("EvexEncoding", "EvexEncoding", int64_t(Xbyak::PreferredEncoding::EvexEncoding), das::LineInfo());
 	}
 };
 #endif

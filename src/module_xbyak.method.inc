@@ -3,652 +3,645 @@
 // ------------
 
 #ifdef GLOBAL_NAMESPACE
-using _getIdx_method_1 = DAS_CALL_MEMBER(Xbyak::Segment::getIdx);
-addExtern<DAS_CALL_METHOD(_getIdx_method_1)>(*this, lib, "getIdx",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Segment::getIdx))
+using _getKind_method_1 = DAS_CALL_MEMBER(Xbyak::Operand::getKind);
+addExtern<DAS_CALL_METHOD(_getKind_method_1)>(*this, lib, "getKind",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getKind))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _toString_method_3 = DAS_CALL_MEMBER(Xbyak::Segment::toString);
-addExtern<DAS_CALL_METHOD(_toString_method_3)>(*this, lib, "toString",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Segment::toString))
+using _getIdx_method_3 = DAS_CALL_MEMBER(Xbyak::Operand::getIdx);
+addExtern<DAS_CALL_METHOD(_getIdx_method_3)>(*this, lib, "getIdx",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getIdx))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _getKind_method_5 = DAS_CALL_MEMBER(Xbyak::Operand::getKind);
-addExtern<DAS_CALL_METHOD(_getKind_method_5)>(*this, lib, "getKind",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getKind))
+using _isNone_method_5 = DAS_CALL_MEMBER(Xbyak::Operand::isNone);
+addExtern<DAS_CALL_METHOD(_isNone_method_5)>(*this, lib, "isNone",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isNone))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _getIdx_method_7 = DAS_CALL_MEMBER(Xbyak::Operand::getIdx);
-addExtern<DAS_CALL_METHOD(_getIdx_method_7)>(*this, lib, "getIdx",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getIdx))
+using _isMMX_method_7 = DAS_CALL_MEMBER(Xbyak::Operand::isMMX);
+addExtern<DAS_CALL_METHOD(_isMMX_method_7)>(*this, lib, "isMMX",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isMMX))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isNone_method_9 = DAS_CALL_MEMBER(Xbyak::Operand::isNone);
-addExtern<DAS_CALL_METHOD(_isNone_method_9)>(*this, lib, "isNone",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isNone))
+using _isXMM_method_9 = DAS_CALL_MEMBER(Xbyak::Operand::isXMM);
+addExtern<DAS_CALL_METHOD(_isXMM_method_9)>(*this, lib, "isXMM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isXMM))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isMMX_method_11 = DAS_CALL_MEMBER(Xbyak::Operand::isMMX);
-addExtern<DAS_CALL_METHOD(_isMMX_method_11)>(*this, lib, "isMMX",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isMMX))
+using _isYMM_method_11 = DAS_CALL_MEMBER(Xbyak::Operand::isYMM);
+addExtern<DAS_CALL_METHOD(_isYMM_method_11)>(*this, lib, "isYMM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isYMM))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isXMM_method_13 = DAS_CALL_MEMBER(Xbyak::Operand::isXMM);
-addExtern<DAS_CALL_METHOD(_isXMM_method_13)>(*this, lib, "isXMM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isXMM))
+using _isZMM_method_13 = DAS_CALL_MEMBER(Xbyak::Operand::isZMM);
+addExtern<DAS_CALL_METHOD(_isZMM_method_13)>(*this, lib, "isZMM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isZMM))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isYMM_method_15 = DAS_CALL_MEMBER(Xbyak::Operand::isYMM);
-addExtern<DAS_CALL_METHOD(_isYMM_method_15)>(*this, lib, "isYMM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isYMM))
+using _isTMM_method_15 = DAS_CALL_MEMBER(Xbyak::Operand::isTMM);
+addExtern<DAS_CALL_METHOD(_isTMM_method_15)>(*this, lib, "isTMM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isTMM))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isZMM_method_17 = DAS_CALL_MEMBER(Xbyak::Operand::isZMM);
-addExtern<DAS_CALL_METHOD(_isZMM_method_17)>(*this, lib, "isZMM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isZMM))
+using _isXMEM_method_17 = DAS_CALL_MEMBER(Xbyak::Operand::isXMEM);
+addExtern<DAS_CALL_METHOD(_isXMEM_method_17)>(*this, lib, "isXMEM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isXMEM))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isTMM_method_19 = DAS_CALL_MEMBER(Xbyak::Operand::isTMM);
-addExtern<DAS_CALL_METHOD(_isTMM_method_19)>(*this, lib, "isTMM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isTMM))
+using _isYMEM_method_19 = DAS_CALL_MEMBER(Xbyak::Operand::isYMEM);
+addExtern<DAS_CALL_METHOD(_isYMEM_method_19)>(*this, lib, "isYMEM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isYMEM))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isXMEM_method_21 = DAS_CALL_MEMBER(Xbyak::Operand::isXMEM);
-addExtern<DAS_CALL_METHOD(_isXMEM_method_21)>(*this, lib, "isXMEM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isXMEM))
+using _isZMEM_method_21 = DAS_CALL_MEMBER(Xbyak::Operand::isZMEM);
+addExtern<DAS_CALL_METHOD(_isZMEM_method_21)>(*this, lib, "isZMEM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isZMEM))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isYMEM_method_23 = DAS_CALL_MEMBER(Xbyak::Operand::isYMEM);
-addExtern<DAS_CALL_METHOD(_isYMEM_method_23)>(*this, lib, "isYMEM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isYMEM))
+using _isOPMASK_method_23 = DAS_CALL_MEMBER(Xbyak::Operand::isOPMASK);
+addExtern<DAS_CALL_METHOD(_isOPMASK_method_23)>(*this, lib, "isOPMASK",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isOPMASK))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isZMEM_method_25 = DAS_CALL_MEMBER(Xbyak::Operand::isZMEM);
-addExtern<DAS_CALL_METHOD(_isZMEM_method_25)>(*this, lib, "isZMEM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isZMEM))
+using _isBNDREG_method_25 = DAS_CALL_MEMBER(Xbyak::Operand::isBNDREG);
+addExtern<DAS_CALL_METHOD(_isBNDREG_method_25)>(*this, lib, "isBNDREG",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isBNDREG))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isOPMASK_method_27 = DAS_CALL_MEMBER(Xbyak::Operand::isOPMASK);
-addExtern<DAS_CALL_METHOD(_isOPMASK_method_27)>(*this, lib, "isOPMASK",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isOPMASK))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _isBNDREG_method_29 = DAS_CALL_MEMBER(Xbyak::Operand::isBNDREG);
-addExtern<DAS_CALL_METHOD(_isBNDREG_method_29)>(*this, lib, "isBNDREG",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isBNDREG))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _isREG_method_31 = DAS_CALL_MEMBER(Xbyak::Operand::isREG);
-addExtern<DAS_CALL_METHOD(_isREG_method_31)>(*this, lib, "isREG",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isREG))
+using _isREG_method_27 = DAS_CALL_MEMBER(Xbyak::Operand::isREG);
+addExtern<DAS_CALL_METHOD(_isREG_method_27)>(*this, lib, "isREG",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isREG))
 	->args({"self","bit"})
-		->arg_init(1,make_smart<ExprConstInt>(0))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isMEM_method_33 = DAS_CALL_MEMBER(Xbyak::Operand::isMEM);
-addExtern<DAS_CALL_METHOD(_isMEM_method_33)>(*this, lib, "isMEM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isMEM))
+using _isMEM_method_29 = DAS_CALL_MEMBER(Xbyak::Operand::isMEM);
+addExtern<DAS_CALL_METHOD(_isMEM_method_29)>(*this, lib, "isMEM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isMEM))
 	->args({"self","bit"})
-		->arg_init(1,make_smart<ExprConstInt>(0))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isFPU_method_35 = DAS_CALL_MEMBER(Xbyak::Operand::isFPU);
-addExtern<DAS_CALL_METHOD(_isFPU_method_35)>(*this, lib, "isFPU",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isFPU))
+using _isFPU_method_31 = DAS_CALL_MEMBER(Xbyak::Operand::isFPU);
+addExtern<DAS_CALL_METHOD(_isFPU_method_31)>(*this, lib, "isFPU",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isFPU))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isExt8bit_method_37 = DAS_CALL_MEMBER(Xbyak::Operand::isExt8bit);
-addExtern<DAS_CALL_METHOD(_isExt8bit_method_37)>(*this, lib, "isExt8bit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isExt8bit))
+using _isExt8bit_method_33 = DAS_CALL_MEMBER(Xbyak::Operand::isExt8bit);
+addExtern<DAS_CALL_METHOD(_isExt8bit_method_33)>(*this, lib, "isExt8bit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isExt8bit))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isExtIdx_method_39 = DAS_CALL_MEMBER(Xbyak::Operand::isExtIdx);
-addExtern<DAS_CALL_METHOD(_isExtIdx_method_39)>(*this, lib, "isExtIdx",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isExtIdx))
+using _isExtIdx_method_35 = DAS_CALL_MEMBER(Xbyak::Operand::isExtIdx);
+addExtern<DAS_CALL_METHOD(_isExtIdx_method_35)>(*this, lib, "isExtIdx",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isExtIdx))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isExtIdx2_method_41 = DAS_CALL_MEMBER(Xbyak::Operand::isExtIdx2);
-addExtern<DAS_CALL_METHOD(_isExtIdx2_method_41)>(*this, lib, "isExtIdx2",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isExtIdx2))
+using _isExtIdx2_method_37 = DAS_CALL_MEMBER(Xbyak::Operand::isExtIdx2);
+addExtern<DAS_CALL_METHOD(_isExtIdx2_method_37)>(*this, lib, "isExtIdx2",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isExtIdx2))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _hasEvex_method_43 = DAS_CALL_MEMBER(Xbyak::Operand::hasEvex);
-addExtern<DAS_CALL_METHOD(_hasEvex_method_43)>(*this, lib, "hasEvex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::hasEvex))
+using _hasEvex_method_39 = DAS_CALL_MEMBER(Xbyak::Operand::hasEvex);
+addExtern<DAS_CALL_METHOD(_hasEvex_method_39)>(*this, lib, "hasEvex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::hasEvex))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _hasRex_method_45 = DAS_CALL_MEMBER(Xbyak::Operand::hasRex);
-addExtern<DAS_CALL_METHOD(_hasRex_method_45)>(*this, lib, "hasRex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::hasRex))
+using _hasRex_method_41 = DAS_CALL_MEMBER(Xbyak::Operand::hasRex);
+addExtern<DAS_CALL_METHOD(_hasRex_method_41)>(*this, lib, "hasRex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::hasRex))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _hasZero_method_47 = DAS_CALL_MEMBER(Xbyak::Operand::hasZero);
-addExtern<DAS_CALL_METHOD(_hasZero_method_47)>(*this, lib, "hasZero",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::hasZero))
+using _hasZero_method_43 = DAS_CALL_MEMBER(Xbyak::Operand::hasZero);
+addExtern<DAS_CALL_METHOD(_hasZero_method_43)>(*this, lib, "hasZero",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::hasZero))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _getOpmaskIdx_method_49 = DAS_CALL_MEMBER(Xbyak::Operand::getOpmaskIdx);
-addExtern<DAS_CALL_METHOD(_getOpmaskIdx_method_49)>(*this, lib, "getOpmaskIdx",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getOpmaskIdx))
+using _getOpmaskIdx_method_45 = DAS_CALL_MEMBER(Xbyak::Operand::getOpmaskIdx);
+addExtern<DAS_CALL_METHOD(_getOpmaskIdx_method_45)>(*this, lib, "getOpmaskIdx",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getOpmaskIdx))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _getRounding_method_51 = DAS_CALL_MEMBER(Xbyak::Operand::getRounding);
-addExtern<DAS_CALL_METHOD(_getRounding_method_51)>(*this, lib, "getRounding",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getRounding))
+using _getRounding_method_47 = DAS_CALL_MEMBER(Xbyak::Operand::getRounding);
+addExtern<DAS_CALL_METHOD(_getRounding_method_47)>(*this, lib, "getRounding",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getRounding))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _setKind_method_53 = DAS_CALL_MEMBER(Xbyak::Operand::setKind);
-addExtern<DAS_CALL_METHOD(_setKind_method_53)>(*this, lib, "setKind",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::setKind))
+using _setKind_method_49 = DAS_CALL_MEMBER(Xbyak::Operand::setKind);
+addExtern<DAS_CALL_METHOD(_setKind_method_49)>(*this, lib, "setKind",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::setKind))
 	->args({"self","kind"})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _setBit_method_55 = DAS_CALL_MEMBER(Xbyak::Operand::setBit);
-addExtern<DAS_CALL_METHOD(_setBit_method_55)>(*this, lib, "setBit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::setBit))
+using _setBit_method_51 = DAS_CALL_MEMBER(Xbyak::Operand::setBit);
+addExtern<DAS_CALL_METHOD(_setBit_method_51)>(*this, lib, "setBit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::setBit))
 	->args({"self","bit"})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _setOpmaskIdx_method_57 = DAS_CALL_MEMBER(Xbyak::Operand::setOpmaskIdx);
-addExtern<DAS_CALL_METHOD(_setOpmaskIdx_method_57)>(*this, lib, "setOpmaskIdx",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::setOpmaskIdx))
+using _setOpmaskIdx_method_53 = DAS_CALL_MEMBER(Xbyak::Operand::setOpmaskIdx);
+addExtern<DAS_CALL_METHOD(_setOpmaskIdx_method_53)>(*this, lib, "setOpmaskIdx",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::setOpmaskIdx))
 	->args({"self","idx","arg2"})
-		->arg_init(2,make_smart<ExprConstBool>(true))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _setRounding_method_59 = DAS_CALL_MEMBER(Xbyak::Operand::setRounding);
-addExtern<DAS_CALL_METHOD(_setRounding_method_59)>(*this, lib, "setRounding",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::setRounding))
+using _setRounding_method_55 = DAS_CALL_MEMBER(Xbyak::Operand::setRounding);
+addExtern<DAS_CALL_METHOD(_setRounding_method_55)>(*this, lib, "setRounding",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::setRounding))
 	->args({"self","idx"})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _setZero_method_61 = DAS_CALL_MEMBER(Xbyak::Operand::setZero);
-addExtern<DAS_CALL_METHOD(_setZero_method_61)>(*this, lib, "setZero",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::setZero))
+using _setZero_method_57 = DAS_CALL_MEMBER(Xbyak::Operand::setZero);
+addExtern<DAS_CALL_METHOD(_setZero_method_57)>(*this, lib, "setZero",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::setZero))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isHigh8bit_method_63 = DAS_CALL_MEMBER(Xbyak::Operand::isHigh8bit);
-addExtern<DAS_CALL_METHOD(_isHigh8bit_method_63)>(*this, lib, "isHigh8bit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isHigh8bit))
+using _isHigh8bit_method_59 = DAS_CALL_MEMBER(Xbyak::Operand::isHigh8bit);
+addExtern<DAS_CALL_METHOD(_isHigh8bit_method_59)>(*this, lib, "isHigh8bit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isHigh8bit))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _is_method_65 = DAS_CALL_MEMBER(Xbyak::Operand::is);
-addExtern<DAS_CALL_METHOD(_is_method_65)>(*this, lib, "is",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::is))
+using _is_method_61 = DAS_CALL_MEMBER(Xbyak::Operand::is);
+addExtern<DAS_CALL_METHOD(_is_method_61)>(*this, lib, "is",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::is))
 	->args({"self","kind","bit"})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isBit_method_67 = DAS_CALL_MEMBER(Xbyak::Operand::isBit);
-addExtern<DAS_CALL_METHOD(_isBit_method_67)>(*this, lib, "isBit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isBit))
+using _isBit_method_63 = DAS_CALL_MEMBER(Xbyak::Operand::isBit);
+addExtern<DAS_CALL_METHOD(_isBit_method_63)>(*this, lib, "isBit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isBit))
 	->args({"self","bit"})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _getBit_method_69 = DAS_CALL_MEMBER(Xbyak::Operand::getBit);
-addExtern<DAS_CALL_METHOD(_getBit_method_69)>(*this, lib, "getBit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getBit))
+using _getBit_method_65 = DAS_CALL_MEMBER(Xbyak::Operand::getBit);
+addExtern<DAS_CALL_METHOD(_getBit_method_65)>(*this, lib, "getBit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getBit))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _toString_method_71 = DAS_CALL_MEMBER(Xbyak::Operand::toString);
-addExtern<DAS_CALL_METHOD(_toString_method_71)>(*this, lib, "toString",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::toString))
+using _toString_method_67 = DAS_CALL_MEMBER(Xbyak::Operand::toString);
+addExtern<DAS_CALL_METHOD(_toString_method_67)>(*this, lib, "toString",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::toString))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _isEqualIfNotInherited_method_73 = DAS_CALL_MEMBER(Xbyak::Operand::isEqualIfNotInherited);
-addExtern<DAS_CALL_METHOD(_isEqualIfNotInherited_method_73)>(*this, lib, "isEqualIfNotInherited",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isEqualIfNotInherited))
+using _isEqualIfNotInherited_method_69 = DAS_CALL_MEMBER(Xbyak::Operand::isEqualIfNotInherited);
+addExtern<DAS_CALL_METHOD(_isEqualIfNotInherited_method_69)>(*this, lib, "isEqualIfNotInherited",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::isEqualIfNotInherited))
 	->args({"self","rhs"})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _getAddress_method_75 = DAS_CALL_MEMBER(Xbyak::Operand::getAddress);
-addExtern<DAS_CALL_METHOD(_getAddress_method_75), SimNode_ExtFuncCallRef>(*this, lib, "getAddress",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getAddress))
+using _getAddress_method_71 = DAS_CALL_MEMBER(Xbyak::Operand::getAddress);
+addExtern<DAS_CALL_METHOD(_getAddress_method_71), SimNode_ExtFuncCallRef>(*this, lib, "getAddress",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getAddress))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _getReg_method_77 = DAS_CALL_MEMBER(Xbyak::Operand::getReg);
-addExtern<DAS_CALL_METHOD(_getReg_method_77), SimNode_ExtFuncCallRef>(*this, lib, "getReg",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getReg))
+using _getReg_method_73 = DAS_CALL_MEMBER(Xbyak::Operand::getReg);
+addExtern<DAS_CALL_METHOD(_getReg_method_73), SimNode_ExtFuncCallRef>(*this, lib, "getReg",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Operand::getReg))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _reset_method_79 = DAS_CALL_MEMBER(Xbyak::LabelManager::reset);
-addExtern<DAS_CALL_METHOD(_reset_method_79)>(*this, lib, "reset",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::reset))
+using _getIdx_method_75 = DAS_CALL_MEMBER(Xbyak::Segment::getIdx);
+addExtern<DAS_CALL_METHOD(_getIdx_method_75)>(*this, lib, "getIdx",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Segment::getIdx))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _enterLocal_method_81 = DAS_CALL_MEMBER(Xbyak::LabelManager::enterLocal);
-addExtern<DAS_CALL_METHOD(_enterLocal_method_81)>(*this, lib, "enterLocal",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::enterLocal))
+using _toString_method_77 = DAS_CALL_MEMBER(Xbyak::Segment::toString);
+addExtern<DAS_CALL_METHOD(_toString_method_77)>(*this, lib, "toString",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Segment::toString))
 	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _leaveLocal_method_83 = DAS_CALL_MEMBER(Xbyak::LabelManager::leaveLocal);
-addExtern<DAS_CALL_METHOD(_leaveLocal_method_83)>(*this, lib, "leaveLocal",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::leaveLocal))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _set_method_85 = DAS_CALL_MEMBER(Xbyak::LabelManager::set);
-addExtern<DAS_CALL_METHOD(_set_method_85)>(*this, lib, "set",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::set))
-	->args({"self","base"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _defineSlabel_method_87 = DAS_CALL_MEMBER(Xbyak::LabelManager::defineSlabel);
-addExtern<DAS_CALL_METHOD(_defineSlabel_method_87)>(*this, lib, "defineSlabel",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::defineSlabel))
-	->args({"self","label"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _defineClabel_method_89 = DAS_CALL_MEMBER(Xbyak::LabelManager::defineClabel);
-addExtern<DAS_CALL_METHOD(_defineClabel_method_89)>(*this, lib, "defineClabel",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::defineClabel))
-	->args({"self","label"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _assign_method_91 = DAS_CALL_MEMBER(Xbyak::LabelManager::assign);
-addExtern<DAS_CALL_METHOD(_assign_method_91)>(*this, lib, "assign",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::assign))
-	->args({"self","dst","src"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getOffset_method_93 = das::das_call_member<bool (Xbyak::LabelManager::*)(size_t *, std::string &) const,&Xbyak::LabelManager::getOffset>;
-addExtern<DAS_CALL_METHOD(_getOffset_method_93)>(*this, lib, "getOffset",SideEffects::worstDefault, "das_call_member<bool (Xbyak::LabelManager::*)(size_t *, std::string &) const,&Xbyak::LabelManager::getOffset>::invoke")
-	->args({"self","offset","label"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getOffset_method_95 = das::das_call_member<bool (Xbyak::LabelManager::*)(size_t *, const Xbyak::Label &) const,&Xbyak::LabelManager::getOffset>;
-addExtern<DAS_CALL_METHOD(_getOffset_method_95)>(*this, lib, "getOffset",SideEffects::worstDefault, "das_call_member<bool (Xbyak::LabelManager::*)(size_t *, const Xbyak::Label &) const,&Xbyak::LabelManager::getOffset>::invoke")
-	->args({"self","offset","label"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _addUndefinedLabel_method_97 = das::das_call_member<void (Xbyak::LabelManager::*)(const std::string &, const Xbyak::JmpLabel &),&Xbyak::LabelManager::addUndefinedLabel>;
-addExtern<DAS_CALL_METHOD(_addUndefinedLabel_method_97)>(*this, lib, "addUndefinedLabel",SideEffects::worstDefault, "das_call_member<void (Xbyak::LabelManager::*)(const std::string &, const Xbyak::JmpLabel &),&Xbyak::LabelManager::addUndefinedLabel>::invoke")
-	->args({"self","label","jmp"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _addUndefinedLabel_method_99 = das::das_call_member<void (Xbyak::LabelManager::*)(const Xbyak::Label &, const Xbyak::JmpLabel &),&Xbyak::LabelManager::addUndefinedLabel>;
-addExtern<DAS_CALL_METHOD(_addUndefinedLabel_method_99)>(*this, lib, "addUndefinedLabel",SideEffects::worstDefault, "das_call_member<void (Xbyak::LabelManager::*)(const Xbyak::Label &, const Xbyak::JmpLabel &),&Xbyak::LabelManager::addUndefinedLabel>::invoke")
-	->args({"self","label","jmp"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _hasUndefSlabel_method_101 = DAS_CALL_MEMBER(Xbyak::LabelManager::hasUndefSlabel);
-addExtern<DAS_CALL_METHOD(_hasUndefSlabel_method_101)>(*this, lib, "hasUndefSlabel",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::hasUndefSlabel))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _hasUndefClabel_method_103 = DAS_CALL_MEMBER(Xbyak::LabelManager::hasUndefClabel);
-addExtern<DAS_CALL_METHOD(_hasUndefClabel_method_103)>(*this, lib, "hasUndefClabel",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::hasUndefClabel))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getCode_method_105 = DAS_CALL_MEMBER(Xbyak::LabelManager::getCode);
-addExtern<DAS_CALL_METHOD(_getCode_method_105)>(*this, lib, "getCode",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::getCode))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _isReady_method_107 = DAS_CALL_MEMBER(Xbyak::LabelManager::isReady);
-addExtern<DAS_CALL_METHOD(_isReady_method_107)>(*this, lib, "isReady",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::isReady))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _setProtectMode_method_109 = DAS_CALL_MEMBER(Xbyak::CodeArray::setProtectMode);
-addExtern<DAS_CALL_METHOD(_setProtectMode_method_109)>(*this, lib, "setProtectMode",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::setProtectMode))
-	->args({"self","mode","throwException"})
-		->arg_init(2,make_smart<ExprConstBool>(true))
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _setProtectModeRE_method_111 = DAS_CALL_MEMBER(Xbyak::CodeArray::setProtectModeRE);
-addExtern<DAS_CALL_METHOD(_setProtectModeRE_method_111)>(*this, lib, "setProtectModeRE",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::setProtectModeRE))
-	->args({"self","throwException"})
-		->arg_init(1,make_smart<ExprConstBool>(true))
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _setProtectModeRW_method_113 = DAS_CALL_MEMBER(Xbyak::CodeArray::setProtectModeRW);
-addExtern<DAS_CALL_METHOD(_setProtectModeRW_method_113)>(*this, lib, "setProtectModeRW",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::setProtectModeRW))
-	->args({"self","throwException"})
-		->arg_init(1,make_smart<ExprConstBool>(true))
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _resetSize_method_115 = DAS_CALL_MEMBER(Xbyak::CodeArray::resetSize);
-addExtern<DAS_CALL_METHOD(_resetSize_method_115)>(*this, lib, "resetSize",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::resetSize))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _db_method_117 = das::das_call_member<void (Xbyak::CodeArray::*)(int),&Xbyak::CodeArray::db>;
-addExtern<DAS_CALL_METHOD(_db_method_117)>(*this, lib, "db",SideEffects::worstDefault, "das_call_member<void (Xbyak::CodeArray::*)(int),&Xbyak::CodeArray::db>::invoke")
-	->args({"self","code"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _db_method_119 = das::das_call_member<void (Xbyak::CodeArray::*)(const uint8_t *, size_t),&Xbyak::CodeArray::db>;
-addExtern<DAS_CALL_METHOD(_db_method_119)>(*this, lib, "db",SideEffects::worstDefault, "das_call_member<void (Xbyak::CodeArray::*)(const uint8_t *, size_t),&Xbyak::CodeArray::db>::invoke")
-	->args({"self","code","codeSize"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _db_method_121 = das::das_call_member<void (Xbyak::CodeArray::*)(uint64_t, size_t),&Xbyak::CodeArray::db>;
-addExtern<DAS_CALL_METHOD(_db_method_121)>(*this, lib, "db",SideEffects::worstDefault, "das_call_member<void (Xbyak::CodeArray::*)(uint64_t, size_t),&Xbyak::CodeArray::db>::invoke")
-	->args({"self","code","codeSize"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _dw_method_123 = DAS_CALL_MEMBER(Xbyak::CodeArray::dw);
-addExtern<DAS_CALL_METHOD(_dw_method_123)>(*this, lib, "dw",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::dw))
-	->args({"self","code"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _dd_method_125 = DAS_CALL_MEMBER(Xbyak::CodeArray::dd);
-addExtern<DAS_CALL_METHOD(_dd_method_125)>(*this, lib, "dd",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::dd))
-	->args({"self","code"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _dq_method_127 = DAS_CALL_MEMBER(Xbyak::CodeArray::dq);
-addExtern<DAS_CALL_METHOD(_dq_method_127)>(*this, lib, "dq",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::dq))
-	->args({"self","code"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getSize_method_129 = DAS_CALL_MEMBER(Xbyak::CodeArray::getSize);
-addExtern<DAS_CALL_METHOD(_getSize_method_129)>(*this, lib, "getSize",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::getSize))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _setSize_method_131 = DAS_CALL_MEMBER(Xbyak::CodeArray::setSize);
-addExtern<DAS_CALL_METHOD(_setSize_method_131)>(*this, lib, "setSize",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::setSize))
-	->args({"self","size"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _dump_method_133 = DAS_CALL_MEMBER(Xbyak::CodeArray::dump);
-addExtern<DAS_CALL_METHOD(_dump_method_133)>(*this, lib, "dump",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::dump))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _rewrite_method_135 = DAS_CALL_MEMBER(Xbyak::CodeArray::rewrite);
-addExtern<DAS_CALL_METHOD(_rewrite_method_135)>(*this, lib, "rewrite",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::rewrite))
-	->args({"self","offset","disp","size"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _save_method_137 = DAS_CALL_MEMBER(Xbyak::CodeArray::save);
-addExtern<DAS_CALL_METHOD(_save_method_137)>(*this, lib, "save",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::save))
-	->args({"self","offset","val","size","mode"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _isAutoGrow_method_139 = DAS_CALL_MEMBER(Xbyak::CodeArray::isAutoGrow);
-addExtern<DAS_CALL_METHOD(_isAutoGrow_method_139)>(*this, lib, "isAutoGrow",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::isAutoGrow))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _isCalledCalcJmpAddress_method_141 = DAS_CALL_MEMBER(Xbyak::CodeArray::isCalledCalcJmpAddress);
-addExtern<DAS_CALL_METHOD(_isCalledCalcJmpAddress_method_141)>(*this, lib, "isCalledCalcJmpAddress",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::isCalledCalcJmpAddress))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _changeBit_method_143 = DAS_CALL_MEMBER(Xbyak::Reg::changeBit);
-addExtern<DAS_CALL_METHOD(_changeBit_method_143), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "changeBit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::changeBit))
-	->args({"self","bit"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getRexW_method_145 = DAS_CALL_MEMBER(Xbyak::Reg::getRexW);
-addExtern<DAS_CALL_METHOD(_getRexW_method_145)>(*this, lib, "getRexW",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::getRexW))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getRexR_method_147 = DAS_CALL_MEMBER(Xbyak::Reg::getRexR);
-addExtern<DAS_CALL_METHOD(_getRexR_method_147)>(*this, lib, "getRexR",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::getRexR))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getRexX_method_149 = DAS_CALL_MEMBER(Xbyak::Reg::getRexX);
-addExtern<DAS_CALL_METHOD(_getRexX_method_149)>(*this, lib, "getRexX",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::getRexX))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getRexB_method_151 = DAS_CALL_MEMBER(Xbyak::Reg::getRexB);
-addExtern<DAS_CALL_METHOD(_getRexB_method_151)>(*this, lib, "getRexB",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::getRexB))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getRex_method_153 = DAS_CALL_MEMBER(Xbyak::Reg::getRex);
-addExtern<DAS_CALL_METHOD(_getRex_method_153)>(*this, lib, "getRex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::getRex))
-	->args({"self","base"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _cvt8_method_155 = DAS_CALL_MEMBER(Xbyak::Reg::cvt8);
-addExtern<DAS_CALL_METHOD(_cvt8_method_155), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "cvt8",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::cvt8))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _cvt16_method_157 = DAS_CALL_MEMBER(Xbyak::Reg::cvt16);
-addExtern<DAS_CALL_METHOD(_cvt16_method_157), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "cvt16",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::cvt16))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _cvt32_method_159 = DAS_CALL_MEMBER(Xbyak::Reg::cvt32);
-addExtern<DAS_CALL_METHOD(_cvt32_method_159), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "cvt32",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::cvt32))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _cvt64_method_161 = DAS_CALL_MEMBER(Xbyak::Reg::cvt64);
-addExtern<DAS_CALL_METHOD(_cvt64_method_161), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "cvt64",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::cvt64))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getRegExp_method_163 = DAS_CALL_MEMBER(Xbyak::Address::getRegExp);
-addExtern<DAS_CALL_METHOD(_getRegExp_method_163), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "getRegExp",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::getRegExp))
-	->args({"self","optimize"})
-		->arg_init(1,make_smart<ExprConstBool>(true))
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getMode_method_165 = DAS_CALL_MEMBER(Xbyak::Address::getMode);
-addExtern<DAS_CALL_METHOD(_getMode_method_165)>(*this, lib, "getMode",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::getMode))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _is32bit_method_167 = DAS_CALL_MEMBER(Xbyak::Address::is32bit);
-addExtern<DAS_CALL_METHOD(_is32bit_method_167)>(*this, lib, "is32bit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::is32bit))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _isOnlyDisp_method_169 = DAS_CALL_MEMBER(Xbyak::Address::isOnlyDisp);
-addExtern<DAS_CALL_METHOD(_isOnlyDisp_method_169)>(*this, lib, "isOnlyDisp",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::isOnlyDisp))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getDisp_method_171 = DAS_CALL_MEMBER(Xbyak::Address::getDisp);
-addExtern<DAS_CALL_METHOD(_getDisp_method_171)>(*this, lib, "getDisp",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::getDisp))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getRex_method_173 = DAS_CALL_MEMBER(Xbyak::Address::getRex);
-addExtern<DAS_CALL_METHOD(_getRex_method_173)>(*this, lib, "getRex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::getRex))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _is64bitDisp_method_175 = DAS_CALL_MEMBER(Xbyak::Address::is64bitDisp);
-addExtern<DAS_CALL_METHOD(_is64bitDisp_method_175)>(*this, lib, "is64bitDisp",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::is64bitDisp))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _isBroadcast_method_177 = DAS_CALL_MEMBER(Xbyak::Address::isBroadcast);
-addExtern<DAS_CALL_METHOD(_isBroadcast_method_177)>(*this, lib, "isBroadcast",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::isBroadcast))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getLabel_method_179 = DAS_CALL_MEMBER(Xbyak::Address::getLabel);
-addExtern<DAS_CALL_METHOD(_getLabel_method_179)>(*this, lib, "getLabel",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::getLabel))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _isVsib_method_181 = DAS_CALL_MEMBER(Xbyak::Address::isVsib);
-addExtern<DAS_CALL_METHOD(_isVsib_method_181)>(*this, lib, "isVsib",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::isVsib))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _clear_method_183 = DAS_CALL_MEMBER(Xbyak::Label::clear);
-addExtern<DAS_CALL_METHOD(_clear_method_183)>(*this, lib, "clear",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Label::clear))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getId_method_185 = DAS_CALL_MEMBER(Xbyak::Label::getId);
-addExtern<DAS_CALL_METHOD(_getId_method_185)>(*this, lib, "getId",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Label::getId))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getAddress_method_187 = DAS_CALL_MEMBER(Xbyak::Label::getAddress);
-addExtern<DAS_CALL_METHOD(_getAddress_method_187)>(*this, lib, "getAddress",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Label::getAddress))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _isVsib_method_189 = DAS_CALL_MEMBER(Xbyak::RegExp::isVsib);
-addExtern<DAS_CALL_METHOD(_isVsib_method_189)>(*this, lib, "isVsib",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::isVsib))
-	->args({"self","bit"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _optimize_method_191 = DAS_CALL_MEMBER(Xbyak::RegExp::optimize);
-addExtern<DAS_CALL_METHOD(_optimize_method_191), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "optimize",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::optimize))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getBase_method_193 = DAS_CALL_MEMBER(Xbyak::RegExp::getBase);
-addExtern<DAS_CALL_METHOD(_getBase_method_193), SimNode_ExtFuncCallRef>(*this, lib, "getBase",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::getBase))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getIndex_method_195 = DAS_CALL_MEMBER(Xbyak::RegExp::getIndex);
-addExtern<DAS_CALL_METHOD(_getIndex_method_195), SimNode_ExtFuncCallRef>(*this, lib, "getIndex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::getIndex))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getScale_method_197 = DAS_CALL_MEMBER(Xbyak::RegExp::getScale);
-addExtern<DAS_CALL_METHOD(_getScale_method_197)>(*this, lib, "getScale",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::getScale))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getDisp_method_199 = DAS_CALL_MEMBER(Xbyak::RegExp::getDisp);
-addExtern<DAS_CALL_METHOD(_getDisp_method_199)>(*this, lib, "getDisp",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::getDisp))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _verify_method_201 = DAS_CALL_MEMBER(Xbyak::RegExp::verify);
-addExtern<DAS_CALL_METHOD(_verify_method_201)>(*this, lib, "verify",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::verify))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _getRex_method_203 = DAS_CALL_MEMBER(Xbyak::RegExp::getRex);
-addExtern<DAS_CALL_METHOD(_getRex_method_203)>(*this, lib, "getRex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::getRex))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _alloc_method_205 = DAS_CALL_MEMBER(Xbyak::Allocator::alloc);
-addExtern<DAS_CALL_METHOD(_alloc_method_205)>(*this, lib, "alloc",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Allocator::alloc))
-	->args({"self","size"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _free_method_207 = DAS_CALL_MEMBER(Xbyak::Allocator::free);
-addExtern<DAS_CALL_METHOD(_free_method_207)>(*this, lib, "free",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Allocator::free))
-	->args({"self","p"})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _useProtect_method_209 = DAS_CALL_MEMBER(Xbyak::Allocator::useProtect);
-addExtern<DAS_CALL_METHOD(_useProtect_method_209)>(*this, lib, "useProtect",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Allocator::useProtect))
-	->args({"self",})
-;
-#endif
-#ifdef GLOBAL_NAMESPACE
-using _copyAndSetIdx_method_211 = DAS_CALL_MEMBER(Xbyak::Xmm::copyAndSetIdx);
-addExtern<DAS_CALL_METHOD(_copyAndSetIdx_method_211), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "copyAndSetIdx",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Xmm::copyAndSetIdx))
+using _copyAndSetIdx_method_79 = DAS_CALL_MEMBER(Xbyak::Xmm::copyAndSetIdx);
+addExtern<DAS_CALL_METHOD(_copyAndSetIdx_method_79), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "copyAndSetIdx",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Xmm::copyAndSetIdx))
 	->args({"self","idx"})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
-using _copyAndSetKind_method_213 = DAS_CALL_MEMBER(Xbyak::Xmm::copyAndSetKind);
-addExtern<DAS_CALL_METHOD(_copyAndSetKind_method_213), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "copyAndSetKind",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Xmm::copyAndSetKind))
+using _copyAndSetKind_method_81 = DAS_CALL_MEMBER(Xbyak::Xmm::copyAndSetKind);
+addExtern<DAS_CALL_METHOD(_copyAndSetKind_method_81), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "copyAndSetKind",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Xmm::copyAndSetKind))
 	->args({"self","kind"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getRegExp_method_83 = DAS_CALL_MEMBER(Xbyak::Address::getRegExp);
+addExtern<DAS_CALL_METHOD(_getRegExp_method_83), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "getRegExp",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::getRegExp))
+	->args({"self","optimize"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getMode_method_85 = DAS_CALL_MEMBER(Xbyak::Address::getMode);
+addExtern<DAS_CALL_METHOD(_getMode_method_85)>(*this, lib, "getMode",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::getMode))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _is32bit_method_87 = DAS_CALL_MEMBER(Xbyak::Address::is32bit);
+addExtern<DAS_CALL_METHOD(_is32bit_method_87)>(*this, lib, "is32bit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::is32bit))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _isOnlyDisp_method_89 = DAS_CALL_MEMBER(Xbyak::Address::isOnlyDisp);
+addExtern<DAS_CALL_METHOD(_isOnlyDisp_method_89)>(*this, lib, "isOnlyDisp",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::isOnlyDisp))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getDisp_method_91 = DAS_CALL_MEMBER(Xbyak::Address::getDisp);
+addExtern<DAS_CALL_METHOD(_getDisp_method_91)>(*this, lib, "getDisp",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::getDisp))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getRex_method_93 = DAS_CALL_MEMBER(Xbyak::Address::getRex);
+addExtern<DAS_CALL_METHOD(_getRex_method_93)>(*this, lib, "getRex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::getRex))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _is64bitDisp_method_95 = DAS_CALL_MEMBER(Xbyak::Address::is64bitDisp);
+addExtern<DAS_CALL_METHOD(_is64bitDisp_method_95)>(*this, lib, "is64bitDisp",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::is64bitDisp))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _isBroadcast_method_97 = DAS_CALL_MEMBER(Xbyak::Address::isBroadcast);
+addExtern<DAS_CALL_METHOD(_isBroadcast_method_97)>(*this, lib, "isBroadcast",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::isBroadcast))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getLabel_method_99 = DAS_CALL_MEMBER(Xbyak::Address::getLabel);
+addExtern<DAS_CALL_METHOD(_getLabel_method_99)>(*this, lib, "getLabel",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::getLabel))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _isVsib_method_101 = DAS_CALL_MEMBER(Xbyak::Address::isVsib);
+addExtern<DAS_CALL_METHOD(_isVsib_method_101)>(*this, lib, "isVsib",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Address::isVsib))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _reset_method_103 = DAS_CALL_MEMBER(Xbyak::LabelManager::reset);
+addExtern<DAS_CALL_METHOD(_reset_method_103)>(*this, lib, "reset",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::reset))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _enterLocal_method_105 = DAS_CALL_MEMBER(Xbyak::LabelManager::enterLocal);
+addExtern<DAS_CALL_METHOD(_enterLocal_method_105)>(*this, lib, "enterLocal",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::enterLocal))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _leaveLocal_method_107 = DAS_CALL_MEMBER(Xbyak::LabelManager::leaveLocal);
+addExtern<DAS_CALL_METHOD(_leaveLocal_method_107)>(*this, lib, "leaveLocal",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::leaveLocal))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _set_method_109 = DAS_CALL_MEMBER(Xbyak::LabelManager::set);
+addExtern<DAS_CALL_METHOD(_set_method_109)>(*this, lib, "set",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::set))
+	->args({"self","base"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _defineSlabel_method_111 = DAS_CALL_MEMBER(Xbyak::LabelManager::defineSlabel);
+addExtern<DAS_CALL_METHOD(_defineSlabel_method_111)>(*this, lib, "defineSlabel",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::defineSlabel))
+	->args({"self","label"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _defineClabel_method_113 = DAS_CALL_MEMBER(Xbyak::LabelManager::defineClabel);
+addExtern<DAS_CALL_METHOD(_defineClabel_method_113)>(*this, lib, "defineClabel",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::defineClabel))
+	->args({"self","label"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _assign_method_115 = DAS_CALL_MEMBER(Xbyak::LabelManager::assign);
+addExtern<DAS_CALL_METHOD(_assign_method_115)>(*this, lib, "assign",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::assign))
+	->args({"self","dst","src"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getOffset_method_117 = das::das_call_member<bool (Xbyak::LabelManager::*)(size_t *, std::string &) const,&Xbyak::LabelManager::getOffset>;
+addExtern<DAS_CALL_METHOD(_getOffset_method_117)>(*this, lib, "getOffset",SideEffects::worstDefault, "das_call_member<bool (Xbyak::LabelManager::*)(size_t *, std::string &) const,&Xbyak::LabelManager::getOffset>::invoke")
+	->args({"self","offset","label"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getOffset_method_119 = das::das_call_member<bool (Xbyak::LabelManager::*)(size_t *, const Xbyak::Label &) const,&Xbyak::LabelManager::getOffset>;
+addExtern<DAS_CALL_METHOD(_getOffset_method_119)>(*this, lib, "getOffset",SideEffects::worstDefault, "das_call_member<bool (Xbyak::LabelManager::*)(size_t *, const Xbyak::Label &) const,&Xbyak::LabelManager::getOffset>::invoke")
+	->args({"self","offset","label"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _addUndefinedLabel_method_121 = das::das_call_member<void (Xbyak::LabelManager::*)(const std::string &, const Xbyak::JmpLabel &),&Xbyak::LabelManager::addUndefinedLabel>;
+addExtern<DAS_CALL_METHOD(_addUndefinedLabel_method_121)>(*this, lib, "addUndefinedLabel",SideEffects::worstDefault, "das_call_member<void (Xbyak::LabelManager::*)(const std::string &, const Xbyak::JmpLabel &),&Xbyak::LabelManager::addUndefinedLabel>::invoke")
+	->args({"self","label","jmp"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _addUndefinedLabel_method_123 = das::das_call_member<void (Xbyak::LabelManager::*)(const Xbyak::Label &, const Xbyak::JmpLabel &),&Xbyak::LabelManager::addUndefinedLabel>;
+addExtern<DAS_CALL_METHOD(_addUndefinedLabel_method_123)>(*this, lib, "addUndefinedLabel",SideEffects::worstDefault, "das_call_member<void (Xbyak::LabelManager::*)(const Xbyak::Label &, const Xbyak::JmpLabel &),&Xbyak::LabelManager::addUndefinedLabel>::invoke")
+	->args({"self","label","jmp"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _hasUndefSlabel_method_125 = DAS_CALL_MEMBER(Xbyak::LabelManager::hasUndefSlabel);
+addExtern<DAS_CALL_METHOD(_hasUndefSlabel_method_125)>(*this, lib, "hasUndefSlabel",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::hasUndefSlabel))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _hasUndefClabel_method_127 = DAS_CALL_MEMBER(Xbyak::LabelManager::hasUndefClabel);
+addExtern<DAS_CALL_METHOD(_hasUndefClabel_method_127)>(*this, lib, "hasUndefClabel",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::hasUndefClabel))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getCode_method_129 = DAS_CALL_MEMBER(Xbyak::LabelManager::getCode);
+addExtern<DAS_CALL_METHOD(_getCode_method_129)>(*this, lib, "getCode",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::getCode))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _isReady_method_131 = DAS_CALL_MEMBER(Xbyak::LabelManager::isReady);
+addExtern<DAS_CALL_METHOD(_isReady_method_131)>(*this, lib, "isReady",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::LabelManager::isReady))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _alloc_method_133 = DAS_CALL_MEMBER(Xbyak::Allocator::alloc);
+addExtern<DAS_CALL_METHOD(_alloc_method_133)>(*this, lib, "alloc",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Allocator::alloc))
+	->args({"self","size"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _free_method_135 = DAS_CALL_MEMBER(Xbyak::Allocator::free);
+addExtern<DAS_CALL_METHOD(_free_method_135)>(*this, lib, "free",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Allocator::free))
+	->args({"self","p"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _useProtect_method_137 = DAS_CALL_MEMBER(Xbyak::Allocator::useProtect);
+addExtern<DAS_CALL_METHOD(_useProtect_method_137)>(*this, lib, "useProtect",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Allocator::useProtect))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _changeBit_method_139 = DAS_CALL_MEMBER(Xbyak::Reg::changeBit);
+addExtern<DAS_CALL_METHOD(_changeBit_method_139), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "changeBit",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::changeBit))
+	->args({"self","bit"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getRexW_method_141 = DAS_CALL_MEMBER(Xbyak::Reg::getRexW);
+addExtern<DAS_CALL_METHOD(_getRexW_method_141)>(*this, lib, "getRexW",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::getRexW))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getRexR_method_143 = DAS_CALL_MEMBER(Xbyak::Reg::getRexR);
+addExtern<DAS_CALL_METHOD(_getRexR_method_143)>(*this, lib, "getRexR",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::getRexR))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getRexX_method_145 = DAS_CALL_MEMBER(Xbyak::Reg::getRexX);
+addExtern<DAS_CALL_METHOD(_getRexX_method_145)>(*this, lib, "getRexX",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::getRexX))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getRexB_method_147 = DAS_CALL_MEMBER(Xbyak::Reg::getRexB);
+addExtern<DAS_CALL_METHOD(_getRexB_method_147)>(*this, lib, "getRexB",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::getRexB))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getRex_method_149 = DAS_CALL_MEMBER(Xbyak::Reg::getRex);
+addExtern<DAS_CALL_METHOD(_getRex_method_149)>(*this, lib, "getRex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::getRex))
+	->args({"self","base"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _cvt8_method_151 = DAS_CALL_MEMBER(Xbyak::Reg::cvt8);
+addExtern<DAS_CALL_METHOD(_cvt8_method_151), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "cvt8",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::cvt8))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _cvt16_method_153 = DAS_CALL_MEMBER(Xbyak::Reg::cvt16);
+addExtern<DAS_CALL_METHOD(_cvt16_method_153), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "cvt16",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::cvt16))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _cvt32_method_155 = DAS_CALL_MEMBER(Xbyak::Reg::cvt32);
+addExtern<DAS_CALL_METHOD(_cvt32_method_155), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "cvt32",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::cvt32))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _cvt64_method_157 = DAS_CALL_MEMBER(Xbyak::Reg::cvt64);
+addExtern<DAS_CALL_METHOD(_cvt64_method_157), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "cvt64",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Reg::cvt64))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _isVsib_method_159 = DAS_CALL_MEMBER(Xbyak::RegExp::isVsib);
+addExtern<DAS_CALL_METHOD(_isVsib_method_159)>(*this, lib, "isVsib",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::isVsib))
+	->args({"self","bit"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _optimize_method_161 = DAS_CALL_MEMBER(Xbyak::RegExp::optimize);
+addExtern<DAS_CALL_METHOD(_optimize_method_161), SimNode_ExtFuncCallAndCopyOrMove>(*this, lib, "optimize",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::optimize))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getBase_method_163 = DAS_CALL_MEMBER(Xbyak::RegExp::getBase);
+addExtern<DAS_CALL_METHOD(_getBase_method_163), SimNode_ExtFuncCallRef>(*this, lib, "getBase",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::getBase))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getIndex_method_165 = DAS_CALL_MEMBER(Xbyak::RegExp::getIndex);
+addExtern<DAS_CALL_METHOD(_getIndex_method_165), SimNode_ExtFuncCallRef>(*this, lib, "getIndex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::getIndex))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getScale_method_167 = DAS_CALL_MEMBER(Xbyak::RegExp::getScale);
+addExtern<DAS_CALL_METHOD(_getScale_method_167)>(*this, lib, "getScale",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::getScale))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getDisp_method_169 = DAS_CALL_MEMBER(Xbyak::RegExp::getDisp);
+addExtern<DAS_CALL_METHOD(_getDisp_method_169)>(*this, lib, "getDisp",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::getDisp))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _verify_method_171 = DAS_CALL_MEMBER(Xbyak::RegExp::verify);
+addExtern<DAS_CALL_METHOD(_verify_method_171)>(*this, lib, "verify",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::verify))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getRex_method_173 = DAS_CALL_MEMBER(Xbyak::RegExp::getRex);
+addExtern<DAS_CALL_METHOD(_getRex_method_173)>(*this, lib, "getRex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::RegExp::getRex))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _clear_method_175 = DAS_CALL_MEMBER(Xbyak::Label::clear);
+addExtern<DAS_CALL_METHOD(_clear_method_175)>(*this, lib, "clear",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Label::clear))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getId_method_177 = DAS_CALL_MEMBER(Xbyak::Label::getId);
+addExtern<DAS_CALL_METHOD(_getId_method_177)>(*this, lib, "getId",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Label::getId))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getAddress_method_179 = DAS_CALL_MEMBER(Xbyak::Label::getAddress);
+addExtern<DAS_CALL_METHOD(_getAddress_method_179)>(*this, lib, "getAddress",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::Label::getAddress))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _setProtectMode_method_181 = DAS_CALL_MEMBER(Xbyak::CodeArray::setProtectMode);
+addExtern<DAS_CALL_METHOD(_setProtectMode_method_181)>(*this, lib, "setProtectMode",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::setProtectMode))
+	->args({"self","mode","throwException"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _setProtectModeRE_method_183 = DAS_CALL_MEMBER(Xbyak::CodeArray::setProtectModeRE);
+addExtern<DAS_CALL_METHOD(_setProtectModeRE_method_183)>(*this, lib, "setProtectModeRE",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::setProtectModeRE))
+	->args({"self","throwException"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _setProtectModeRW_method_185 = DAS_CALL_MEMBER(Xbyak::CodeArray::setProtectModeRW);
+addExtern<DAS_CALL_METHOD(_setProtectModeRW_method_185)>(*this, lib, "setProtectModeRW",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::setProtectModeRW))
+	->args({"self","throwException"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _resetSize_method_187 = DAS_CALL_MEMBER(Xbyak::CodeArray::resetSize);
+addExtern<DAS_CALL_METHOD(_resetSize_method_187)>(*this, lib, "resetSize",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::resetSize))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _db_method_189 = das::das_call_member<void (Xbyak::CodeArray::*)(int),&Xbyak::CodeArray::db>;
+addExtern<DAS_CALL_METHOD(_db_method_189)>(*this, lib, "db",SideEffects::worstDefault, "das_call_member<void (Xbyak::CodeArray::*)(int),&Xbyak::CodeArray::db>::invoke")
+	->args({"self","code"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _db_method_191 = das::das_call_member<void (Xbyak::CodeArray::*)(const uint8_t *, size_t),&Xbyak::CodeArray::db>;
+addExtern<DAS_CALL_METHOD(_db_method_191)>(*this, lib, "db",SideEffects::worstDefault, "das_call_member<void (Xbyak::CodeArray::*)(const uint8_t *, size_t),&Xbyak::CodeArray::db>::invoke")
+	->args({"self","code","codeSize"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _db_method_193 = das::das_call_member<void (Xbyak::CodeArray::*)(uint64_t, size_t),&Xbyak::CodeArray::db>;
+addExtern<DAS_CALL_METHOD(_db_method_193)>(*this, lib, "db",SideEffects::worstDefault, "das_call_member<void (Xbyak::CodeArray::*)(uint64_t, size_t),&Xbyak::CodeArray::db>::invoke")
+	->args({"self","code","codeSize"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _dw_method_195 = DAS_CALL_MEMBER(Xbyak::CodeArray::dw);
+addExtern<DAS_CALL_METHOD(_dw_method_195)>(*this, lib, "dw",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::dw))
+	->args({"self","code"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _dd_method_197 = DAS_CALL_MEMBER(Xbyak::CodeArray::dd);
+addExtern<DAS_CALL_METHOD(_dd_method_197)>(*this, lib, "dd",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::dd))
+	->args({"self","code"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _dq_method_199 = DAS_CALL_MEMBER(Xbyak::CodeArray::dq);
+addExtern<DAS_CALL_METHOD(_dq_method_199)>(*this, lib, "dq",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::dq))
+	->args({"self","code"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _getSize_method_201 = DAS_CALL_MEMBER(Xbyak::CodeArray::getSize);
+addExtern<DAS_CALL_METHOD(_getSize_method_201)>(*this, lib, "getSize",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::getSize))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _setSize_method_203 = DAS_CALL_MEMBER(Xbyak::CodeArray::setSize);
+addExtern<DAS_CALL_METHOD(_setSize_method_203)>(*this, lib, "setSize",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::setSize))
+	->args({"self","size"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _dump_method_205 = DAS_CALL_MEMBER(Xbyak::CodeArray::dump);
+addExtern<DAS_CALL_METHOD(_dump_method_205)>(*this, lib, "dump",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::dump))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _rewrite_method_207 = DAS_CALL_MEMBER(Xbyak::CodeArray::rewrite);
+addExtern<DAS_CALL_METHOD(_rewrite_method_207)>(*this, lib, "rewrite",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::rewrite))
+	->args({"self","offset","disp","size"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _save_method_209 = DAS_CALL_MEMBER(Xbyak::CodeArray::save);
+addExtern<DAS_CALL_METHOD(_save_method_209)>(*this, lib, "save",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::save))
+	->args({"self","offset","val","size","mode"})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _isAutoGrow_method_211 = DAS_CALL_MEMBER(Xbyak::CodeArray::isAutoGrow);
+addExtern<DAS_CALL_METHOD(_isAutoGrow_method_211)>(*this, lib, "isAutoGrow",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::isAutoGrow))
+	->args({"self",})
+;
+#endif
+#ifdef GLOBAL_NAMESPACE
+using _isCalledCalcJmpAddress_method_213 = DAS_CALL_MEMBER(Xbyak::CodeArray::isCalledCalcJmpAddress);
+addExtern<DAS_CALL_METHOD(_isCalledCalcJmpAddress_method_213)>(*this, lib, "isCalledCalcJmpAddress",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeArray::isCalledCalcJmpAddress))
+	->args({"self",})
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
@@ -667,7 +660,6 @@ addExtern<DAS_CALL_METHOD(_getPP_method_217)>(*this, lib, "getPP",SideEffects::w
 using _vex_method_219 = DAS_CALL_MEMBER(Xbyak::CodeGenerator::vex);
 addExtern<DAS_CALL_METHOD(_vex_method_219)>(*this, lib, "vex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeGenerator::vex))
 	->args({"self","reg","base","v","type","code","x"})
-		->arg_init(6,make_smart<ExprConstBool>(false))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
@@ -692,10 +684,6 @@ addExtern<DAS_CALL_METHOD(_verifyDuplicate_method_225)>(*this, lib, "verifyDupli
 using _evex_method_227 = DAS_CALL_MEMBER(Xbyak::CodeGenerator::evex);
 addExtern<DAS_CALL_METHOD(_evex_method_227)>(*this, lib, "evex",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeGenerator::evex))
 	->args({"self","reg","base","v","type","code","x","b","aaa","VL","Hi16Vidx"})
-		->arg_init(6,make_smart<ExprConstBool>(false))
-		->arg_init(7,make_smart<ExprConstBool>(false))
-		->arg_init(8,make_smart<ExprConstInt>(0))
-		->arg_init(10,make_smart<ExprConstBool>(false))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
@@ -708,7 +696,6 @@ addExtern<DAS_CALL_METHOD(_setModRM_method_229)>(*this, lib, "setModRM",SideEffe
 using _setSIB_method_231 = DAS_CALL_MEMBER(Xbyak::CodeGenerator::setSIB);
 addExtern<DAS_CALL_METHOD(_setSIB_method_231)>(*this, lib, "setSIB",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeGenerator::setSIB))
 	->args({"self","e","reg","disp8N"})
-		->arg_init(3,make_smart<ExprConstInt>(0))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
@@ -727,7 +714,6 @@ addExtern<DAS_CALL_METHOD(_opModR_method_235)>(*this, lib, "opModR",SideEffects:
 using _opModM_method_237 = DAS_CALL_MEMBER(Xbyak::CodeGenerator::opModM);
 addExtern<DAS_CALL_METHOD(_opModM_method_237)>(*this, lib, "opModM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeGenerator::opModM))
 	->args({"self","addr","reg","code0","code1","code2","immSize"})
-		->arg_init(6,make_smart<ExprConstInt>(0))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
@@ -764,9 +750,6 @@ addExtern<DAS_CALL_METHOD(_opJmpAbs_method_247)>(*this, lib, "opJmpAbs",SideEffe
 using _opAddr_method_249 = DAS_CALL_MEMBER(Xbyak::CodeGenerator::opAddr);
 addExtern<DAS_CALL_METHOD(_opAddr_method_249)>(*this, lib, "opAddr",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeGenerator::opAddr))
 	->args({"self","addr","reg","immSize","disp8N","permitVisb"})
-		->arg_init(3,make_smart<ExprConstInt>(0))
-		->arg_init(4,make_smart<ExprConstInt>(0))
-		->arg_init(5,make_smart<ExprConstBool>(false))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
@@ -785,7 +768,6 @@ addExtern<DAS_CALL_METHOD(_opMMX_IMM_method_253)>(*this, lib, "opMMX_IMM",SideEf
 using _opMMX_method_255 = DAS_CALL_MEMBER(Xbyak::CodeGenerator::opMMX);
 addExtern<DAS_CALL_METHOD(_opMMX_method_255)>(*this, lib, "opMMX",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeGenerator::opMMX))
 	->args({"self","mmx","op","code","pref","imm8","preCode"})
-		->arg_init(4,make_smart<ExprConstInt>(102))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
@@ -798,15 +780,12 @@ addExtern<DAS_CALL_METHOD(_opMovXMM_method_257)>(*this, lib, "opMovXMM",SideEffe
 using _opExt_method_259 = DAS_CALL_MEMBER(Xbyak::CodeGenerator::opExt);
 addExtern<DAS_CALL_METHOD(_opExt_method_259)>(*this, lib, "opExt",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeGenerator::opExt))
 	->args({"self","op","mmx","code","imm","hasMMX2"})
-		->arg_init(5,make_smart<ExprConstBool>(false))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
 using _opR_ModM_method_261 = DAS_CALL_MEMBER(Xbyak::CodeGenerator::opR_ModM);
 addExtern<DAS_CALL_METHOD(_opR_ModM_method_261)>(*this, lib, "opR_ModM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeGenerator::opR_ModM))
 	->args({"self","op","bit","ext","code0","code1","code2","disableRex","immSize"})
-		->arg_init(7,make_smart<ExprConstBool>(false))
-		->arg_init(8,make_smart<ExprConstInt>(0))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
@@ -825,7 +804,6 @@ addExtern<DAS_CALL_METHOD(_opShift_method_265)>(*this, lib, "opShift",SideEffect
 using _opModRM_method_267 = DAS_CALL_MEMBER(Xbyak::CodeGenerator::opModRM);
 addExtern<DAS_CALL_METHOD(_opModRM_method_267)>(*this, lib, "opModRM",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeGenerator::opModRM))
 	->args({"self","op1","op2","condR","condM","code0","code1","code2","immSize"})
-		->arg_init(8,make_smart<ExprConstInt>(0))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
@@ -1265,7 +1243,6 @@ addExtern<DAS_CALL_METHOD(_readyRE_method_411)>(*this, lib, "readyRE",SideEffect
 using _nop_method_413 = DAS_CALL_MEMBER(Xbyak::CodeGenerator::nop);
 addExtern<DAS_CALL_METHOD(_nop_method_413)>(*this, lib, "nop",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeGenerator::nop))
 	->args({"self","size","useMultiByteNop"})
-		->arg_init(2,make_smart<ExprConstBool>(true))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
@@ -5592,7 +5569,6 @@ addExtern<DAS_CALL_METHOD(_repz_method_1853)>(*this, lib, "repz",SideEffects::wo
 using _ret_method_1855 = DAS_CALL_MEMBER(Xbyak::CodeGenerator::ret);
 addExtern<DAS_CALL_METHOD(_ret_method_1855)>(*this, lib, "ret",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeGenerator::ret))
 	->args({"self","imm"})
-		->arg_init(1,make_smart<ExprConstInt>(0))
 ;
 #endif
 #ifdef GLOBAL_NAMESPACE
@@ -13231,6 +13207,5 @@ addExtern<DAS_CALL_METHOD(_vpbroadcastq_method_4399)>(*this, lib, "vpbroadcastq"
 using _align_method_4401 = DAS_CALL_MEMBER(Xbyak::CodeGenerator::align);
 addExtern<DAS_CALL_METHOD(_align_method_4401)>(*this, lib, "align",SideEffects::worstDefault, DAS_CALL_MEMBER_CPP(Xbyak::CodeGenerator::align))
 	->args({"self","x","useMultiByteNop"})
-		->arg_init(2,make_smart<ExprConstBool>(true))
 ;
 #endif

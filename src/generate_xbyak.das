@@ -60,7 +60,7 @@ def main
 
     var args <- get_command_line_arguments()
     generate_split_functions = true
-    g_split_factor = 200    // there are TONES of functions
+    g_split_factor = 100    // there are TONES of functions
     split_prefix = "{args[4]}_split"
 
     split_cpp_prefix="

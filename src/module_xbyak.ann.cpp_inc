@@ -3,134 +3,109 @@
 // ------------
 
 #ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Reg32,Xbyak::Reg32)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Ymm,Xbyak::Ymm)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Reg8,Xbyak::Reg8)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Segment,Xbyak::Segment)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(EvexModifierRounding,Xbyak::EvexModifierRounding)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Operand,Xbyak::Operand)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Fpu,Xbyak::Fpu)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(LabelManager,Xbyak::LabelManager)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(CodeArray,Xbyak::CodeArray)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Reg,Xbyak::Reg)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Address,Xbyak::Address)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Label,Xbyak::Label)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(AddressFrame,Xbyak::AddressFrame)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(RegRip,Xbyak::RegRip)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Reg16,Xbyak::Reg16)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Reg64,Xbyak::Reg64)
-#endif
-#ifdef GLOBAL_NAMESPACE
 	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Opmask,Xbyak::Opmask)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(RegExp,Xbyak::RegExp)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(EvexModifierZero,Xbyak::EvexModifierZero)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Allocator,Xbyak::Allocator)
-#endif
-#ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Xmm,Xbyak::Xmm)
 #endif
 #ifdef GLOBAL_NAMESPACE
 	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Reg32e,Xbyak::Reg32e)
 #endif
 #ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Reg64,Xbyak::Reg64)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Fpu,Xbyak::Fpu)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(RegRip,Xbyak::RegRip)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Operand,Xbyak::Operand)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Segment,Xbyak::Segment)
+#endif
+#ifdef GLOBAL_NAMESPACE
 	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Zmm,Xbyak::Zmm)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Xmm,Xbyak::Xmm)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Ymm,Xbyak::Ymm)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Address,Xbyak::Address)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(AddressFrame,Xbyak::AddressFrame)
 #endif
 #ifdef GLOBAL_NAMESPACE
 	IMPLEMENT_EXTERNAL_TYPE_FACTORY(JmpLabel,Xbyak::JmpLabel)
 #endif
 #ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Tmm,Xbyak::Tmm)
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(LabelManager,Xbyak::LabelManager)
 #endif
 #ifdef GLOBAL_NAMESPACE
-	IMPLEMENT_EXTERNAL_TYPE_FACTORY(BoundsReg,Xbyak::BoundsReg)
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Allocator,Xbyak::Allocator)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Reg,Xbyak::Reg)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(EvexModifierZero,Xbyak::EvexModifierZero)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(RegExp,Xbyak::RegExp)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Label,Xbyak::Label)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(CodeArray,Xbyak::CodeArray)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Tmm,Xbyak::Tmm)
 #endif
 #ifdef GLOBAL_NAMESPACE
 	IMPLEMENT_EXTERNAL_TYPE_FACTORY(CodeGenerator,Xbyak::CodeGenerator)
 #endif
 #ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Reg8,Xbyak::Reg8)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Reg16,Xbyak::Reg16)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(BoundsReg,Xbyak::BoundsReg)
+#endif
+#ifdef GLOBAL_NAMESPACE
 	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Mmx,Xbyak::Mmx)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(EvexModifierRounding,Xbyak::EvexModifierRounding)
+#endif
+#ifdef GLOBAL_NAMESPACE
+	IMPLEMENT_EXTERNAL_TYPE_FACTORY(Reg32,Xbyak::Reg32)
 #endif
 
 #ifdef GLOBAL_NAMESPACE
-struct Reg32_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg32> {
-	Reg32_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg32", ml) {
+struct Opmask_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Opmask> {
+	Opmask_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Opmask", ml) {
 	}
 	void init () {
 	}
 };
 #endif
 #ifdef GLOBAL_NAMESPACE
-struct Ymm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Ymm> {
-	Ymm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Ymm", ml) {
+struct Reg32e_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg32e> {
+	Reg32e_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg32e", ml) {
 	}
 	void init () {
 	}
 };
 #endif
 #ifdef GLOBAL_NAMESPACE
-struct Reg8_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg8> {
-	Reg8_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg8", ml) {
-	}
-	void init () {
-	}
-};
-#endif
-#ifdef GLOBAL_NAMESPACE
-struct Segment_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Segment> {
-	Segment_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Segment", ml) {
-	}
-	void init () {
-	}
-};
-#endif
-#ifdef GLOBAL_NAMESPACE
-struct EvexModifierRounding_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::EvexModifierRounding> {
-	EvexModifierRounding_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("EvexModifierRounding", ml) {
-	}
-	void init () {
-		addField<DAS_BIND_MANAGED_FIELD(rounding)>("rounding","rounding");
-	}
-};
-#endif
-#ifdef GLOBAL_NAMESPACE
-struct Operand_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Operand> {
-	Operand_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Operand", ml) {
+struct Reg64_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg64> {
+	Reg64_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg64", ml) {
 	}
 	void init () {
 	}
@@ -145,24 +120,51 @@ struct Fpu_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Fpu> {
 };
 #endif
 #ifdef GLOBAL_NAMESPACE
-struct LabelManager_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::LabelManager> {
-	LabelManager_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("LabelManager", ml) {
+struct RegRip_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::RegRip> {
+	RegRip_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("RegRip", ml) {
+	}
+	void init () {
+		addField<DAS_BIND_MANAGED_FIELD(disp_)>("disp_","disp_");
+		addField<DAS_BIND_MANAGED_FIELD(label_)>("label_","label_");
+		addField<DAS_BIND_MANAGED_FIELD(isAddr_)>("isAddr_","isAddr_");
+	}
+};
+#endif
+#ifdef GLOBAL_NAMESPACE
+struct Operand_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Operand> {
+	Operand_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Operand", ml) {
 	}
 	void init () {
 	}
 };
 #endif
 #ifdef GLOBAL_NAMESPACE
-struct CodeArray_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::CodeArray> {
-	CodeArray_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("CodeArray", ml) {
+struct Segment_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Segment> {
+	Segment_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Segment", ml) {
 	}
 	void init () {
 	}
 };
 #endif
 #ifdef GLOBAL_NAMESPACE
-struct Reg_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg> {
-	Reg_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg", ml) {
+struct Zmm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Zmm> {
+	Zmm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Zmm", ml) {
+	}
+	void init () {
+	}
+};
+#endif
+#ifdef GLOBAL_NAMESPACE
+struct Xmm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Xmm> {
+	Xmm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Xmm", ml) {
+	}
+	void init () {
+	}
+};
+#endif
+#ifdef GLOBAL_NAMESPACE
+struct Ymm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Ymm> {
+	Ymm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Ymm", ml) {
 	}
 	void init () {
 	}
@@ -171,14 +173,6 @@ struct Reg_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg> {
 #ifdef GLOBAL_NAMESPACE
 struct Address_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Address> {
 	Address_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Address", ml) {
-	}
-	void init () {
-	}
-};
-#endif
-#ifdef GLOBAL_NAMESPACE
-struct Label_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Label> {
-	Label_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Label", ml) {
 	}
 	void init () {
 	}
@@ -195,51 +189,20 @@ struct AddressFrame_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Addr
 };
 #endif
 #ifdef GLOBAL_NAMESPACE
-struct RegRip_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::RegRip> {
-	RegRip_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("RegRip", ml) {
+struct JmpLabel_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::JmpLabel> {
+	JmpLabel_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("JmpLabel", ml) {
 	}
 	void init () {
-		addField<DAS_BIND_MANAGED_FIELD(disp_)>("disp_","disp_");
-		addField<DAS_BIND_MANAGED_FIELD(label_)>("label_","label_");
-		addField<DAS_BIND_MANAGED_FIELD(isAddr_)>("isAddr_","isAddr_");
+		addField<DAS_BIND_MANAGED_FIELD(endOfJmp)>("endOfJmp","endOfJmp");
+		addField<DAS_BIND_MANAGED_FIELD(jmpSize)>("jmpSize","jmpSize");
+		addField<DAS_BIND_MANAGED_FIELD(mode)>("mode","mode");
+		addField<DAS_BIND_MANAGED_FIELD(disp)>("disp","disp");
 	}
 };
 #endif
 #ifdef GLOBAL_NAMESPACE
-struct Reg16_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg16> {
-	Reg16_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg16", ml) {
-	}
-	void init () {
-	}
-};
-#endif
-#ifdef GLOBAL_NAMESPACE
-struct Reg64_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg64> {
-	Reg64_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg64", ml) {
-	}
-	void init () {
-	}
-};
-#endif
-#ifdef GLOBAL_NAMESPACE
-struct Opmask_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Opmask> {
-	Opmask_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Opmask", ml) {
-	}
-	void init () {
-	}
-};
-#endif
-#ifdef GLOBAL_NAMESPACE
-struct RegExp_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::RegExp> {
-	RegExp_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("RegExp", ml) {
-	}
-	void init () {
-	}
-};
-#endif
-#ifdef GLOBAL_NAMESPACE
-struct EvexModifierZero_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::EvexModifierZero> {
-	EvexModifierZero_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("EvexModifierZero", ml) {
+struct LabelManager_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::LabelManager> {
+	LabelManager_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("LabelManager", ml) {
 	}
 	void init () {
 	}
@@ -254,52 +217,48 @@ struct Allocator_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Allocat
 };
 #endif
 #ifdef GLOBAL_NAMESPACE
-struct Xmm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Xmm> {
-	Xmm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Xmm", ml) {
+struct Reg_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg> {
+	Reg_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg", ml) {
 	}
 	void init () {
 	}
 };
 #endif
 #ifdef GLOBAL_NAMESPACE
-struct Reg32e_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg32e> {
-	Reg32e_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg32e", ml) {
+struct EvexModifierZero_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::EvexModifierZero> {
+	EvexModifierZero_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("EvexModifierZero", ml) {
 	}
 	void init () {
 	}
 };
 #endif
 #ifdef GLOBAL_NAMESPACE
-struct Zmm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Zmm> {
-	Zmm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Zmm", ml) {
+struct RegExp_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::RegExp> {
+	RegExp_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("RegExp", ml) {
 	}
 	void init () {
 	}
 };
 #endif
 #ifdef GLOBAL_NAMESPACE
-struct JmpLabel_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::JmpLabel> {
-	JmpLabel_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("JmpLabel", ml) {
+struct Label_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Label> {
+	Label_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Label", ml) {
 	}
 	void init () {
-		addField<DAS_BIND_MANAGED_FIELD(endOfJmp)>("endOfJmp","endOfJmp");
-		addField<DAS_BIND_MANAGED_FIELD(jmpSize)>("jmpSize","jmpSize");
-		addField<DAS_BIND_MANAGED_FIELD(mode)>("mode","mode");
-		addField<DAS_BIND_MANAGED_FIELD(disp)>("disp","disp");
+	}
+};
+#endif
+#ifdef GLOBAL_NAMESPACE
+struct CodeArray_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::CodeArray> {
+	CodeArray_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("CodeArray", ml) {
+	}
+	void init () {
 	}
 };
 #endif
 #ifdef GLOBAL_NAMESPACE
 struct Tmm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Tmm> {
 	Tmm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Tmm", ml) {
-	}
-	void init () {
-	}
-};
-#endif
-#ifdef GLOBAL_NAMESPACE
-struct BoundsReg_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::BoundsReg> {
-	BoundsReg_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("BoundsReg", ml) {
 	}
 	void init () {
 	}
@@ -635,8 +594,49 @@ struct CodeGenerator_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Cod
 };
 #endif
 #ifdef GLOBAL_NAMESPACE
+struct Reg8_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg8> {
+	Reg8_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg8", ml) {
+	}
+	void init () {
+	}
+};
+#endif
+#ifdef GLOBAL_NAMESPACE
+struct Reg16_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg16> {
+	Reg16_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg16", ml) {
+	}
+	void init () {
+	}
+};
+#endif
+#ifdef GLOBAL_NAMESPACE
+struct BoundsReg_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::BoundsReg> {
+	BoundsReg_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("BoundsReg", ml) {
+	}
+	void init () {
+	}
+};
+#endif
+#ifdef GLOBAL_NAMESPACE
 struct Mmx_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Mmx> {
 	Mmx_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Mmx", ml) {
+	}
+	void init () {
+	}
+};
+#endif
+#ifdef GLOBAL_NAMESPACE
+struct EvexModifierRounding_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::EvexModifierRounding> {
+	EvexModifierRounding_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("EvexModifierRounding", ml) {
+	}
+	void init () {
+		addField<DAS_BIND_MANAGED_FIELD(rounding)>("rounding","rounding");
+	}
+};
+#endif
+#ifdef GLOBAL_NAMESPACE
+struct Reg32_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg32> {
+	Reg32_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg32", ml) {
 	}
 	void init () {
 	}

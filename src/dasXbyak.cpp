@@ -284,10 +284,25 @@ Module_Xbyak::Module_Xbyak() : Module("xbyak") {
     initFunctions_9();
     initFunctions_10();
     initFunctions_11();
+    initFunctions_12();
+    initFunctions_13();
+    initFunctions_14();
+    initFunctions_15();
+    initFunctions_16();
+    initFunctions_17();
+    initFunctions_18();
+    initFunctions_19();
+    initFunctions_20();
+    initFunctions_21();
+    initFunctions_22();
 #else
     #include "module_xbyak.method.inc"
     #include "module_xbyak.inc"
 #endif
+
+    auto fnRet = findUniqueFunction("ret");
+    fnRet->arguments[1]->init = make_smart<ExprConstInt>(0);
+
 #endif
 }
 

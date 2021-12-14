@@ -31,6 +31,17 @@ IF (DAS_XBYAK_SUPPORTED AND (NOT DAS_XBYAK_INCLUDED) AND ((NOT ${DAS_XBYAK_DISAB
 		${DAS_XBYAK_DIR}/src/module_xbyak_split_9.cpp
 		${DAS_XBYAK_DIR}/src/module_xbyak_split_10.cpp
 		${DAS_XBYAK_DIR}/src/module_xbyak_split_11.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_12.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_13.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_14.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_15.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_16.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_17.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_18.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_19.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_20.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_21.cpp
+		${DAS_XBYAK_DIR}/src/module_xbyak_split_22.cpp
 	)
 
 	ADD_MODULE_LIB(libDasModuleXbyak)
