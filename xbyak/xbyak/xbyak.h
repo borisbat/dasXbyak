@@ -46,6 +46,7 @@
 	#define XBYAK_STD_UNORDERED_MAP std::unordered_map
 	// #define XBYAK_STD_UNORDERED_MULTIMAP std::unordered_multimap
 	// bbatkin: won't compile otherwise
+	#include <map>
 	#define XBYAK_STD_UNORDERED_MULTIMAP std::multimap
 
 /*

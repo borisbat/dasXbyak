@@ -14,43 +14,61 @@ IF (DAS_XBYAK_SUPPORTED AND (NOT DAS_XBYAK_INCLUDED) AND ((NOT ${DAS_XBYAK_DISAB
 
     LIST(APPEND CMAKE_MODULE_PATH ${DAS_XBYAK_DIR})
 
+	SET(DAS_XBYAK_INCLUDE_DIR ${DAS_XBYAK_DIR}/xbyak)
+
 	# libDasModuleXbyak
-	SET(DAS_XBYAK_MODULE_SRC
-		${DAS_XBYAK_DIR}/src/dasXbyak.h
-		${DAS_XBYAK_DIR}/src/dasXbyak.cpp
-		${DAS_XBYAK_DIR}/src/aot_xbyak.h
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_0.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_1.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_2.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_3.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_4.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_5.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_6.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_7.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_8.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_9.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_10.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_11.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_12.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_13.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_14.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_15.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_16.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_17.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_18.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_19.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_20.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_21.cpp
-		${DAS_XBYAK_DIR}/src/module_xbyak_split_22.cpp
+	SET(DAS_XBYAK_BIND_DIR ${DAS_XBYAK_DIR})
+	SET(DAS_XBYAK_BIND_MODULE_SRC
+		${DAS_XBYAK_BIND_DIR}/src/need_dasXBYAK.h
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.h
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.cpp
+	# user include
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.main.cpp
+	# generated binding includes
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.alias.add.inc
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.dummy.add.inc
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.enum.add.inc
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.enum.class.inc
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.enum.decl.inc
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.struct.add.inc
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.struct.postadd.inc
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.struct.class.inc
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.struct.decl.inc
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.struct.impl.inc
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.struct.cast.inc
+	# generated functions
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_1.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_2.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_3.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_4.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_5.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_6.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_7.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_8.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_9.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_10.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_11.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_12.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_13.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_14.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_15.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_16.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_17.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_18.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_19.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_20.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_21.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_22.cpp
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.func_23.cpp
 	)
 
 	ADD_MODULE_LIB(libDasModuleXbyak)
-	ADD_MODULE_CPP(Xbyak)
+	ADD_MODULE_CPP(dasXBYAK)
 	# ADD_MODULE_NATIVE(stbimage_boost)
-	ADD_LIBRARY(libDasModuleXbyak ${DAS_XBYAK_MODULE_SRC})
+	ADD_LIBRARY(libDasModuleXbyak ${DAS_XBYAK_BIND_MODULE_SRC})
 	TARGET_LINK_LIBRARIES(libDasModuleXbyak ${XBYAK_LIBRARIES})
 	# ADD_DEPENDENCIES(libDasModuleXbyak)
-	TARGET_INCLUDE_DIRECTORIES(libDasModuleXbyak PUBLIC ${XBYAK_INCLUDE_DIR} ${XBYAK_DIR})
+	TARGET_INCLUDE_DIRECTORIES(libDasModuleXbyak PUBLIC ${DAS_XBYAK_INCLUDE_DIR})
 	SETUP_CPP11(libDasModuleXbyak)
 
 	ADD_MODULE_DAS(dasxbyak dasxbyak xbyak_boost)
@@ -64,19 +82,6 @@ IF (DAS_XBYAK_SUPPORTED AND (NOT DAS_XBYAK_INCLUDED) AND ((NOT ${DAS_XBYAK_DISAB
 	ADD_MODULE_DAS(jit jit jit_x86_64_test)
 	ADD_MODULE_DAS(jit jit jit_x86_64)
 
-    #DAS_OUTPUT_AST(XBYAK_GENERATE_AST "${XBYAK_DIR}/xbyak.h" ${DAS_XBYAK_DIR} ${XBYAK_DIR})
-	#DAS_OUTPUT_JSON(XBYAK_GENERATE_JSON "${DAS_XBYAK_DIR}/src/xbyak_headers.h" ${DAS_XBYAK_DIR} ${XBYAK_DIR})
-
-	DAS_CPP_BIND_AST(
-		XBYAK_GENERATE
-		generate_xbyak.das
-		${DAS_XBYAK_DIR}/src/xbyak_headers.h
-		${DAS_XBYAK_DIR}/src/module_xbyak
-		${DAS_XBYAK_DIR}/src
-		${XBYAK_DIR}
-		""
-	)
-
 	SET(DAS_ZYCONFIG_DIR ${CMAKE_SOURCE_DIR}/modules/dasXbyak/zydis/msvc)
 
 	SET(DAS_ZYDIS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/modules/dasXbyak/zydis/include)
@@ -84,7 +89,6 @@ IF (DAS_XBYAK_SUPPORTED AND (NOT DAS_XBYAK_INCLUDED) AND ((NOT ${DAS_XBYAK_DISAB
 
 	SET(DAS_ZYCORE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/modules/dasXbyak/zydis/dependencies/zycore/include)
 	SET(DAS_ZYCORE_SRC_DIR     ${CMAKE_SOURCE_DIR}/modules/dasXbyak/zydis/dependencies/zycore/src)
-
 
 	# libDasModuleZydis
 	SET(DAS_ZYDIS_MODULE_SRC
