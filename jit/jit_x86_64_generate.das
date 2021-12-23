@@ -919,14 +919,14 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                 let evA0 & = unsafe(evResGet(expr.arguments[0]))
                 if evA0 is gpReg
                     shl(REG64(GEN,evA0 as gpReg),32)
-                    movd(REGXMM(GEN,xreg),REG64(GEN,evA0 as gpReg))
+                    movd(REGXMM(GEN,xreg),REG32(GEN,evA0 as gpReg))
                 elif evA0 is gpRegT
                     shl(REG64(GEN,evA0 as gpRegT),32)
-                    movd(REGXMM(GEN,xreg),REG64(GEN,evA0 as gpRegT))
+                    movd(REGXMM(GEN,xreg),REG32(GEN,evA0 as gpRegT))
                 else
                     copyRegAny32(GpTempReg RAX,evA0,expr.at)
                     shl(rax,32)
-                    movd(REGXMM(GEN,xreg),rax)
+                    movd(REGXMM(GEN,xreg),eax)
             // range(int,int)
             elif length(expr.arguments)==2 && expr.arguments[0]._type.baseType==Type tInt && expr.arguments[1]._type.baseType==Type tInt
                 rdx_has_args = false
@@ -936,6 +936,6 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                 copyRegAny32(GpTempReg RAX,evA0,expr.at)
                 shl(rax,32)
                 shrd(rax,rdx,uint8(32))
-                movd(REGXMM(GEN,xreg),rax)
+                movd(REGXMM(GEN,xreg),eax)
             log(" [{xreg}]")
 

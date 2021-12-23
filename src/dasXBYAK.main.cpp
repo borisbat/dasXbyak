@@ -133,18 +133,6 @@ namespace das {
         return (uint64_t) ptext;
     }
 
-    void setParents ( Module * mod, const char * child, const initializer_list<const char *> & parents ) {
-        auto chA = mod->findAnnotation(child);
-        DAS_VERIFYF(chA,"missing child annotation");
-        DAS_VERIFYF(chA->rtti_isBasicStructureAnnotation(),"expecting basic structure annotation");
-        auto bsaCh = (BasicStructureAnnotation *) chA.get();
-        for ( auto parent : parents ) {
-            auto chP = mod->findAnnotation(parent);
-            DAS_VERIFYF(chP,"missing parent annotation");
-            bsaCh->parents.push_back((TypeAnnotation *)chP.get());
-        }
-    }
-
 	void Module_dasXBYAK::initMain () {
         #ifdef XBYAK32
             addConstant<bool>(*this,"xbyak32",true);
@@ -159,18 +147,6 @@ namespace das {
             addConstant<bool>(*this,"xbyak64",true);
             addConstant<bool>(*this,"xbyak64win",false);
         #endif
-        // parents
-        setParents(this,"CodeGenerator",  {"CodeArray"});
-        // regs
-        setParents(this,"Address",  {"Operand"});
-        setParents(this,"Reg",      {"Operand"});
-        setParents(this,"Reg8",     {"Operand","Reg"});
-        setParents(this,"Reg16",    {"Operand","Reg"});
-        setParents(this,"Reg32e",   {"Operand","Reg"});
-        setParents(this,"Reg32",    {"Operand","Reg","Reg32e"});
-        setParents(this,"Reg64",    {"Operand","Reg","Reg32e","Reg32"});
-        setParents(this,"Mmx",      {"Operand","Reg"});
-        setParents(this,"Xmm",      {"Operand","Reg","Mmx"});
         // remainder of xbyak
         addExtern<DAS_BIND_FUN(das_L_str)>(*this, lib, "L",
             SideEffects::worstDefault, "das_L_str")
