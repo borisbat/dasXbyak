@@ -88,7 +88,9 @@ void Module_dasXBYAK::initFunctions_23() {
 		->args({"self","x","r"});
 	using _method_2212 = das::das_call_member< void (Xbyak::CodeGenerator::*)(unsigned long long,bool),&Xbyak::CodeGenerator::align >;
 	addExtern<DAS_CALL_METHOD(_method_2212)>(*this,lib,"align",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(unsigned long long,bool),&Xbyak::CodeGenerator::align >::invoke")
-		->args({"self","x","useMultiByteNop"});
+		->args({"self","x","useMultiByteNop"})
+		->arg_init(1,make_smart<ExprConstUInt64>(0x10))
+		->arg_init(2,make_smart<ExprConstBool>(true));
 }
 }
 

@@ -214,6 +214,8 @@ namespace das {
 
 	ModuleAotType Module_dasXBYAK::aotRequire ( TextWriter & tw ) const {
         tw << "#include \"../modules/dasXbyak/src/aot_dasXBYAK.h\"\n";
+        tw << "#include \"daScript/simulate/bind_enum.h\"\n";
+        tw << "#include \"../modules/dasXbyak/src/dasXBYAK.enum.decl.cast.inc\"\n";
         return ModuleAotType::cpp;
     }
 }

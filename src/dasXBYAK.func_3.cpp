@@ -16,16 +16,20 @@ void Module_dasXBYAK::initFunctions_3() {
 		->args({"self","op"});
 	using _method_188 = das::das_call_member< void (Xbyak::CodeGenerator::*)(std::basic_string<char>,Xbyak::CodeGenerator::LabelType),&Xbyak::CodeGenerator::jmp >;
 	addExtern<DAS_CALL_METHOD(_method_188)>(*this,lib,"jmp",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(std::basic_string<char>,Xbyak::CodeGenerator::LabelType),&Xbyak::CodeGenerator::jmp >::invoke")
-		->args({"self","label","type"});
+		->args({"self","label","type"})
+		->arg_init(2,make_smart<ExprConstEnumeration>(2,makeType<Xbyak::CodeGenerator::LabelType>(lib)));
 	using _method_189 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const char *,Xbyak::CodeGenerator::LabelType),&Xbyak::CodeGenerator::jmp >;
 	addExtern<DAS_CALL_METHOD(_method_189)>(*this,lib,"jmp",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const char *,Xbyak::CodeGenerator::LabelType),&Xbyak::CodeGenerator::jmp >::invoke")
-		->args({"self","label","type"});
+		->args({"self","label","type"})
+		->arg_init(2,make_smart<ExprConstEnumeration>(2,makeType<Xbyak::CodeGenerator::LabelType>(lib)));
 	using _method_190 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Label &,Xbyak::CodeGenerator::LabelType),&Xbyak::CodeGenerator::jmp >;
 	addExtern<DAS_CALL_METHOD(_method_190)>(*this,lib,"jmp",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Label &,Xbyak::CodeGenerator::LabelType),&Xbyak::CodeGenerator::jmp >::invoke")
-		->args({"self","label","type"});
+		->args({"self","label","type"})
+		->arg_init(2,make_smart<ExprConstEnumeration>(2,makeType<Xbyak::CodeGenerator::LabelType>(lib)));
 	using _method_191 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const void *,Xbyak::CodeGenerator::LabelType),&Xbyak::CodeGenerator::jmp >;
 	addExtern<DAS_CALL_METHOD(_method_191)>(*this,lib,"jmp",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const void *,Xbyak::CodeGenerator::LabelType),&Xbyak::CodeGenerator::jmp >::invoke")
-		->args({"self","addr","type"});
+		->args({"self","addr","type"})
+		->arg_init(2,make_smart<ExprConstEnumeration>(2,makeType<Xbyak::CodeGenerator::LabelType>(lib)));
 	using _method_192 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &),&Xbyak::CodeGenerator::call >;
 	addExtern<DAS_CALL_METHOD(_method_192)>(*this,lib,"call",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &),&Xbyak::CodeGenerator::call >::invoke")
 		->args({"self","op"});
@@ -100,13 +104,16 @@ void Module_dasXBYAK::initFunctions_3() {
 		->args({"self"});
 	using _method_216 = das::das_call_member< void (Xbyak::CodeGenerator::*)(Xbyak::CodeArray::ProtectMode),&Xbyak::CodeGenerator::ready >;
 	addExtern<DAS_CALL_METHOD(_method_216)>(*this,lib,"ready",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(Xbyak::CodeArray::ProtectMode),&Xbyak::CodeGenerator::ready >::invoke")
-		->args({"self","mode"});
+		->args({"self","mode"})
+		->arg_init(1,make_smart<ExprConstEnumeration>(1,makeType<Xbyak::CodeArray::ProtectMode>(lib)));
 	using _method_217 = das::das_call_member< void (Xbyak::CodeGenerator::*)(),&Xbyak::CodeGenerator::readyRE >;
 	addExtern<DAS_CALL_METHOD(_method_217)>(*this,lib,"readyRE",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(),&Xbyak::CodeGenerator::readyRE >::invoke")
 		->args({"self"});
 	using _method_218 = das::das_call_member< void (Xbyak::CodeGenerator::*)(unsigned long long,bool),&Xbyak::CodeGenerator::nop >;
 	addExtern<DAS_CALL_METHOD(_method_218)>(*this,lib,"nop",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(unsigned long long,bool),&Xbyak::CodeGenerator::nop >::invoke")
-		->args({"self","size","useMultiByteNop"});
+		->args({"self","size","useMultiByteNop"})
+		->arg_init(1,make_smart<ExprConstUInt64>(0x1))
+		->arg_init(2,make_smart<ExprConstBool>(true));
 	using _method_219 = das::das_call_member< const char * (Xbyak::CodeGenerator::*)() const,&Xbyak::CodeGenerator::getVersionString >;
 	addExtern<DAS_CALL_METHOD(_method_219)>(*this,lib,"getVersionString",SideEffects::worstDefault,"das_call_member< const char * (Xbyak::CodeGenerator::*)() const,&Xbyak::CodeGenerator::getVersionString >::invoke")
 		->args({"self"});

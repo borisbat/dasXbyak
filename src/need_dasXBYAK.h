@@ -5,6 +5,7 @@
 #define XBYAK_NO_EXCEPTION
 #include <xbyak/xbyak.h>
 #include "dasXBYAK.enum.decl.inc"
+#include "dasXBYAK.enum.decl.cast.inc"
 #include "dasXBYAK.struct.decl.inc"
 namespace das {
 	#include "dasXBYAK.struct.cast.inc"

@@ -1,135 +1,135 @@
 // this file is generated via daScript automatic C++ binder
 // all user modifications will be lost after this file is re-generated
 
-struct Allocator_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Allocator> {
-	Allocator_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Allocator", ml) {
+struct Xbyak_Allocator_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Allocator> {
+	Xbyak_Allocator_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Allocator", ml, "Xbyak::Allocator") {
 	}
 	void init () {
 	}
 };
 
-struct Operand_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Operand> {
-	Operand_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Operand", ml) {
+struct Xbyak_Operand_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Operand> {
+	Xbyak_Operand_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Operand", ml, "Xbyak::Operand") {
 	}
 	void init () {
 	}
 };
 
-struct Reg_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg> {
-	Reg_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg", ml) {
+struct Xbyak_Reg_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg> {
+	Xbyak_Reg_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg", ml, "Xbyak::Reg") {
 	}
 	void init () {
 	}
 };
 
-struct Reg8_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg8> {
-	Reg8_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg8", ml) {
+struct Xbyak_Reg8_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg8> {
+	Xbyak_Reg8_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg8", ml, "Xbyak::Reg8") {
 	}
 	void init () {
 	}
 };
 
-struct Reg16_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg16> {
-	Reg16_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg16", ml) {
+struct Xbyak_Reg16_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg16> {
+	Xbyak_Reg16_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg16", ml, "Xbyak::Reg16") {
 	}
 	void init () {
 	}
 };
 
-struct Mmx_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Mmx> {
-	Mmx_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Mmx", ml) {
+struct Xbyak_Mmx_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Mmx> {
+	Xbyak_Mmx_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Mmx", ml, "Xbyak::Mmx") {
 	}
 	void init () {
 	}
 };
 
-struct EvexModifierRounding_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::EvexModifierRounding> {
-	EvexModifierRounding_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("EvexModifierRounding", ml) {
+struct Xbyak_EvexModifierRounding_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::EvexModifierRounding> {
+	Xbyak_EvexModifierRounding_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("EvexModifierRounding", ml, "Xbyak::EvexModifierRounding") {
 	}
 	void init () {
 		addField<DAS_BIND_MANAGED_FIELD(rounding)>("rounding","rounding");
 	}
 };
 
-struct EvexModifierZero_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::EvexModifierZero> {
-	EvexModifierZero_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("EvexModifierZero", ml) {
+struct Xbyak_EvexModifierZero_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::EvexModifierZero> {
+	Xbyak_EvexModifierZero_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("EvexModifierZero", ml, "Xbyak::EvexModifierZero") {
 	}
 	void init () {
 	}
 };
 
-struct Xmm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Xmm> {
-	Xmm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Xmm", ml) {
+struct Xbyak_Xmm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Xmm> {
+	Xbyak_Xmm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Xmm", ml, "Xbyak::Xmm") {
 	}
 	void init () {
 	}
 };
 
-struct Ymm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Ymm> {
-	Ymm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Ymm", ml) {
+struct Xbyak_Ymm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Ymm> {
+	Xbyak_Ymm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Ymm", ml, "Xbyak::Ymm") {
 	}
 	void init () {
 	}
 };
 
-struct Zmm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Zmm> {
-	Zmm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Zmm", ml) {
+struct Xbyak_Zmm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Zmm> {
+	Xbyak_Zmm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Zmm", ml, "Xbyak::Zmm") {
 	}
 	void init () {
 	}
 };
 
-struct Tmm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Tmm> {
-	Tmm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Tmm", ml) {
+struct Xbyak_Tmm_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Tmm> {
+	Xbyak_Tmm_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Tmm", ml, "Xbyak::Tmm") {
 	}
 	void init () {
 	}
 };
 
-struct Opmask_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Opmask> {
-	Opmask_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Opmask", ml) {
+struct Xbyak_Opmask_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Opmask> {
+	Xbyak_Opmask_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Opmask", ml, "Xbyak::Opmask") {
 	}
 	void init () {
 	}
 };
 
-struct BoundsReg_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::BoundsReg> {
-	BoundsReg_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("BoundsReg", ml) {
+struct Xbyak_BoundsReg_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::BoundsReg> {
+	Xbyak_BoundsReg_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("BoundsReg", ml, "Xbyak::BoundsReg") {
 	}
 	void init () {
 	}
 };
 
-struct Fpu_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Fpu> {
-	Fpu_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Fpu", ml) {
+struct Xbyak_Fpu_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Fpu> {
+	Xbyak_Fpu_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Fpu", ml, "Xbyak::Fpu") {
 	}
 	void init () {
 	}
 };
 
-struct Reg32e_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg32e> {
-	Reg32e_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg32e", ml) {
+struct Xbyak_Reg32e_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg32e> {
+	Xbyak_Reg32e_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg32e", ml, "Xbyak::Reg32e") {
 	}
 	void init () {
 	}
 };
 
-struct Reg32_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg32> {
-	Reg32_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg32", ml) {
+struct Xbyak_Reg32_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg32> {
+	Xbyak_Reg32_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg32", ml, "Xbyak::Reg32") {
 	}
 	void init () {
 	}
 };
 
-struct Reg64_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg64> {
-	Reg64_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg64", ml) {
+struct Xbyak_Reg64_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Reg64> {
+	Xbyak_Reg64_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Reg64", ml, "Xbyak::Reg64") {
 	}
 	void init () {
 	}
 };
 
-struct RegRip_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::RegRip> {
-	RegRip_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("RegRip", ml) {
+struct Xbyak_RegRip_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::RegRip> {
+	Xbyak_RegRip_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("RegRip", ml, "Xbyak::RegRip") {
 	}
 	void init () {
 		addField<DAS_BIND_MANAGED_FIELD(disp_)>("disp_","disp_");
@@ -138,36 +138,36 @@ struct RegRip_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::RegRip> {
 	}
 };
 
-struct Segment_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Segment> {
-	Segment_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Segment", ml) {
+struct Xbyak_Segment_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Segment> {
+	Xbyak_Segment_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Segment", ml, "Xbyak::Segment") {
 	}
 	void init () {
 	}
 };
 
-struct RegExp_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::RegExp> {
-	RegExp_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("RegExp", ml) {
+struct Xbyak_RegExp_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::RegExp> {
+	Xbyak_RegExp_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("RegExp", ml, "Xbyak::RegExp") {
 	}
 	void init () {
 	}
 };
 
-struct CodeArray_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::CodeArray> {
-	CodeArray_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("CodeArray", ml) {
+struct Xbyak_CodeArray_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::CodeArray> {
+	Xbyak_CodeArray_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("CodeArray", ml, "Xbyak::CodeArray") {
 	}
 	void init () {
 	}
 };
 
-struct Address_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Address> {
-	Address_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Address", ml) {
+struct Xbyak_Address_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Address> {
+	Xbyak_Address_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Address", ml, "Xbyak::Address") {
 	}
 	void init () {
 	}
 };
 
-struct AddressFrame_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::AddressFrame> {
-	AddressFrame_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("AddressFrame", ml) {
+struct Xbyak_AddressFrame_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::AddressFrame> {
+	Xbyak_AddressFrame_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("AddressFrame", ml, "Xbyak::AddressFrame") {
 	}
 	void init () {
 		addField<DAS_BIND_MANAGED_FIELD(bit_)>("bit_","bit_");
@@ -175,8 +175,8 @@ struct AddressFrame_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Addr
 	}
 };
 
-struct JmpLabel_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::JmpLabel> {
-	JmpLabel_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("JmpLabel", ml) {
+struct Xbyak_JmpLabel_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::JmpLabel> {
+	Xbyak_JmpLabel_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("JmpLabel", ml, "Xbyak::JmpLabel") {
 	}
 	void init () {
 		addField<DAS_BIND_MANAGED_FIELD(endOfJmp)>("endOfJmp","endOfJmp");
@@ -186,22 +186,22 @@ struct JmpLabel_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::JmpLabel
 	}
 };
 
-struct Label_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Label> {
-	Label_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Label", ml) {
+struct Xbyak_Label_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::Label> {
+	Xbyak_Label_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("Label", ml, "Xbyak::Label") {
 	}
 	void init () {
 	}
 };
 
-struct LabelManager_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::LabelManager> {
-	LabelManager_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("LabelManager", ml) {
+struct Xbyak_LabelManager_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::LabelManager> {
+	Xbyak_LabelManager_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("LabelManager", ml, "Xbyak::LabelManager") {
 	}
 	void init () {
 	}
 };
 
-struct CodeGenerator_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::CodeGenerator> {
-	CodeGenerator_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("CodeGenerator", ml) {
+struct Xbyak_CodeGenerator_GeneratedAnnotation : ManagedStructureAnnotation<Xbyak::CodeGenerator> {
+	Xbyak_CodeGenerator_GeneratedAnnotation(ModuleLibrary & ml) : ManagedStructureAnnotation ("CodeGenerator", ml, "Xbyak::CodeGenerator") {
 	}
 	void init () {
 		addField<DAS_BIND_MANAGED_FIELD(labelMgr_)>("labelMgr_","labelMgr_");

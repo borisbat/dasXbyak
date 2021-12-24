@@ -30,6 +30,7 @@ IF (DAS_XBYAK_SUPPORTED AND (NOT DAS_XBYAK_INCLUDED) AND ((NOT ${DAS_XBYAK_DISAB
 		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.enum.add.inc
 		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.enum.class.inc
 		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.enum.decl.inc
+		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.enum.decl.cast.inc
 		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.struct.add.inc
 		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.struct.postadd.inc
 		${DAS_XBYAK_BIND_DIR}/src/dasXBYAK.struct.class.inc

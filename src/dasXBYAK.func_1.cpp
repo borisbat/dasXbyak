@@ -69,10 +69,12 @@ void Module_dasXBYAK::initFunctions_1() {
 		->args({"self"});
 	using _method_14 = das::das_call_member< bool (Xbyak::Operand::*)(int) const,&Xbyak::Operand::isREG >;
 	addExtern<DAS_CALL_METHOD(_method_14)>(*this,lib,"isREG",SideEffects::worstDefault,"das_call_member< bool (Xbyak::Operand::*)(int) const,&Xbyak::Operand::isREG >::invoke")
-		->args({"self","bit"});
+		->args({"self","bit"})
+		->arg_init(1,make_smart<ExprConstInt>(0));
 	using _method_15 = das::das_call_member< bool (Xbyak::Operand::*)(int) const,&Xbyak::Operand::isMEM >;
 	addExtern<DAS_CALL_METHOD(_method_15)>(*this,lib,"isMEM",SideEffects::worstDefault,"das_call_member< bool (Xbyak::Operand::*)(int) const,&Xbyak::Operand::isMEM >::invoke")
-		->args({"self","bit"});
+		->args({"self","bit"})
+		->arg_init(1,make_smart<ExprConstInt>(0));
 	using _method_16 = das::das_call_member< bool (Xbyak::Operand::*)() const,&Xbyak::Operand::isFPU >;
 	addExtern<DAS_CALL_METHOD(_method_16)>(*this,lib,"isFPU",SideEffects::worstDefault,"das_call_member< bool (Xbyak::Operand::*)() const,&Xbyak::Operand::isFPU >::invoke")
 		->args({"self"});
@@ -108,7 +110,8 @@ void Module_dasXBYAK::initFunctions_1() {
 		->args({"self","bit"});
 	using _method_27 = das::das_call_member< void (Xbyak::Operand::*)(int,bool),&Xbyak::Operand::setOpmaskIdx >;
 	addExtern<DAS_CALL_METHOD(_method_27)>(*this,lib,"setOpmaskIdx",SideEffects::worstDefault,"das_call_member< void (Xbyak::Operand::*)(int,bool),&Xbyak::Operand::setOpmaskIdx >::invoke")
-		->args({"self","idx",""});
+		->args({"self","idx",""})
+		->arg_init(2,make_smart<ExprConstBool>(true));
 	using _method_28 = das::das_call_member< void (Xbyak::Operand::*)(int),&Xbyak::Operand::setRounding >;
 	addExtern<DAS_CALL_METHOD(_method_28)>(*this,lib,"setRounding",SideEffects::worstDefault,"das_call_member< void (Xbyak::Operand::*)(int),&Xbyak::Operand::setRounding >::invoke")
 		->args({"self","idx"});
@@ -120,7 +123,8 @@ void Module_dasXBYAK::initFunctions_1() {
 		->args({"self"});
 	using _method_31 = das::das_call_member< bool (Xbyak::Operand::*)(int,unsigned int) const,&Xbyak::Operand::is >;
 	addExtern<DAS_CALL_METHOD(_method_31)>(*this,lib,"is",SideEffects::worstDefault,"das_call_member< bool (Xbyak::Operand::*)(int,unsigned int) const,&Xbyak::Operand::is >::invoke")
-		->args({"self","kind","bit"});
+		->args({"self","kind","bit"})
+		->arg_init(2,make_smart<ExprConstUInt>(0x0));
 	using _method_32 = das::das_call_member< bool (Xbyak::Operand::*)(unsigned int) const,&Xbyak::Operand::isBit >;
 	addExtern<DAS_CALL_METHOD(_method_32)>(*this,lib,"isBit",SideEffects::worstDefault,"das_call_member< bool (Xbyak::Operand::*)(unsigned int) const,&Xbyak::Operand::isBit >::invoke")
 		->args({"self","bit"});
@@ -198,7 +202,8 @@ void Module_dasXBYAK::initFunctions_1() {
 		->args({"self"});
 	using _method_57 = das::das_call_member< bool (Xbyak::RegExp::*)(int) const,&Xbyak::RegExp::isVsib >;
 	addExtern<DAS_CALL_METHOD(_method_57)>(*this,lib,"isVsib",SideEffects::worstDefault,"das_call_member< bool (Xbyak::RegExp::*)(int) const,&Xbyak::RegExp::isVsib >::invoke")
-		->args({"self","bit"});
+		->args({"self","bit"})
+		->arg_init(1,make_smart<ExprConstInt>(896));
 	using _method_58 = das::das_call_member< Xbyak::RegExp (Xbyak::RegExp::*)() const,&Xbyak::RegExp::optimize >;
 	addExtern<DAS_CALL_METHOD(_method_58),SimNode_ExtFuncCallAndCopyOrMove>(*this,lib,"optimize",SideEffects::worstDefault,"das_call_member< Xbyak::RegExp (Xbyak::RegExp::*)() const,&Xbyak::RegExp::optimize >::invoke")
 		->args({"self"});
@@ -233,13 +238,16 @@ void Module_dasXBYAK::initFunctions_1() {
 		->args({"e","disp"});
 	using _method_66 = das::das_call_member< bool (Xbyak::CodeArray::*)(Xbyak::CodeArray::ProtectMode,bool),&Xbyak::CodeArray::setProtectMode >;
 	addExtern<DAS_CALL_METHOD(_method_66)>(*this,lib,"setProtectMode",SideEffects::worstDefault,"das_call_member< bool (Xbyak::CodeArray::*)(Xbyak::CodeArray::ProtectMode,bool),&Xbyak::CodeArray::setProtectMode >::invoke")
-		->args({"self","mode","throwException"});
+		->args({"self","mode","throwException"})
+		->arg_init(2,make_smart<ExprConstBool>(true));
 	using _method_67 = das::das_call_member< bool (Xbyak::CodeArray::*)(bool),&Xbyak::CodeArray::setProtectModeRE >;
 	addExtern<DAS_CALL_METHOD(_method_67)>(*this,lib,"setProtectModeRE",SideEffects::worstDefault,"das_call_member< bool (Xbyak::CodeArray::*)(bool),&Xbyak::CodeArray::setProtectModeRE >::invoke")
-		->args({"self","throwException"});
+		->args({"self","throwException"})
+		->arg_init(1,make_smart<ExprConstBool>(true));
 	using _method_68 = das::das_call_member< bool (Xbyak::CodeArray::*)(bool),&Xbyak::CodeArray::setProtectModeRW >;
 	addExtern<DAS_CALL_METHOD(_method_68)>(*this,lib,"setProtectModeRW",SideEffects::worstDefault,"das_call_member< bool (Xbyak::CodeArray::*)(bool),&Xbyak::CodeArray::setProtectModeRW >::invoke")
-		->args({"self","throwException"});
+		->args({"self","throwException"})
+		->arg_init(1,make_smart<ExprConstBool>(true));
 	using _method_69 = das::das_call_member< void (Xbyak::CodeArray::*)(),&Xbyak::CodeArray::resetSize >;
 	addExtern<DAS_CALL_METHOD(_method_69)>(*this,lib,"resetSize",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeArray::*)(),&Xbyak::CodeArray::resetSize >::invoke")
 		->args({"self"});
@@ -290,7 +298,8 @@ void Module_dasXBYAK::initFunctions_1() {
 		->args({"self"});
 	using _method_85 = das::das_call_member< Xbyak::RegExp (Xbyak::Address::*)(bool) const,&Xbyak::Address::getRegExp >;
 	addExtern<DAS_CALL_METHOD(_method_85),SimNode_ExtFuncCallAndCopyOrMove>(*this,lib,"getRegExp",SideEffects::worstDefault,"das_call_member< Xbyak::RegExp (Xbyak::Address::*)(bool) const,&Xbyak::Address::getRegExp >::invoke")
-		->args({"self","optimize"});
+		->args({"self","optimize"})
+		->arg_init(1,make_smart<ExprConstBool>(true));
 	using _method_86 = das::das_call_member< Xbyak::Address::Mode (Xbyak::Address::*)() const,&Xbyak::Address::getMode >;
 	addExtern<DAS_CALL_METHOD(_method_86)>(*this,lib,"getMode",SideEffects::worstDefault,"das_call_member< Xbyak::Address::Mode (Xbyak::Address::*)() const,&Xbyak::Address::getMode >::invoke")
 		->args({"self"});

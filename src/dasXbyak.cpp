@@ -14,12 +14,12 @@ namespace das {
 #include "dasXBYAK.enum.class.inc"
 #include "dasXBYAK.struct.class.inc"
 Module_dasXBYAK::Module_dasXBYAK() : Module("xbyak") {
-	lib.addModule(this);
-	lib.addBuiltInModule();
 }
 bool Module_dasXBYAK::initDependencies() {
 	if ( initialized ) return true;
 	initialized = true;
+	lib.addModule(this);
+	lib.addBuiltInModule();
 	#include "dasXBYAK.enum.add.inc"
 	#include "dasXBYAK.dummy.add.inc"
 	#include "dasXBYAK.struct.add.inc"

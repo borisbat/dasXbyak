@@ -61,16 +61,20 @@ void Module_dasXBYAK::initFunctions_15() {
 		->args({"self","xm","op","imm"});
 	using _method_1403 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Xmm &,const Xbyak::Xmm &,const Xbyak::Operand &,Xbyak::PreferredEncoding),&Xbyak::CodeGenerator::vpdpbusd >;
 	addExtern<DAS_CALL_METHOD(_method_1403)>(*this,lib,"vpdpbusd",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Xmm &,const Xbyak::Xmm &,const Xbyak::Operand &,Xbyak::PreferredEncoding),&Xbyak::CodeGenerator::vpdpbusd >::invoke")
-		->args({"self","x1","x2","op","encoding"});
+		->args({"self","x1","x2","op","encoding"})
+		->arg_init(4,make_smart<ExprConstEnumeration>(0,makeType<Xbyak::PreferredEncoding>(lib)));
 	using _method_1404 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Xmm &,const Xbyak::Xmm &,const Xbyak::Operand &,Xbyak::PreferredEncoding),&Xbyak::CodeGenerator::vpdpbusds >;
 	addExtern<DAS_CALL_METHOD(_method_1404)>(*this,lib,"vpdpbusds",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Xmm &,const Xbyak::Xmm &,const Xbyak::Operand &,Xbyak::PreferredEncoding),&Xbyak::CodeGenerator::vpdpbusds >::invoke")
-		->args({"self","x1","x2","op","encoding"});
+		->args({"self","x1","x2","op","encoding"})
+		->arg_init(4,make_smart<ExprConstEnumeration>(0,makeType<Xbyak::PreferredEncoding>(lib)));
 	using _method_1405 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Xmm &,const Xbyak::Xmm &,const Xbyak::Operand &,Xbyak::PreferredEncoding),&Xbyak::CodeGenerator::vpdpwssd >;
 	addExtern<DAS_CALL_METHOD(_method_1405)>(*this,lib,"vpdpwssd",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Xmm &,const Xbyak::Xmm &,const Xbyak::Operand &,Xbyak::PreferredEncoding),&Xbyak::CodeGenerator::vpdpwssd >::invoke")
-		->args({"self","x1","x2","op","encoding"});
+		->args({"self","x1","x2","op","encoding"})
+		->arg_init(4,make_smart<ExprConstEnumeration>(0,makeType<Xbyak::PreferredEncoding>(lib)));
 	using _method_1406 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Xmm &,const Xbyak::Xmm &,const Xbyak::Operand &,Xbyak::PreferredEncoding),&Xbyak::CodeGenerator::vpdpwssds >;
 	addExtern<DAS_CALL_METHOD(_method_1406)>(*this,lib,"vpdpwssds",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Xmm &,const Xbyak::Xmm &,const Xbyak::Operand &,Xbyak::PreferredEncoding),&Xbyak::CodeGenerator::vpdpwssds >::invoke")
-		->args({"self","x1","x2","op","encoding"});
+		->args({"self","x1","x2","op","encoding"})
+		->arg_init(4,make_smart<ExprConstEnumeration>(0,makeType<Xbyak::PreferredEncoding>(lib)));
 	using _method_1407 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Ymm &,const Xbyak::Ymm &,const Xbyak::Operand &,unsigned char),&Xbyak::CodeGenerator::vperm2f128 >;
 	addExtern<DAS_CALL_METHOD(_method_1407)>(*this,lib,"vperm2f128",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Ymm &,const Xbyak::Ymm &,const Xbyak::Operand &,unsigned char),&Xbyak::CodeGenerator::vperm2f128 >::invoke")
 		->args({"self","y1","y2","op","imm"});

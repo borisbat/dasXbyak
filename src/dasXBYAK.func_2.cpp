@@ -115,7 +115,8 @@ void Module_dasXBYAK::initFunctions_2() {
 		->args({"self","type"});
 	using _method_121 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Reg &,const Xbyak::Reg &,const Xbyak::Operand *,int,int,bool),&Xbyak::CodeGenerator::vex >;
 	addExtern<DAS_CALL_METHOD(_method_121)>(*this,lib,"vex",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Reg &,const Xbyak::Reg &,const Xbyak::Operand *,int,int,bool),&Xbyak::CodeGenerator::vex >::invoke")
-		->args({"self","reg","base","v","type","code","x"});
+		->args({"self","reg","base","v","type","code","x"})
+		->arg_init(6,make_smart<ExprConstBool>(false));
 	using _method_122 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Reg &,int) const,&Xbyak::CodeGenerator::verifySAE >;
 	addExtern<DAS_CALL_METHOD(_method_122)>(*this,lib,"verifySAE",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Reg &,int) const,&Xbyak::CodeGenerator::verifySAE >::invoke")
 		->args({"self","r","type"});
@@ -127,25 +128,37 @@ void Module_dasXBYAK::initFunctions_2() {
 		->args({"self","a","b","c","err"});
 	using _method_125 = das::das_call_member< int (Xbyak::CodeGenerator::*)(const Xbyak::Reg &,const Xbyak::Reg &,const Xbyak::Operand *,int,int,bool,bool,int,unsigned int,bool),&Xbyak::CodeGenerator::evex >;
 	addExtern<DAS_CALL_METHOD(_method_125)>(*this,lib,"evex",SideEffects::worstDefault,"das_call_member< int (Xbyak::CodeGenerator::*)(const Xbyak::Reg &,const Xbyak::Reg &,const Xbyak::Operand *,int,int,bool,bool,int,unsigned int,bool),&Xbyak::CodeGenerator::evex >::invoke")
-		->args({"self","reg","base","v","type","code","x","b","aaa","VL","Hi16Vidx"});
+		->args({"self","reg","base","v","type","code","x","b","aaa","VL","Hi16Vidx"})
+		->arg_init(6,make_smart<ExprConstBool>(false))
+		->arg_init(7,make_smart<ExprConstBool>(false))
+		->arg_init(8,make_smart<ExprConstInt>(0))
+		->arg_init(9,make_smart<ExprConstUInt>(0x0))
+		->arg_init(10,make_smart<ExprConstBool>(false));
 	using _method_126 = das::das_call_member< void (Xbyak::CodeGenerator::*)(int,int,int),&Xbyak::CodeGenerator::setModRM >;
 	addExtern<DAS_CALL_METHOD(_method_126)>(*this,lib,"setModRM",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(int,int,int),&Xbyak::CodeGenerator::setModRM >::invoke")
 		->args({"self","mod","r1","r2"});
 	using _method_127 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::RegExp &,int,int),&Xbyak::CodeGenerator::setSIB >;
 	addExtern<DAS_CALL_METHOD(_method_127)>(*this,lib,"setSIB",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::RegExp &,int,int),&Xbyak::CodeGenerator::setSIB >::invoke")
-		->args({"self","e","reg","disp8N"});
+		->args({"self","e","reg","disp8N"})
+		->arg_init(3,make_smart<ExprConstInt>(0));
 	using _method_128 = das::das_call_member< bool (Xbyak::CodeGenerator::*)(unsigned int) const,&Xbyak::CodeGenerator::isInDisp16 >;
 	addExtern<DAS_CALL_METHOD(_method_128)>(*this,lib,"isInDisp16",SideEffects::worstDefault,"das_call_member< bool (Xbyak::CodeGenerator::*)(unsigned int) const,&Xbyak::CodeGenerator::isInDisp16 >::invoke")
 		->args({"self","x"});
 	using _method_129 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Reg &,const Xbyak::Reg &,int,int,int),&Xbyak::CodeGenerator::opModR >;
 	addExtern<DAS_CALL_METHOD(_method_129)>(*this,lib,"opModR",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Reg &,const Xbyak::Reg &,int,int,int),&Xbyak::CodeGenerator::opModR >::invoke")
-		->args({"self","reg1","reg2","code0","code1","code2"});
+		->args({"self","reg1","reg2","code0","code1","code2"})
+		->arg_init(4,make_smart<ExprConstInt>(256))
+		->arg_init(5,make_smart<ExprConstInt>(256));
 	using _method_130 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Address &,const Xbyak::Reg &,int,int,int,int),&Xbyak::CodeGenerator::opModM >;
 	addExtern<DAS_CALL_METHOD(_method_130)>(*this,lib,"opModM",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Address &,const Xbyak::Reg &,int,int,int,int),&Xbyak::CodeGenerator::opModM >::invoke")
-		->args({"self","addr","reg","code0","code1","code2","immSize"});
+		->args({"self","addr","reg","code0","code1","code2","immSize"})
+		->arg_init(4,make_smart<ExprConstInt>(256))
+		->arg_init(5,make_smart<ExprConstInt>(256))
+		->arg_init(6,make_smart<ExprConstInt>(0));
 	using _method_131 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Address &,const Xbyak::Reg &,int,int),&Xbyak::CodeGenerator::opLoadSeg >;
 	addExtern<DAS_CALL_METHOD(_method_131)>(*this,lib,"opLoadSeg",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Address &,const Xbyak::Reg &,int,int),&Xbyak::CodeGenerator::opLoadSeg >::invoke")
-		->args({"self","addr","reg","code0","code1"});
+		->args({"self","addr","reg","code0","code1"})
+		->arg_init(4,make_smart<ExprConstInt>(256));
 	using _method_132 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Address &,const Xbyak::Reg &,int,int),&Xbyak::CodeGenerator::opMIB >;
 	addExtern<DAS_CALL_METHOD(_method_132)>(*this,lib,"opMIB",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Address &,const Xbyak::Reg &,int,int),&Xbyak::CodeGenerator::opMIB >::invoke")
 		->args({"self","addr","reg","code0","code1"});
@@ -160,25 +173,38 @@ void Module_dasXBYAK::initFunctions_2() {
 		->args({"self","addr","type","shortCode","longCode","longPref"});
 	using _method_136 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Address &,int,int,int,bool),&Xbyak::CodeGenerator::opAddr >;
 	addExtern<DAS_CALL_METHOD(_method_136)>(*this,lib,"opAddr",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Address &,int,int,int,bool),&Xbyak::CodeGenerator::opAddr >::invoke")
-		->args({"self","addr","reg","immSize","disp8N","permitVisb"});
+		->args({"self","addr","reg","immSize","disp8N","permitVisb"})
+		->arg_init(3,make_smart<ExprConstInt>(0))
+		->arg_init(4,make_smart<ExprConstInt>(0))
+		->arg_init(5,make_smart<ExprConstBool>(false));
 	using _method_137 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Operand &,int,int,bool (const Xbyak::Operand &, const Xbyak::Operand &),int,int),&Xbyak::CodeGenerator::opGen >;
 	addExtern<DAS_CALL_METHOD(_method_137)>(*this,lib,"opGen",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Operand &,int,int,bool (const Xbyak::Operand &, const Xbyak::Operand &),int,int),&Xbyak::CodeGenerator::opGen >::invoke")
-		->args({"self","reg","op","code","pref","isValid","imm8","preCode"});
+		->args({"self","reg","op","code","pref","isValid","imm8","preCode"})
+		->arg_init(6,make_smart<ExprConstInt>(256))
+		->arg_init(7,make_smart<ExprConstInt>(256));
 	using _method_138 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Mmx &,int,int,int),&Xbyak::CodeGenerator::opMMX_IMM >;
 	addExtern<DAS_CALL_METHOD(_method_138)>(*this,lib,"opMMX_IMM",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Mmx &,int,int,int),&Xbyak::CodeGenerator::opMMX_IMM >::invoke")
 		->args({"self","mmx","imm8","code","ext"});
 	using _method_139 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Mmx &,const Xbyak::Operand &,int,int,int,int),&Xbyak::CodeGenerator::opMMX >;
 	addExtern<DAS_CALL_METHOD(_method_139)>(*this,lib,"opMMX",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Mmx &,const Xbyak::Operand &,int,int,int,int),&Xbyak::CodeGenerator::opMMX >::invoke")
-		->args({"self","mmx","op","code","pref","imm8","preCode"});
+		->args({"self","mmx","op","code","pref","imm8","preCode"})
+		->arg_init(4,make_smart<ExprConstInt>(102))
+		->arg_init(5,make_smart<ExprConstInt>(256))
+		->arg_init(6,make_smart<ExprConstInt>(256));
 	using _method_140 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Operand &,int,int),&Xbyak::CodeGenerator::opMovXMM >;
 	addExtern<DAS_CALL_METHOD(_method_140)>(*this,lib,"opMovXMM",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Operand &,int,int),&Xbyak::CodeGenerator::opMovXMM >::invoke")
 		->args({"self","op1","op2","code","pref"});
 	using _method_141 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Mmx &,int,int,bool),&Xbyak::CodeGenerator::opExt >;
 	addExtern<DAS_CALL_METHOD(_method_141)>(*this,lib,"opExt",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Mmx &,int,int,bool),&Xbyak::CodeGenerator::opExt >::invoke")
-		->args({"self","op","mmx","code","imm","hasMMX2"});
+		->args({"self","op","mmx","code","imm","hasMMX2"})
+		->arg_init(5,make_smart<ExprConstBool>(false));
 	using _method_142 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,int,int,int,int,int,bool,int),&Xbyak::CodeGenerator::opR_ModM >;
 	addExtern<DAS_CALL_METHOD(_method_142)>(*this,lib,"opR_ModM",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,int,int,int,int,int,bool,int),&Xbyak::CodeGenerator::opR_ModM >::invoke")
-		->args({"self","op","bit","ext","code0","code1","code2","disableRex","immSize"});
+		->args({"self","op","bit","ext","code0","code1","code2","disableRex","immSize"})
+		->arg_init(5,make_smart<ExprConstInt>(256))
+		->arg_init(6,make_smart<ExprConstInt>(256))
+		->arg_init(7,make_smart<ExprConstBool>(false))
+		->arg_init(8,make_smart<ExprConstInt>(0));
 	using _method_143 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,int,int),&Xbyak::CodeGenerator::opShift >;
 	addExtern<DAS_CALL_METHOD(_method_143)>(*this,lib,"opShift",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,int,int),&Xbyak::CodeGenerator::opShift >::invoke")
 		->args({"self","op","imm","ext"});
@@ -187,10 +213,14 @@ void Module_dasXBYAK::initFunctions_2() {
 		->args({"self","op","_cl","ext"});
 	using _method_145 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Operand &,bool,bool,int,int,int,int),&Xbyak::CodeGenerator::opModRM >;
 	addExtern<DAS_CALL_METHOD(_method_145)>(*this,lib,"opModRM",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Operand &,bool,bool,int,int,int,int),&Xbyak::CodeGenerator::opModRM >::invoke")
-		->args({"self","op1","op2","condR","condM","code0","code1","code2","immSize"});
+		->args({"self","op1","op2","condR","condM","code0","code1","code2","immSize"})
+		->arg_init(6,make_smart<ExprConstInt>(256))
+		->arg_init(7,make_smart<ExprConstInt>(256))
+		->arg_init(8,make_smart<ExprConstInt>(0));
 	using _method_146 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Reg &,unsigned char,int,const Xbyak::Reg8 *),&Xbyak::CodeGenerator::opShxd >;
 	addExtern<DAS_CALL_METHOD(_method_146)>(*this,lib,"opShxd",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Reg &,unsigned char,int,const Xbyak::Reg8 *),&Xbyak::CodeGenerator::opShxd >::invoke")
-		->args({"self","op","reg","imm","code","_cl"});
+		->args({"self","op","reg","imm","code","_cl"})
+		->arg_init(5,make_smart<ExprConstPtr>());
 	using _method_147 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Operand &,int),&Xbyak::CodeGenerator::opRM_RM >;
 	addExtern<DAS_CALL_METHOD(_method_147)>(*this,lib,"opRM_RM",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Operand &,int),&Xbyak::CodeGenerator::opRM_RM >::invoke")
 		->args({"self","op1","op2","code"});
@@ -223,16 +253,20 @@ void Module_dasXBYAK::initFunctions_2() {
 		->args({"self","reg","code1","code2"});
 	using _method_157 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Reg &,const Xbyak::Operand *,const Xbyak::Operand &,int,int,int),&Xbyak::CodeGenerator::opVex >;
 	addExtern<DAS_CALL_METHOD(_method_157)>(*this,lib,"opVex",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Reg &,const Xbyak::Operand *,const Xbyak::Operand &,int,int,int),&Xbyak::CodeGenerator::opVex >::invoke")
-		->args({"self","r","p1","op2","type","code","imm8"});
+		->args({"self","r","p1","op2","type","code","imm8"})
+		->arg_init(6,make_smart<ExprConstInt>(256));
 	using _method_158 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Reg32e &,const Xbyak::Operand &,const Xbyak::Operand &,int,unsigned char,bool,int),&Xbyak::CodeGenerator::opGpr >;
 	addExtern<DAS_CALL_METHOD(_method_158)>(*this,lib,"opGpr",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Reg32e &,const Xbyak::Operand &,const Xbyak::Operand &,int,unsigned char,bool,int),&Xbyak::CodeGenerator::opGpr >::invoke")
-		->args({"self","r","op1","op2","type","code","isR_R_RM","imm8"});
+		->args({"self","r","op1","op2","type","code","isR_R_RM","imm8"})
+		->arg_init(7,make_smart<ExprConstInt>(256));
 	using _method_159 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Xmm &,const Xbyak::Operand &,const Xbyak::Operand &,int,int,int),&Xbyak::CodeGenerator::opAVX_X_X_XM >;
 	addExtern<DAS_CALL_METHOD(_method_159)>(*this,lib,"opAVX_X_X_XM",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Xmm &,const Xbyak::Operand &,const Xbyak::Operand &,int,int,int),&Xbyak::CodeGenerator::opAVX_X_X_XM >::invoke")
-		->args({"self","x1","op1","op2","type","code0","imm8"});
+		->args({"self","x1","op1","op2","type","code0","imm8"})
+		->arg_init(6,make_smart<ExprConstInt>(256));
 	using _method_160 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Opmask &,const Xbyak::Xmm &,const Xbyak::Operand &,int,int,int),&Xbyak::CodeGenerator::opAVX_K_X_XM >;
 	addExtern<DAS_CALL_METHOD(_method_160)>(*this,lib,"opAVX_K_X_XM",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Opmask &,const Xbyak::Xmm &,const Xbyak::Operand &,int,int,int),&Xbyak::CodeGenerator::opAVX_K_X_XM >::invoke")
-		->args({"self","k","x2","op3","type","code0","imm8"});
+		->args({"self","k","x2","op3","type","code0","imm8"})
+		->arg_init(6,make_smart<ExprConstInt>(256));
 	using _method_161 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Operand &) const,&Xbyak::CodeGenerator::checkCvt1 >;
 	addExtern<DAS_CALL_METHOD(_method_161)>(*this,lib,"checkCvt1",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Operand &) const,&Xbyak::CodeGenerator::checkCvt1 >::invoke")
 		->args({"self","x","op"});
@@ -259,7 +293,8 @@ void Module_dasXBYAK::initFunctions_2() {
 		->args({"self","x"});
 	using _method_169 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Xmm &,const Xbyak::Operand &,int,int,int),&Xbyak::CodeGenerator::opAVX_X_XM_IMM >;
 	addExtern<DAS_CALL_METHOD(_method_169)>(*this,lib,"opAVX_X_XM_IMM",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Xmm &,const Xbyak::Operand &,int,int,int),&Xbyak::CodeGenerator::opAVX_X_XM_IMM >::invoke")
-		->args({"self","x","op","type","code","imm8"});
+		->args({"self","x","op","type","code","imm8"})
+		->arg_init(5,make_smart<ExprConstInt>(256));
 	using _method_170 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Reg &,const Xbyak::Operand &,unsigned char,unsigned char,unsigned char),&Xbyak::CodeGenerator::opSp1 >;
 	addExtern<DAS_CALL_METHOD(_method_170)>(*this,lib,"opSp1",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Reg &,const Xbyak::Operand &,unsigned char,unsigned char,unsigned char),&Xbyak::CodeGenerator::opSp1 >::invoke")
 		->args({"self","reg","op","pref","code0","code1"});

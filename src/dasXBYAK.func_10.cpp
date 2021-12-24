@@ -169,7 +169,8 @@ void Module_dasXBYAK::initFunctions_10() {
 		->args({"self"});
 	using _method_939 = das::das_call_member< void (Xbyak::CodeGenerator::*)(int),&Xbyak::CodeGenerator::ret >;
 	addExtern<DAS_CALL_METHOD(_method_939)>(*this,lib,"ret",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(int),&Xbyak::CodeGenerator::ret >::invoke")
-		->args({"self","imm"});
+		->args({"self","imm"})
+		->arg_init(1,make_smart<ExprConstInt>(0));
 	using _method_940 = das::das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Reg8 &),&Xbyak::CodeGenerator::rol >;
 	addExtern<DAS_CALL_METHOD(_method_940)>(*this,lib,"rol",SideEffects::worstDefault,"das_call_member< void (Xbyak::CodeGenerator::*)(const Xbyak::Operand &,const Xbyak::Reg8 &),&Xbyak::CodeGenerator::rol >::invoke")
 		->args({"self","op","_cl"});
