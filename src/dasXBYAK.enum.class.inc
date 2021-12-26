@@ -1,9 +1,9 @@
 // this file is generated via daScript automatic C++ binder
 // all user modifications will be lost after this file is re-generated
 
-class Enumeration_LabelMode : public das::Enumeration {
+class Enumeration_Xbyak_inner_LabelMode : public das::Enumeration {
 public:
-	Enumeration_LabelMode() : das::Enumeration("LabelMode") {
+	Enumeration_Xbyak_inner_LabelMode() : das::Enumeration("LabelMode") {
 		external = true;
 		cppName = "Xbyak::inner::LabelMode";
 		baseType = (das::Type) das::ToBasicType<int>::type;
@@ -13,9 +13,9 @@ public:
 	}
 };
 
-class Enumeration_Kind : public das::Enumeration {
+class Enumeration_Xbyak_Operand_Kind : public das::Enumeration {
 public:
-	Enumeration_Kind() : das::Enumeration("Kind") {
+	Enumeration_Xbyak_Operand_Kind() : das::Enumeration("Kind") {
 		external = true;
 		cppName = "Xbyak::Operand::Kind";
 		baseType = (das::Type) das::ToBasicType<int>::type;
@@ -33,9 +33,9 @@ public:
 	}
 };
 
-class Enumeration_Code : public das::Enumeration {
+class Enumeration_Xbyak_Operand_Code : public das::Enumeration {
 public:
-	Enumeration_Code() : das::Enumeration("Code") {
+	Enumeration_Xbyak_Operand_Code() : das::Enumeration("Code") {
 		external = true;
 		cppName = "Xbyak::Operand::Code";
 		baseType = (das::Type) das::ToBasicType<int>::type;
@@ -110,9 +110,9 @@ public:
 	}
 };
 
-class Enumeration_ProtectMode : public das::Enumeration {
+class Enumeration_Xbyak_CodeArray_ProtectMode : public das::Enumeration {
 public:
-	Enumeration_ProtectMode() : das::Enumeration("ProtectMode") {
+	Enumeration_Xbyak_CodeArray_ProtectMode() : das::Enumeration("ProtectMode") {
 		external = true;
 		cppName = "Xbyak::CodeArray::ProtectMode";
 		baseType = (das::Type) das::ToBasicType<int>::type;
@@ -122,9 +122,9 @@ public:
 	}
 };
 
-class Enumeration_Mode : public das::Enumeration {
+class Enumeration_Xbyak_Address_Mode : public das::Enumeration {
 public:
-	Enumeration_Mode() : das::Enumeration("Mode") {
+	Enumeration_Xbyak_Address_Mode() : das::Enumeration("Mode") {
 		external = true;
 		cppName = "Xbyak::Address::Mode";
 		baseType = (das::Type) das::ToBasicType<int>::type;
@@ -135,9 +135,9 @@ public:
 	}
 };
 
-class Enumeration_PreferredEncoding : public das::Enumeration {
+class Enumeration_Xbyak_PreferredEncoding : public das::Enumeration {
 public:
-	Enumeration_PreferredEncoding() : das::Enumeration("PreferredEncoding") {
+	Enumeration_Xbyak_PreferredEncoding() : das::Enumeration("PreferredEncoding") {
 		external = true;
 		cppName = "Xbyak::PreferredEncoding";
 		baseType = (das::Type) das::ToBasicType<int>::type;
@@ -147,9 +147,9 @@ public:
 	}
 };
 
-class Enumeration_LabelType : public das::Enumeration {
+class Enumeration_Xbyak_CodeGenerator_LabelType : public das::Enumeration {
 public:
-	Enumeration_LabelType() : das::Enumeration("LabelType") {
+	Enumeration_Xbyak_CodeGenerator_LabelType() : das::Enumeration("LabelType") {
 		external = true;
 		cppName = "Xbyak::CodeGenerator::LabelType";
 		baseType = (das::Type) das::ToBasicType<int>::type;
@@ -159,9 +159,9 @@ public:
 	}
 };
 
-class Enumeration_AVXtype : public das::Enumeration {
+class Enumeration_Xbyak_CodeGenerator_AVXtype : public das::Enumeration {
 public:
-	Enumeration_AVXtype() : das::Enumeration("AVXtype") {
+	Enumeration_Xbyak_CodeGenerator_AVXtype() : das::Enumeration("AVXtype") {
 		external = true;
 		cppName = "Xbyak::CodeGenerator::AVXtype";
 		baseType = (das::Type) das::ToBasicType<int>::type;
