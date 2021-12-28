@@ -13,6 +13,7 @@
 namespace das {
 #include "dasXBYAK.enum.class.inc"
 #include "dasXBYAK.struct.class.inc"
+#include "dasXBYAK.func.aot.inc"
 Module_dasXBYAK::Module_dasXBYAK() : Module("xbyak") {
 }
 bool Module_dasXBYAK::initDependencies() {
