@@ -71,55 +71,55 @@ def test_range_2a_0(a,b:int)
 def test_for_range_1arg_unused_value(t: T?)
     test_jit_levels(t.verbose) <|
         verify_jit(t, @@test_range_1a_v)
-        test_range_1a_v(5);     verify_seq(t,[{for t in range(0,5); t}])
+        test_range_1a_v(5);     verify_seq(t,[{for tt in range(0,5); tt}])
 [test]
 def test_for_range_1arg(t: T?)
     test_jit_levels(t.verbose) <|
         verify_jit(t, @@test_range_1a_0)
-        test_range_1a_0(5);     verify_seq(t,[{for t in range(0,5); t}])
+        test_range_1a_0(5);     verify_seq(t,[{for tt in range(0,5); tt}])
 
 [test]
 def test_for_range_2arg(t: T?)
     // range2
     test_jit_levels(t.verbose) <|
         verify_jit(t, @@test_range_2a_v)
-        test_range_2a_v(2,5);    verify_seq(t,[{for t in range(2,5); t}])
-        test_range_2a_v(5,5);    verify_seq(t,[{for t in range(5,5); t}])
-        test_range_2a_v(50,5);   verify_seq(t,[{for t in range(50,5); t}])
+        test_range_2a_v(2,5);    verify_seq(t,[{for tt in range(2,5); tt}])
+        test_range_2a_v(5,5);    verify_seq(t,[{for tt in range(5,5); tt}])
+        test_range_2a_v(50,5);   verify_seq(t,[{for tt in range(50,5); tt}])
 
 [test]
 def test_for_range_2arg_unused_value(t: T?)
     test_jit_levels(t.verbose) <|
         verify_jit(t, @@test_range_2a_0)
-        test_range_2a_0(2,5);    verify_seq(t,[{for t in range(2,5); t}])
-        test_range_2a_0(5,5);    verify_seq(t,[{for t in range(5,5); t}])
-        test_range_2a_0(50,5);   verify_seq(t,[{for t in range(50,5); t}])
+        test_range_2a_0(2,5);    verify_seq(t,[{for tt in range(2,5); tt}])
+        test_range_2a_0(5,5);    verify_seq(t,[{for tt in range(5,5); tt}])
+        test_range_2a_0(50,5);   verify_seq(t,[{for tt in range(50,5); tt}])
 
 [test]
 def test_for_range_any(t: T?)
     test_jit_levels(t.verbose) <|
         verify_jit(t, @@test_range)
-        test_range(0,5);        verify_seq(t,[{for t in range(0,5); t}])
-        test_range(2,5);        verify_seq(t,[{for t in range(2,5); t}])
-        test_range(5,5);        verify_seq(t,[{for t in range(5,5); t}])
-        test_range(50,5);       verify_seq(t,[{for t in range(50,5); t}])
-        test_range(-2,5);       verify_seq(t,[{for t in range(-2,5); t}])
-        test_range(-2,-3);      verify_seq(t,[{for t in range(-2,-3); t}])
-        test_range(-3,-2);      verify_seq(t,[{for t in range(-3,-2); t}])
+        test_range(0,5);        verify_seq(t,[{for tt in range(0,5); tt}])
+        test_range(2,5);        verify_seq(t,[{for tt in range(2,5); tt}])
+        test_range(5,5);        verify_seq(t,[{for tt in range(5,5); tt}])
+        test_range(50,5);       verify_seq(t,[{for tt in range(50,5); tt}])
+        test_range(-2,5);       verify_seq(t,[{for tt in range(-2,5); tt}])
+        test_range(-2,-3);      verify_seq(t,[{for tt in range(-2,-3); tt}])
+        test_range(-3,-2);      verify_seq(t,[{for tt in range(-3,-2); tt}])
 
 [test]
 def test_for_break(t: T?)
     test_jit_levels(t.verbose) <|
         verify_jit(t, @@test_break)
-        test_break(0,10,4);    verify_seq(t,[{for t in range(0,10); t; where t<=4}])
+        test_break(0,10,4);    verify_seq(t,[{for tt in range(0,10); tt; where tt<=4}])
 
 [test]
 def test_for_continue(t: T?)
     test_jit_levels(t.verbose) <|
         verify_jit(t, @@test_continue)
-        test_continue(0,10);    verify_seq(t,[{for t in range(0,10); t; where t % 2 != 0}])
+        test_continue(0,10);    verify_seq(t,[{for tt in range(0,10); tt; where tt % 2 != 0}])
 
 [export]
 def main
     test_jit_levels(false, true) <|
-        test_continue(0,10);    verify_seq([{for t in range(0,10); t; where t % 2 != 0}])
+        test_continue(0,10);    verify_seq([{for tt in range(0,10); tt; where tt % 2 != 0}])
