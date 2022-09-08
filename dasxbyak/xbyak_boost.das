@@ -7,6 +7,7 @@ module xbyak_boost shared public
 require xbyak public
 
 require daslib/ast_boost
+require daslib/macro_boost
 
 enum public GenerationError
 	NONE = 0
@@ -136,9 +137,7 @@ def public append_code_geenerator(var blk:smart_ptr<Expression>)
 class XbyakRemoveGenMacro : AstFunctionAnnotation
     def override transform ( var call : smart_ptr<ExprCallFunc>; var errors : das_string ) : ExpressionPtr
         let last_arg_index = length(call.arguments)-1
-        if !call.arguments[last_arg_index] is ExprMakeBlock
-            compiling_program() |> macro_error(call.at,"expecting block")
-            return [[ExpressionPtr]]
+        macro_verify(call.arguments[last_arg_index] is ExprMakeBlock,compiling_program(),call.at,"expecting block")
         var cblock <- clone_expression(call.arguments[last_arg_index])
         if append_code_geenerator(cblock)
             var ncall <- new [[ExprCall() at=call.at, name:=call.name]]

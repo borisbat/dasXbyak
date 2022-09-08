@@ -22,7 +22,7 @@ require ast public
 
 var public JIT_MAX_OPT_LEVEL = 3
 let public JIT_MAX_POSSIBLE_OPT_LEVEL = 3
-var public JIT_VERBOSE = false
+var public JIT_VERBOSE = true
 var public JIT_DISASM = false
 var public JIT_REPORT_REG_PRESSURE = false
 var public JIT_DISASSEMBLE_SHOW_ADDRESS = false
@@ -129,7 +129,7 @@ class Jit_x86_64_Macro : AstFunctionAnnotation
                     var fnptr <- find_module_function_via_rtti(find_module_via_rtti(this_program(),PMOD),PFUN)
                     var gen = generate_x86_64(fnptr,SHOW_DISASM,VERBOSE || JIT_VERBOSE, OPTLEVEL, NO_EXCEPTIONS)
                     if gen != null
-                        *gen |> instrument_jit(reinterpret<function> PFUN)
+                        get_code(*gen) |> instrument_jit(reinterpret<function> PFUN)
                     else
                         remove_jit(reinterpret<function> PFUN)
                     fnptr := null
