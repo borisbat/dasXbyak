@@ -20,10 +20,6 @@ namespace das {
     bool das_instrument_jit ( const Xbyak::CodeGenerator & code, const Func func, Context * context );
     void * das_get_code_ptr ( const Xbyak::CodeGenerator & code );
     uint64_t das_get_curr_ptr ( const Xbyak::CodeGenerator & code );
-    vec4f JIT_call_or_fastcall ( SimFunction * fn, vec4f * args, Context * context );
-    uint64_t das_get_JIT_call_or_fastcall ( );
-    void JIT_exception ( const char * text, Context * context );
-    uint64_t das_get_JIT_exception ( );
     uint64_t das_get_SimFunction_by_MNH ( uint64_t MNH, Context * context );
     uint64_t das_get_const_string_offset ( const char * text, Context * context, LineInfoArg * at );
 }

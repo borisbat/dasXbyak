@@ -856,7 +856,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                 if recursive_call
                     call(func_begin)
                 else
-                    mov(rax,JIT_call_or_fastcall())
+                    mov(rax,intptr(get_jit_call_or_fastcall()))
                     call(rax)
                 // restore used transient registers
                 add(rsp,(t_total & 1) != 0 ? 40u : 32u)

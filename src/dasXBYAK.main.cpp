@@ -60,22 +60,6 @@ namespace das {
         return (uint64_t) code.getCurr();
     }
 
-    vec4f JIT_call_or_fastcall ( SimFunction * fn, vec4f * args, Context * context ) {
-        return context->callOrFastcall(fn, args, nullptr);
-    }
-
-    uint64_t das_get_JIT_call_or_fastcall ( ) {
-        return (uint64_t) &JIT_call_or_fastcall;
-    }
-
-    void JIT_exception ( const char * text, Context * context ) {
-        context->throw_error(text);
-    }
-
-    uint64_t das_get_JIT_exception ( ) {
-        return (uint64_t) &JIT_exception;
-    }
-
     uint64_t das_get_SimFunction_by_MNH ( uint64_t MNH, Context * context ) {
         return (uint64_t) context->fnByMangledName(MNH);
     }
@@ -143,11 +127,6 @@ namespace das {
         addExtern<DAS_BIND_FUN(das_get_const_string_offset)>(*this, lib, "jit_generate_const_string",
             SideEffects::none, "das_get_const_string_offset")
                 ->args({"text","context","at"});
-        // JIT table
-        addExtern<DAS_BIND_FUN(das_get_JIT_call_or_fastcall)>(*this, lib, "JIT_call_or_fastcall",
-            SideEffects::none, "das_get_JIT_call_or_fastcall");
-        addExtern<DAS_BIND_FUN(das_get_JIT_exception)>(*this, lib, "JIT_exception",
-            SideEffects::none, "das_get_JIT_exception");
         // fixup RET
         auto fnRet = findUniqueFunction("ret");
         fnRet->arguments[1]->init = make_smart<ExprConstInt>(0);

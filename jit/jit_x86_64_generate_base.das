@@ -48,7 +48,7 @@ class GenerateCodeVisitorBase : JitVisitor
             mov(rcx,jit_generate_const_string(text))    // rcx is exception text
             mov(rdx,ptr[rbp+ctx_offset])                // rdx is Context *
             sub(rbp,32u)
-            mov(rax,JIT_exception())
+            mov(rax,intptr(get_jit_exception()))
             call(rax)
             add(rbp,32u)
 // CPU bugfixes and workaround
