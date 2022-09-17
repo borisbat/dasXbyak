@@ -60,10 +60,6 @@ namespace das {
         return (uint64_t) code.getCurr();
     }
 
-    uint64_t das_get_SimFunction_by_MNH ( uint64_t MNH, Context * context ) {
-        return (uint64_t) context->fnByMangledName(MNH);
-    }
-
     uint64_t das_get_const_string_offset ( const char * text, Context * context, LineInfoArg * at ) {
         if ( !text ) context->throw_error_at(*at, "missing text");
         auto ptext = context->constStringHeap->allocateString(text);
@@ -121,9 +117,6 @@ namespace das {
         addExtern<DAS_BIND_FUN(das_get_curr_ptr)>(*this, lib, "get_current_address",
             SideEffects::worstDefault, "das_get_curr_ptr");
         // JIT helpers
-        addExtern<DAS_BIND_FUN(das_get_SimFunction_by_MNH)>(*this, lib, "get_function_address",
-            SideEffects::none, "das_get_SimFunction_by_MNH")
-                ->args({"MNH","at"});
         addExtern<DAS_BIND_FUN(das_get_const_string_offset)>(*this, lib, "jit_generate_const_string",
             SideEffects::none, "das_get_const_string_offset")
                 ->args({"text","context","at"});
