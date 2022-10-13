@@ -811,7 +811,7 @@ class GenerateCodeVisitor : GenerateCodeVisitorBase
                 unsafe
                     let mangled_name = get_mangled_name(reinterpret<FunctionPtr> expr.func)
                     let MNH = hash(mangled_name)
-                    MNH_ADDR = get_function_address(MNH)
+                    MNH_ADDR = get_function_address(MNH, this_context())
                 log(" @@{MNH_ADDR} ")
                 // save used transient registers
                 let recursive_call = expr.func == this_function
