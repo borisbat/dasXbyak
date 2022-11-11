@@ -15,9 +15,6 @@ namespace das {
     Xbyak::RegExp das_op_sub_int ( const Xbyak::Reg & reg, int32_t value );
     Xbyak::RegExp das_op_sub_uint ( const Xbyak::Reg & reg, uint32_t value );
     float4 das_invoke_code ( const Xbyak::CodeGenerator & code, vec4f anything, void * cmres, Context * context );
-    bool das_is_jit_function ( const Func func );
-    bool das_remove_jit ( const Func func );
-    bool das_instrument_jit ( const Xbyak::CodeGenerator & code, const Func func, Context * context );
     void * das_get_code_ptr ( const Xbyak::CodeGenerator & code );
     uint64_t das_get_curr_ptr ( const Xbyak::CodeGenerator & code );
     uint64_t das_get_const_string_offset ( const char * text, Context * context, LineInfoArg * at );
