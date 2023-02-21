@@ -16,6 +16,7 @@ require math
 require dasxbyak/xbyak_boost
 require xbyak public
 require zydis
+require jit
 
 require ast public
 

@@ -88,7 +88,7 @@ class XybakVisitor : AstVisitor
     instructions : table<string; bool>
     def XybakVisitor(gname:string)
         genName = gname
-        var cgen <- typeinfo(ast_typedecl type<CodeGenerator>)
+        var inscope cgen <- typeinfo(ast_typedecl type<CodeGenerator>)
         var mod = cgen.annotation._module
         for_each_function(mod, "") <| $ ( fun )
             if length(fun.arguments) > 0
@@ -96,7 +96,7 @@ class XybakVisitor : AstVisitor
                     if fun.arguments[0]._type.annotation.name == "CodeGenerator"
                         instructions[string(fun.name)] = true
     def override visitExprVar(expr:smart_ptr<ExprVar>) : ExpressionPtr
-        var cgen <- typeinfo(ast_typedecl type<CodeGenerator>)
+        var inscope cgen <- typeinfo(ast_typedecl type<CodeGenerator>)
         if has_field(cgen, string(expr.name), true)
             astChanged = true
             return <- new [[ExprField() at=expr.at,
@@ -105,7 +105,7 @@ class XybakVisitor : AstVisitor
             ]]
         return expr
     def override visitExprCall(var expr:smart_ptr<ExprCall>) : ExpressionPtr
-        var cgen <- typeinfo(ast_typedecl type<CodeGenerator>)
+        var inscope cgen <- typeinfo(ast_typedecl type<CodeGenerator>)
         if expr.func==null
             if length(expr.arguments)>0
                 let a0v = expr.arguments[0] ?as ExprVar
