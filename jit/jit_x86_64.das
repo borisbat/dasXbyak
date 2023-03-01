@@ -136,10 +136,10 @@ class Jit_x86_64_Macro : AstFunctionAnnotation
                     fnptr := null
                 else
                     panic("missing 'options rtti'")
-        let show_disasm = find_arg("asm",args) ?as tBool ?? false
-        let verbose = find_arg("verbose",args) ?as tBool ?? false
-        let opt_level = find_arg("o",args) ?as tInt ?? 3
-        let no_exceptions = find_arg("no_exceptions",args) ?as tBool ?? false
+        let show_disasm = args |> find_arg("asm") ?as tBool ?? false
+        let verbose = args |> find_arg("verbose") ?as tBool ?? false
+        let opt_level = args |> find_arg("o") ?as tInt ?? 3
+        let no_exceptions = args |> find_arg("no_exceptions") ?as tBool ?? false
         apply_template(qblock) <| $ ( rules )
             rules |> replaceVariable("PFUN") <| new [[ExprAddr() target:=func.name]]
             rules |> replaceVariable("PMOD") <| new [[ExprConstString() value:=compiling_module().name]]
