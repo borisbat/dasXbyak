@@ -62,7 +62,7 @@ namespace das {
 
     uint64_t das_get_const_string_offset ( const char * text, Context * context, LineInfoArg * at ) {
         if ( !text ) context->throw_error_at(at, "missing text");
-        auto ptext = context->constStringHeap->allocateString(text);
+        auto ptext = context->constStringHeap->impl_allocateString(text);
         return (uint64_t) ptext;
     }
 
