@@ -108,7 +108,7 @@ def public generate_x86_64(var func:FunctionPtr; show_disasm:bool; verbose:bool;
                 if !empty(labt)
                     print("{labt}:\n")
                 if JIT_DISASSEMBLE_SHOW_ADDRESS
-                    print(format("%016llx\t",address))
+                    print(fmt(":016x",address))
                 print("\t{text}\n")
             print("\n")
         let err = reinterpret<GenerationError> GetError()
