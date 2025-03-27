@@ -2,6 +2,12 @@ options no_unused_block_arguments = false
 options no_unused_function_arguments = false
 options indenting = 4
 
+// OLD das restrictions
+options unsafe_table_lookup = false
+options strict_smart_pointers = false
+options relaxed_pointer_const = true
+
+
 module jit_x86_64_alloc_regs shared public
 
 require jit_x86_64_regs
@@ -139,7 +145,7 @@ class AllocateRegistersCodeVisitor : JitVisitor
         acceptConstR64(expr,expr.value ? 1ul : 0ul)
         return expr
 // let
-    def override preVisitExprLetVariable(expr:smart_ptr<ExprLet>;arg:VariablePtr;lastArg:bool) : void
+    def override preVisitExprLetVariable(expr:smart_ptr<ExprLet>;var arg:VariablePtr;lastArg:bool) : void
         local_stack |> push(get_ptr(arg))
         if !arg._type.isRef
             if arg._type |> is_gpreg_type
