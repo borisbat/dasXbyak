@@ -1,3 +1,4 @@
+options gen2
 options rtti
 require jit/jit_x86_64
 require jit/jit_x86_64_test
@@ -16,11 +17,14 @@ def main
 */
 
 [jit_x86_64(asm)]
-def fibR_jit(n:int)
-    if (n < 2)
+def fibR_jit(n : int) {
+    if (n < 2) {
         return n
+    }
     return fibR_jit(n - 1) + fibR_jit(n - 2)
+}
 
 [export]
-def main
+def main {
     fibR_jit(31)
+}
